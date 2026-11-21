@@ -10,7 +10,7 @@
 - Base de datos **cifrada**. Sin servidores, sin anuncios, sin rastreo.
 - Se actualiza sola desde GitHub.
 
-> Próximamente: presupuestos, tiendas, categorías, notificaciones y bloqueo con huella (v1.4.0); informes PDF y Excel (v1.5.0).
+> Próximamente (v1.5.0): informes en PDF y Excel, con «Lo que me deben».
 
 ## Instalar
 

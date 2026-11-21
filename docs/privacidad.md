@@ -19,6 +19,10 @@ Solo los que tú escribes: gastos, ingresos, reembolsos, personas y ajustes.
 - No vende ni comparte datos con nadie.
 - Las copias automáticas de Android están desactivadas para los datos de la app.
 
+## Permisos
+- **Notificaciones**: solo si las activas, para avisarte del sueldo, de los pagos del día y de los presupuestos. Se calculan en el móvil, sin internet.
+- **Huella o bloqueo del móvil**: solo si activas el bloqueo. Nummia nunca ve tu huella ni tu PIN; solo recibe de Android un «sí» o un «no».
+
 ## Conexiones a internet
 - **GitHub** (`api.github.com`, `github.com`): una vez al día como máximo, para comprobar si hay una versión nueva, y al descargarla. No se envía ningún dato personal.
 - **Google** (solo si conectas tu Drive): para guardar y leer tus hojas de cálculo y tus copias de seguridad.

@@ -2,6 +2,21 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.4.0] - 2026-11-21
+
+### Nuevo
+- **Presupuestos** (Ajustes → Presupuestos): un límite al mes en total, por categoría o por tienda.
+  - En Inicio verás una barra por presupuesto: se pone ámbar al 80 % y roja al pasarte.
+  - Cuenta el gasto real: los reembolsos restan y lo previsto no cuenta.
+- **Tiendas** (Ajustes → Tiendas): une las que son la misma tienda escrita de varias formas, o cámbiales el nombre. Nummia te sugiere las que parecen repetidas. El cambio llega también a tu hoja de Drive.
+- **Categorías** (Ajustes → Categorías): crea las tuyas, renombra cualquiera y cambia su color.
+- **Notificaciones** (Ajustes → Notificaciones), desactivadas hasta que las enciendas:
+  - Sueldo sin confirmar, desde el día 27.
+  - El día que toca un pago mensual.
+  - Presupuesto al 80 % y al pasarte, una sola vez al mes.
+  - Sin internet y sin gastar batería: revisa una vez al día y poco después de cada cambio.
+- **Bloqueo** (Ajustes → Seguridad): pide tu huella, tu cara o el PIN del móvil al abrir Nummia y al volver tras más de 1 minuto fuera.
+
 ## [1.3.1] - 2026-11-21
 
 ### Arreglado

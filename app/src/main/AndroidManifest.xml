@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application
+        android:name=".NummiaApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_nummia_a_violeta"
+        android:roundIcon="@mipmap/ic_nummia_a_violeta"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
+        android:localeConfig="@xml/locales_config"
+        android:theme="@style/Theme.Nummia"
+        tools:targetApi="34">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize" />
+
+        <receiver
+            android:name=".data.actualizar.ReceptorInstalacion"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
+        <activity-alias
+            android:name=".Icono_A_verde_menta"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_verde_menta"
+            android:roundIcon="@mipmap/ic_nummia_a_verde_menta"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_turquesa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_turquesa"
+            android:roundIcon="@mipmap/ic_nummia_a_turquesa"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_cian"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_cian"
+            android:roundIcon="@mipmap/ic_nummia_a_cian"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_azul"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_azul"
+            android:roundIcon="@mipmap/ic_nummia_a_azul"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_indigo"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_indigo"
+            android:roundIcon="@mipmap/ic_nummia_a_indigo"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_violeta"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_violeta"
+            android:roundIcon="@mipmap/ic_nummia_a_violeta"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_rosa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_rosa"
+            android:roundIcon="@mipmap/ic_nummia_a_rosa"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_coral"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_coral"
+            android:roundIcon="@mipmap/ic_nummia_a_coral"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_naranja"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_naranja"
+            android:roundIcon="@mipmap/ic_nummia_a_naranja"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_ambar"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_ambar"
+            android:roundIcon="@mipmap/ic_nummia_a_ambar"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_lima"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_lima"
+            android:roundIcon="@mipmap/ic_nummia_a_lima"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_A_pizarra"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_a_pizarra"
+            android:roundIcon="@mipmap/ic_nummia_a_pizarra"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_verde_menta"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_verde_menta"
+            android:roundIcon="@mipmap/ic_nummia_b_verde_menta"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_turquesa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_turquesa"
+            android:roundIcon="@mipmap/ic_nummia_b_turquesa"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_cian"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_cian"
+            android:roundIcon="@mipmap/ic_nummia_b_cian"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_azul"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_azul"
+            android:roundIcon="@mipmap/ic_nummia_b_azul"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_indigo"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_indigo"
+            android:roundIcon="@mipmap/ic_nummia_b_indigo"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_violeta"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_violeta"
+            android:roundIcon="@mipmap/ic_nummia_b_violeta"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_rosa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_rosa"
+            android:roundIcon="@mipmap/ic_nummia_b_rosa"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_coral"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_coral"
+            android:roundIcon="@mipmap/ic_nummia_b_coral"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_naranja"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_naranja"
+            android:roundIcon="@mipmap/ic_nummia_b_naranja"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_ambar"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_ambar"
+            android:roundIcon="@mipmap/ic_nummia_b_ambar"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_lima"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_lima"
+            android:roundIcon="@mipmap/ic_nummia_b_lima"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_B_pizarra"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_b_pizarra"
+            android:roundIcon="@mipmap/ic_nummia_b_pizarra"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_verde_menta"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_verde_menta"
+            android:roundIcon="@mipmap/ic_nummia_c_verde_menta"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_turquesa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_turquesa"
+            android:roundIcon="@mipmap/ic_nummia_c_turquesa"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_cian"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_cian"
+            android:roundIcon="@mipmap/ic_nummia_c_cian"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_azul"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_azul"
+            android:roundIcon="@mipmap/ic_nummia_c_azul"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_indigo"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_indigo"
+            android:roundIcon="@mipmap/ic_nummia_c_indigo"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_violeta"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_violeta"
+            android:roundIcon="@mipmap/ic_nummia_c_violeta"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_rosa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_rosa"
+            android:roundIcon="@mipmap/ic_nummia_c_rosa"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_coral"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_coral"
+            android:roundIcon="@mipmap/ic_nummia_c_coral"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_naranja"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_naranja"
+            android:roundIcon="@mipmap/ic_nummia_c_naranja"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_ambar"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_ambar"
+            android:roundIcon="@mipmap/ic_nummia_c_ambar"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_lima"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_lima"
+            android:roundIcon="@mipmap/ic_nummia_c_lima"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icono_C_pizarra"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_nummia_c_pizarra"
+            android:roundIcon="@mipmap/ic_nummia_c_pizarra"
+            android:label="@string/app_name"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+    </application>
+</manifest>

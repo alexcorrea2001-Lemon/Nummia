@@ -1,0 +1,78 @@
+package io.github.alexcorrea2001lemon.nummia.ui.ajustes
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.alexcorrea2001lemon.nummia.data.ajustes.Ajustes
+import io.github.alexcorrea2001lemon.nummia.data.ajustes.AjustesRepo
+import io.github.alexcorrea2001lemon.nummia.data.copia.CopiaInvalida
+import io.github.alexcorrea2001lemon.nummia.data.copia.CopiaLocal
+import io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity
+import io.github.alexcorrea2001lemon.nummia.data.icono.IconoApp
+import io.github.alexcorrea2001lemon.nummia.data.repo.MovimientosRepo
+import io.github.alexcorrea2001lemon.nummia.domain.reloj.Reloj
+import io.github.alexcorrea2001lemon.nummia.ui.theme.Acento
+import io.github.alexcorrea2001lemon.nummia.ui.theme.Logo
+import io.github.alexcorrea2001lemon.nummia.ui.theme.TamanoTexto
+import io.github.alexcorrea2001lemon.nummia.ui.theme.Tema
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import javax.inject.Inject
+
+@HiltViewModel
+class AjustesViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val ajustesRepo: AjustesRepo,
+    private val repo: MovimientosRepo,
+    private val copia: CopiaLocal,
+    private val reloj: Reloj,
+) : ViewModel() {
+    val ajustes: StateFlow<Ajustes> = ajustesRepo.ajustes.stateIn(viewModelScope, SharingStarted.Eagerly, Ajustes())
+    val personas: StateFlow<List<PersonaEntity>> = repo.personas().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun tema(t: Tema) = viewModelScope.launch { ajustesRepo.tema(t) }
+    fun acento(a: Acento) = viewModelScope.launch { ajustesRepo.acento(a) }
+    fun acentoPersonalizado(argb: Long) = viewModelScope.launch { ajustesRepo.acentoPersonalizado(argb) }
+    fun acentoFondo() = viewModelScope.launch { ajustesRepo.acentoFondoPantalla() }
+    fun tamano(t: TamanoTexto) = viewModelScope.launch { ajustesRepo.tamanoTexto(t) }
+    fun discreto(v: Boolean) = viewModelScope.launch { ajustesRepo.modoDiscreto(v) }
+    fun soloWifi(v: Boolean) = viewModelScope.launch { ajustesRepo.actualizacionesSoloWifi(v) }
+    fun buscarActualizaciones(v: Boolean) = viewModelScope.launch { ajustesRepo.buscarActualizaciones(v) }
+
+    fun icono(logo: Logo, color: Acento) = viewModelScope.launch {
+        ajustesRepo.icono(logo, color)
+        withContext(Dispatchers.IO) { IconoApp.aplicar(context, logo, color) }
+    }
+
+    fun sueldo(c: Long?) = viewModelScope.launch {
+        ajustesRepo.sueldoHabitual(c)
+        repo.asegurarSueldoPrevisto(reloj.hoy(), c)
+    }
+
+    fun nuevaPersona(n: String) = viewModelScope.launch { repo.crearPersona(n) }
+    fun renombrar(p: PersonaEntity, n: String) = viewModelScope.launch { repo.renombrarPersona(p, n) }
+    fun borrarPersona(p: PersonaEntity) = viewModelScope.launch { repo.borrarPersona(p) }
+
+    suspend fun exportar(): ByteArray = copia.exportar(reloj.ahoraMs())
+
+    /** Antes de restaurar se guarda una copia del estado actual en el móvil. */
+    suspend fun importar(bytes: ByteArray): Result<Int> = runCatching {
+        val c = copia.leer(bytes)
+        withContext(Dispatchers.IO) {
+            val dir = File(context.filesDir, "copias").apply { mkdirs() }
+            File(dir, "antes_de_importar_${reloj.ahoraMs()}.nummia").writeBytes(copia.exportar(reloj.ahoraMs()))
+        }
+        copia.restaurar(c)
+        repo.prepararDatos()
+        repo.asegurarSueldoPrevisto(reloj.hoy(), ajustes.first().sueldoHabitual)
+        c.gastos.count { it.deletedAt == null } + c.ingresos.count { it.deletedAt == null }
+    }.recoverCatching { e -> throw if (e is CopiaInvalida) e else CopiaInvalida("No se pudo leer la copia.") }
+}

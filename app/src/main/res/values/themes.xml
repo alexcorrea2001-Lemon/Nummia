@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pantalla de arranque: fondo oscuro con el logo (se ve mientras cargan los ajustes). -->
+    <style name="Theme.Nummia" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/nummia_fondo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_logo_a_violeta</item>
+        <item name="postSplashScreenTheme">@style/Theme.Nummia.App</item>
+    </style>
+
+    <!-- Tema de ventana mínimo: todo el aspecto lo pinta Compose (NummiaTheme). -->
+    <style name="Theme.Nummia.App" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/nummia_fondo</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

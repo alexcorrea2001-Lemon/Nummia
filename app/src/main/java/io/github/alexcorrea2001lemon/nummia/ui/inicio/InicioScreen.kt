@@ -1,0 +1,283 @@
+package io.github.alexcorrea2001lemon.nummia.ui.inicio
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
+import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearPorMil
+import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
+import io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar
+import io.github.alexcorrea2001lemon.nummia.ui.comun.EncabezadoSeccion
+import io.github.alexcorrea2001lemon.nummia.ui.comun.EstadoVacio
+import io.github.alexcorrea2001lemon.nummia.ui.comun.FilaMovimiento
+import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
+import io.github.alexcorrea2001lemon.nummia.ui.comun.ImporteAnimado
+import io.github.alexcorrea2001lemon.nummia.ui.comun.Tarjeta
+import io.github.alexcorrea2001lemon.nummia.ui.comun.nombreMes
+import io.github.alexcorrea2001lemon.nummia.ui.comun.nombreMesMinuscula
+import io.github.alexcorrea2001lemon.nummia.ui.nav.compartido
+import io.github.alexcorrea2001lemon.nummia.ui.theme.Espacio
+import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
+
+@Composable
+fun InicioScreen(
+    vm: InicioViewModel,
+    alAbrirGasto: (String) -> Unit,
+    alAbrirIngreso: (String) -> Unit,
+    alVerTodos: () -> Unit,
+    alBuscar: () -> Unit,
+    alAjustes: () -> Unit,
+    alAnadirGasto: () -> Unit,
+    relleno: PaddingValues,
+) {
+    val e by vm.estado.collectAsStateWithLifecycle()
+    var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(start = Espacio.l, end = Espacio.l, bottom = relleno.calculateBottomPadding() + 96.dp),
+        verticalArrangement = Arrangement.spacedBy(Espacio.l),
+    ) {
+        item {
+            Cabecera(e, vm::mesAnterior, vm::mesSiguiente, vm::irAHoy, alBuscar, alAjustes)
+        }
+        item { TarjetaBalance(e, vm::alternarDiscreto) }
+        item { Indicadores(e) }
+
+        if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty()) {
+            item { EncabezadoSeccion("Pendientes") }
+            items(e.sueldosPendientes, key = { "s" + it.id }) { s ->
+                Tarjeta {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                        Avatar("€", LocalColoresNummia.current.ingresoFondo, LocalColoresNummia.current.ingreso, Iconos.Euro)
+                        Column(Modifier.weight(1f)) {
+                            Text("Sueldo de ${nombreMesMinuscula(java.time.YearMonth.from(s.fecha))} previsto", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text(formatearEuros(s.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
+                        }
+                        Button(onClick = { confirmando = s }) { Text("Confirmar") }
+                    }
+                }
+            }
+            if (e.teDeben.isNotEmpty()) {
+                item("deben") {
+                    Tarjeta {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                            Avatar("", LocalColoresNummia.current.avisoFondo, LocalColoresNummia.current.aviso, Iconos.Persona)
+                            Column(Modifier.weight(1f)) {
+                                Text("Te deben", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text(e.teDeben.joinToString(" · ") { "${it.first} ${formatearEuros(it.second, discreto = e.discreto)}" }, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
+                            }
+                            Text(formatearEuros(e.teDeben.sumOf { it.second }, discreto = e.discreto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = LocalColoresNummia.current.aviso)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (e.vacio && !e.cargando) {
+            item {
+                EstadoVacio(
+                    Iconos.Bolsa,
+                    "Empieza ${if (e.esMesActual) "tu mes" else nombreMesMinuscula(e.mes)}",
+                    "Apunta un gasto o un ingreso y Nummia hará las cuentas por ti.",
+                    accion = "Añadir gasto",
+                    alPulsar = alAnadirGasto,
+                )
+            }
+        }
+
+        if (e.top.isNotEmpty()) item { DondeMas(e) }
+
+        item {
+            Tarjeta {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Ahorrado en ${e.mes.year}", style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
+                        ImporteAnimado(
+                            e.ahorradoAnio, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                            color = if (e.ahorradoAnio >= 0) LocalColoresNummia.current.ingreso else LocalColoresNummia.current.gasto,
+                            discreto = e.discreto,
+                        )
+                    }
+                }
+            }
+        }
+
+        if (e.ultimos.isNotEmpty()) {
+            item { EncabezadoSeccion("Últimos movimientos", accion = "Ver todos", alPulsar = alVerTodos) }
+            item {
+                Tarjeta(relleno = false) {
+                    e.ultimos.forEach { f ->
+                        FilaMovimiento(
+                            f, e.discreto,
+                            alPulsar = { if (f.esGasto) alAbrirGasto(f.id) else alAbrirIngreso(f.id) },
+                            modifier = if (f.esGasto) Modifier.compartido("gasto-${f.id}") else Modifier,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    confirmando?.let { s -> DialogoConfirmarSueldo(s, alCerrar = { confirmando = null }) { fecha, importe -> vm.confirmarSueldo(s.id, fecha, importe); confirmando = null } }
+}
+
+@Composable
+private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Unit, hoy: () -> Unit, buscar: () -> Unit, ajustes: () -> Unit) {
+    Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = anterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
+        TextButton(onClick = hoy, enabled = !e.esMesActual) {
+            Text(nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        }
+        IconButton(onClick = siguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
+        Box(Modifier.weight(1f))
+        Icon(Iconos.Movil, "Datos guardados solo en este móvil", tint = LocalColoresNummia.current.textoSuave, modifier = Modifier.padding(Espacio.s))
+        IconButton(onClick = buscar) { Icon(Iconos.Buscar, "Buscar") }
+        IconButton(onClick = ajustes) { Icon(Iconos.Ajustes, "Ajustes") }
+    }
+}
+
+@Composable
+private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit) {
+    val c = LocalColoresNummia.current
+    Tarjeta(fondo = c.heroe) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Balance del mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.weight(1f))
+            IconButton(onClick = alternarDiscreto) {
+                Icon(if (e.discreto) Iconos.OjoTachado else Iconos.Ojo, if (e.discreto) "Mostrar importes" else "Ocultar importes", tint = c.textoSuave)
+            }
+        }
+        ImporteAnimado(
+            e.resumen.balance,
+            MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+            color = if (e.resumen.balance >= 0) c.ingreso else c.gasto,
+            conSigno = true,
+            discreto = e.discreto,
+        )
+        val v = e.variacion
+        val anterior = nombreMesMinuscula(e.mes.minusMonths(1))
+        val texto = when {
+            v == null -> null
+            v == 0 -> "Has gastado lo mismo que en $anterior"
+            v > 0 -> "Has gastado un ${formatearPorMil(v)} más que en $anterior"
+            else -> "Has gastado un ${formatearPorMil(-v)} menos que en $anterior"
+        }
+        AnimatedVisibility(texto != null) {
+            Text(texto.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+        }
+    }
+}
+
+@Composable
+private fun Indicadores(e: InicioEstado) {
+    val c = LocalColoresNummia.current
+    Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+            Indicador("Ingresos", e.resumen.ingresos, c.ingreso, e.discreto, Modifier.weight(1f))
+            Indicador("Pagado", e.resumen.pagado, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+            Indicador("Reembolsos", e.resumen.reembolsos, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
+            Indicador("Gasto real", e.resumen.gastoReal, c.gasto, e.discreto, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun Indicador(titulo: String, valor: Long, color: androidx.compose.ui.graphics.Color, discreto: Boolean, modifier: Modifier) {
+    Tarjeta(modifier) {
+        Text(titulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
+        ImporteAnimado(valor, MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = color, discreto = discreto)
+    }
+}
+
+@Composable
+private fun DondeMas(e: InicioEstado) {
+    Tarjeta {
+        Text("Dónde más has gastado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        e.top.forEach { t ->
+            val ancho by animateFloatAsState(t.fraccion, spring(dampingRatio = 0.8f, stiffness = 200f), label = "barra")
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = Espacio.xs)) {
+                Row {
+                    Text(t.nombre, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    Text(formatearEuros(t.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                }
+                Box(Modifier.fillMaxWidth().height(8.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))) {
+                    Box(Modifier.fillMaxWidth(ancho).fillMaxHeight().background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DialogoConfirmarSueldo(s: SueldoPendiente, alCerrar: () -> Unit, alConfirmar: (java.time.LocalDate, Long) -> Unit) {
+    val ym = java.time.YearMonth.from(s.fecha)
+    val dias = (27..ym.lengthOfMonth()).toList()
+    var dia by rememberSaveable { mutableStateOf(dias.last()) }
+    var texto by rememberSaveable { mutableStateOf(formatearEuros(s.importe).removeSuffix(" €")) }
+    var error by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        title = { Text("Confirmar sueldo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                Text("¿Qué día lo cobraste?", style = MaterialTheme.typography.bodyMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                    dias.forEach { d -> FilterChip(selected = d == dia, onClick = { dia = d }, label = { Text("$d") }) }
+                }
+                OutlinedTextField(
+                    value = texto, onValueChange = { texto = it; error = null },
+                    label = { Text("Importe cobrado") }, suffix = { Text("€") }, singleLine = true,
+                    isError = error != null, supportingText = error?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                leerImporte(texto).fold({ alConfirmar(ym.atDay(dia), it) }, { error = (it as? io.github.alexcorrea2001lemon.nummia.domain.dinero.ImporteInvalido)?.motivo ?: "Importe no válido" })
+            }) { Text("Confirmar") }
+        },
+        dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },
+    )
+}

@@ -1,0 +1,30 @@
+# Android / Gradle
+.gradle/
+build/
+*/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+.idea/
+*.iml
+.DS_Store
+
+# Secretos: NUNCA subir
+local.properties
+*.jks
+*.keystore
+keystore.properties
+google-services.json
+*.p12
+*.pem
+.env
+
+# Datos reales del usuario: NUNCA subir
+*.xlsx
+*.xls
+*.nummia
+!app/src/test/resources/**/*.xlsx

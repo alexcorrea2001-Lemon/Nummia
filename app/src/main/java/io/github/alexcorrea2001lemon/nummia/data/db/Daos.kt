@@ -1,0 +1,109 @@
+package io.github.alexcorrea2001lemon.nummia.data.db
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Upsert
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.TipoIngreso
+import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
+
+@Dao
+interface GastoDao {
+    @Upsert suspend fun guardar(g: GastoEntity)
+    @Query("SELECT * FROM gastos WHERE id = :id") suspend fun obtener(id: String): GastoEntity?
+
+    @Transaction
+    @Query("SELECT * FROM gastos WHERE id = :id")
+    fun observar(id: String): Flow<GastoConReembolsos?>
+
+    @Transaction
+    @Query("SELECT * FROM gastos WHERE id = :id")
+    suspend fun observarUnaVez(id: String): GastoConReembolsos?
+
+    @Transaction
+    @Query("SELECT * FROM gastos WHERE deletedAt IS NULL AND fecha BETWEEN :desde AND :hasta ORDER BY fecha DESC, createdAt DESC")
+    fun entre(desde: LocalDate, hasta: LocalDate): Flow<List<GastoConReembolsos>>
+
+    @Transaction
+    @Query("SELECT * FROM gastos WHERE deletedAt IS NULL ORDER BY fecha DESC, createdAt DESC")
+    fun todos(): Flow<List<GastoConReembolsos>>
+
+    @Transaction
+    @Query("SELECT * FROM gastos WHERE deletedAt IS NULL AND meLoDevuelven = 1 ORDER BY fecha DESC")
+    fun conDevolucion(): Flow<List<GastoConReembolsos>>
+
+    @Query("SELECT MAX(CAST(SUBSTR(codigo, 3) AS INTEGER)) FROM gastos") suspend fun maxCodigo(): Int?
+
+    @Query("SELECT categoriaId FROM gastos WHERE tienda = :tienda COLLATE NOCASE AND categoriaId IS NOT NULL AND deletedAt IS NULL ORDER BY updatedAt DESC LIMIT 1")
+    suspend fun categoriaHabitual(tienda: String): String?
+
+    @Query("SELECT DISTINCT tienda FROM gastos WHERE deletedAt IS NULL ORDER BY updatedAt DESC LIMIT 200")
+    suspend fun tiendasRecientes(): List<String>
+    @Query("UPDATE gastos SET deletedAt = :ts, updatedAt = :ts WHERE id = :id") suspend fun marcarBorrado(id: String, ts: Long)
+    @Query("UPDATE gastos SET deletedAt = NULL, updatedAt = :ts WHERE id = :id") suspend fun restaurar(id: String, ts: Long)
+    @Query("SELECT * FROM gastos") suspend fun volcar(): List<GastoEntity>
+}
+
+@Dao
+interface ReembolsoDao {
+    @Upsert suspend fun guardar(r: ReembolsoEntity)
+    @Query("SELECT * FROM reembolsos WHERE id = :id") suspend fun obtener(id: String): ReembolsoEntity?
+    @Query("SELECT MAX(CAST(SUBSTR(codigo, 3) AS INTEGER)) FROM reembolsos") suspend fun maxCodigo(): Int?
+    @Query("UPDATE reembolsos SET deletedAt = :ts, updatedAt = :ts WHERE id = :id") suspend fun marcarBorrado(id: String, ts: Long)
+    @Query("SELECT * FROM reembolsos") suspend fun volcar(): List<ReembolsoEntity>
+}
+
+@Dao
+interface IngresoDao {
+    @Upsert suspend fun guardar(i: IngresoEntity)
+    @Query("SELECT * FROM ingresos WHERE id = :id") suspend fun obtener(id: String): IngresoEntity?
+
+    @Query("SELECT * FROM ingresos WHERE deletedAt IS NULL AND fecha BETWEEN :desde AND :hasta ORDER BY fecha DESC, createdAt DESC")
+    fun entre(desde: LocalDate, hasta: LocalDate): Flow<List<IngresoEntity>>
+
+    @Query("SELECT * FROM ingresos WHERE deletedAt IS NULL ORDER BY fecha DESC, createdAt DESC")
+    fun todos(): Flow<List<IngresoEntity>>
+
+    @Query("SELECT COUNT(*) FROM ingresos WHERE deletedAt IS NULL AND tipo = :tipo AND fecha BETWEEN :desde AND :hasta")
+    suspend fun contarTipoEntre(tipo: TipoIngreso, desde: LocalDate, hasta: LocalDate): Int
+
+    @Query("SELECT MAX(CAST(SUBSTR(codigo, 3) AS INTEGER)) FROM ingresos") suspend fun maxCodigo(): Int?
+    @Query("UPDATE ingresos SET deletedAt = :ts, updatedAt = :ts WHERE id = :id") suspend fun marcarBorrado(id: String, ts: Long)
+    @Query("UPDATE ingresos SET deletedAt = NULL, updatedAt = :ts WHERE id = :id") suspend fun restaurar(id: String, ts: Long)
+    @Query("SELECT * FROM ingresos") suspend fun volcar(): List<IngresoEntity>
+}
+
+@Dao
+interface PersonaDao {
+    @Upsert suspend fun guardar(p: PersonaEntity)
+    @Query("SELECT * FROM personas WHERE deletedAt IS NULL ORDER BY nombre COLLATE NOCASE") fun todas(): Flow<List<PersonaEntity>>
+    @Query("SELECT * FROM personas") suspend fun volcar(): List<PersonaEntity>
+}
+
+@Dao
+interface CategoriaDao {
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertarSiNoExisten(c: List<CategoriaEntity>)
+    @Upsert suspend fun guardar(c: CategoriaEntity)
+    @Query("SELECT * FROM categorias ORDER BY orden") fun todas(): Flow<List<CategoriaEntity>>
+    @Query("SELECT * FROM categorias") suspend fun volcar(): List<CategoriaEntity>
+}
+
+@Dao
+interface HistorialDao {
+    @Insert suspend fun insertar(h: List<HistorialEntity>)
+    @Query("SELECT * FROM historial WHERE entidadId = :id ORDER BY fecha DESC, id DESC") fun de(id: String): Flow<List<HistorialEntity>>
+    @Query("SELECT * FROM historial") suspend fun volcar(): List<HistorialEntity>
+}
+
+@Dao
+interface VaciarDao {
+    @Query("DELETE FROM gastos") suspend fun gastos()
+    @Query("DELETE FROM reembolsos") suspend fun reembolsos()
+    @Query("DELETE FROM ingresos") suspend fun ingresos()
+    @Query("DELETE FROM personas") suspend fun personas()
+    @Query("DELETE FROM categorias") suspend fun categorias()
+    @Query("DELETE FROM historial") suspend fun historial()
+}

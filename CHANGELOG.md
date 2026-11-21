@@ -2,6 +2,23 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.3.0] - 2026-11-21
+
+### Nuevo
+- **Importar tu Excel de cuentas** (Ajustes → Datos → Importar Excel):
+  - Lee los gastos de cada mes con su fecha, su precio y su reembolso, el sueldo de cada mes y las ganancias extraordinarias.
+  - Une los nombres escritos de varias formas (mayúsculas, tildes o una errata) y se queda con la más usada.
+  - **Antes de guardar** te enseña un resumen y comprueba mes a mes que el gasto real **cuadra con tu Excel**, con avisos de lo que no ha podido leer.
+  - Puedes marcar los gastos que pagaste por otra persona y elegir quién te los devuelve.
+  - Antes de importar se guarda una copia de seguridad.
+- **Pagos mensuales** (Ajustes → Pagos mensuales, o el interruptor «Se paga cada mes» al apuntar un gasto):
+  - Cada mes aparecen en Inicio como pendientes con **Confirmar**, **Otro importe** o **Este mes no**.
+  - Si el precio cambia, el nuevo precio se queda para los meses siguientes.
+  - Total al mes, pausar, editar y lo que has pagado cada mes.
+  - Lo previsto no cuenta en tus cifras hasta que lo confirmas.
+- **Papelera** (Ajustes → Datos → Papelera): lo borrado se guarda 30 días para recuperarlo; después desaparece solo.
+- **Buscar por fecha**: en Movimientos puedes escribir «15/03», «marzo», «marzo de 2026» o «2026».
+
 ## [1.2.2] - 2026-11-21
 
 ### Arreglado

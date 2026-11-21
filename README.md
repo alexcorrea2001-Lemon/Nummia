@@ -10,7 +10,7 @@
 - Base de datos **cifrada**. Sin servidores, sin anuncios, sin rastreo.
 - Se actualiza sola desde GitHub.
 
-> Próximamente (v1.3.0): importar Excel, pagos mensuales, presupuestos, informes PDF/Excel y más.
+> Próximamente: presupuestos, tiendas, categorías, notificaciones y bloqueo con huella (v1.4.0); informes PDF y Excel (v1.5.0).
 
 ## Instalar
 

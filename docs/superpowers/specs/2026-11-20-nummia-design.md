@@ -393,7 +393,11 @@ Siempre con `NetworkType.CONNECTED` (o `UNMETERED` si está activado «solo con 
 | **v1.0.0** | Gastos, ingresos, reembolsos, pago para otra persona, personas, sueldo previsto; Inicio; Movimientos (filtros, Repetir hoy, deshacer, historial de cambios); detalle y formularios; temas y acento; modo discreto; copia local manual; **actualizador**; pipeline de publicación |
 | v1.1.0 | Estadísticas (Mes, Año, Comparar años, Dónde gasto), calendario y gráficos animados |
 | v1.2.0 | Google Drive (configuración de Cloud junto al propietario), sincronización en los dos sentidos, conflictos y copias de seguridad en Drive |
-| v1.3.0 | Importar Excel, pagos mensuales, presupuestos, tiendas, buscador, informes PDF y .xlsx con «Lo que me deben», biometría, papelera y notificaciones |
+| v1.3.0 | Importar Excel, pagos mensuales, papelera de 30 días y buscador también por fecha |
+| v1.4.0 | Presupuestos, tiendas (unir duplicados), categorías, notificaciones y bloqueo con huella o PIN |
+| v1.5.0 | Informes PDF y .xlsx con «Lo que me deben» |
+
+La v1.3.0 prevista al principio se repartió en tres versiones para poder probar cada parte antes (decidido el 21/11/2026).
 
 ## 13. Preguntas abiertas
 

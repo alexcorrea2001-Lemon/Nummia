@@ -35,7 +35,7 @@ object Iconos {
     val OjoTachado by lazy { trazo("ojo_tachado", "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM4 4l16 16") }
     val Filtro by lazy { trazo("filtro", "M3 5h18l-7 8v6l-4 2v-8z") }
     val Repetir by lazy { trazo("repetir", "M4 12a8 8 0 1 0 3-6.2M4 4v4h4", grosor = 2f) }
-    val Movil by lazy { trazo("nube", "M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z") }
+    val Nube by lazy { trazo("nube", "M7 18a4 4 0 0 1-.6-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z") }
     val Persona by lazy { trazo("persona", "M12 11a4 4 0 1 0 0-8a4 4 0 1 0 0 8zM4 21a8 8 0 0 1 16 0") }
     val FlechaAbajo by lazy { trazo("flecha_abajo", "M12 5v14M5 12l7 7 7-7", grosor = 2f) }
     val Lapiz by lazy { trazo("lapiz", "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4") }

@@ -101,7 +101,7 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
             }
         }
         Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Movil, "Tu Drive", "Llega en la versión 1.2.0. Por ahora tus datos se guardan solo en este móvil.")
+            OpcionAjuste(Iconos.Nube, "Tu Drive", "Llega en la versión 1.2.0. Por ahora tus datos se guardan solo en este móvil.")
         }
         Tarjeta(relleno = false) {
             OpcionAjuste(Iconos.Paleta, "Apariencia", "Tema, color de la app, icono y tamaño del texto") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.APARIENCIA) }
@@ -173,7 +173,7 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
             OpcionAjuste(Iconos.Paleta, "Personalizado", "Elige cualquier color", alPulsar = { personalizando = true })
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 HorizontalDivider(color = c.borde)
-                OpcionAjuste(Iconos.Movil, "Del fondo de pantalla", "Usa los colores de tu móvil (Material You)", alPulsar = vm::acentoFondo)
+                OpcionAjuste(Iconos.Paleta, "Del fondo de pantalla", "Usa los colores de tu móvil (Material You)", alPulsar = vm::acentoFondo)
             }
         }
 

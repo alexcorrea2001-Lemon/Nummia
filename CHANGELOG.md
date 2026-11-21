@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.0.5] - 2026-11-21
+
+### Cambiado
+- **Icono N**: vuelve el diseño de la N con las tres barras que suben encima.
+- **Icono de crecimiento**: la flecha ya no toca las barras.
+
+### Arreglado
+- **El icono del móvil no cambiaba**: algunas pantallas de inicio guardan el icono antiguo y no lo vuelven a leer. Ahora la app usa entradas nuevas en el lanzador, que el móvil no puede tener guardadas.
+- Nuevo botón **«Poner este icono en la pantalla de inicio»** en Apariencia: añade un acceso directo con el icono elegido, que se ve bien en cualquier móvil.
+
 ## [1.0.4] - 2026-11-21
 
 ### Cambiado

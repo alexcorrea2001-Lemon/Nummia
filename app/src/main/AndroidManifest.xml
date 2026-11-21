@@ -40,7 +40,7 @@
         </provider>
 
         <activity-alias
-            android:name=".Icono_A_verde_menta"
+            android:name=".Lanzador_A_verde_menta"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_verde_menta"
@@ -53,7 +53,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_turquesa"
+            android:name=".Lanzador_A_turquesa"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_turquesa"
@@ -66,7 +66,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_cian"
+            android:name=".Lanzador_A_cian"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_cian"
@@ -79,7 +79,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_azul"
+            android:name=".Lanzador_A_azul"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_azul"
@@ -92,7 +92,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_indigo"
+            android:name=".Lanzador_A_indigo"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_indigo"
@@ -105,7 +105,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_violeta"
+            android:name=".Lanzador_A_violeta"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_violeta"
@@ -118,7 +118,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_rosa"
+            android:name=".Lanzador_A_rosa"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_rosa"
@@ -131,7 +131,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_coral"
+            android:name=".Lanzador_A_coral"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_coral"
@@ -144,7 +144,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_naranja"
+            android:name=".Lanzador_A_naranja"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_naranja"
@@ -157,7 +157,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_ambar"
+            android:name=".Lanzador_A_ambar"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_ambar"
@@ -170,7 +170,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_lima"
+            android:name=".Lanzador_A_lima"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_lima"
@@ -183,7 +183,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_A_pizarra"
+            android:name=".Lanzador_A_pizarra"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_a_pizarra"
@@ -196,7 +196,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_verde_menta"
+            android:name=".Lanzador_B_verde_menta"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_verde_menta"
@@ -209,7 +209,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_turquesa"
+            android:name=".Lanzador_B_turquesa"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_turquesa"
@@ -222,7 +222,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_cian"
+            android:name=".Lanzador_B_cian"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_cian"
@@ -235,7 +235,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_azul"
+            android:name=".Lanzador_B_azul"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_azul"
@@ -248,7 +248,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_indigo"
+            android:name=".Lanzador_B_indigo"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_indigo"
@@ -261,7 +261,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_violeta"
+            android:name=".Lanzador_B_violeta"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_violeta"
@@ -274,7 +274,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_rosa"
+            android:name=".Lanzador_B_rosa"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_rosa"
@@ -287,7 +287,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_coral"
+            android:name=".Lanzador_B_coral"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_coral"
@@ -300,7 +300,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_naranja"
+            android:name=".Lanzador_B_naranja"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_naranja"
@@ -313,7 +313,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_ambar"
+            android:name=".Lanzador_B_ambar"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_ambar"
@@ -326,7 +326,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_lima"
+            android:name=".Lanzador_B_lima"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_lima"
@@ -339,7 +339,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_B_pizarra"
+            android:name=".Lanzador_B_pizarra"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_b_pizarra"
@@ -352,7 +352,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_verde_menta"
+            android:name=".Lanzador_C_verde_menta"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_verde_menta"
@@ -365,7 +365,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_turquesa"
+            android:name=".Lanzador_C_turquesa"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_turquesa"
@@ -378,7 +378,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_cian"
+            android:name=".Lanzador_C_cian"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_cian"
@@ -391,7 +391,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_azul"
+            android:name=".Lanzador_C_azul"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_azul"
@@ -404,7 +404,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_indigo"
+            android:name=".Lanzador_C_indigo"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_indigo"
@@ -417,7 +417,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_violeta"
+            android:name=".Lanzador_C_violeta"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_violeta"
@@ -430,7 +430,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_rosa"
+            android:name=".Lanzador_C_rosa"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_rosa"
@@ -443,7 +443,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_coral"
+            android:name=".Lanzador_C_coral"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_coral"
@@ -456,7 +456,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_naranja"
+            android:name=".Lanzador_C_naranja"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_naranja"
@@ -469,7 +469,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_ambar"
+            android:name=".Lanzador_C_ambar"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_ambar"
@@ -482,7 +482,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_lima"
+            android:name=".Lanzador_C_lima"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_lima"
@@ -495,7 +495,7 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".Icono_C_pizarra"
+            android:name=".Lanzador_C_pizarra"
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_nummia_c_pizarra"

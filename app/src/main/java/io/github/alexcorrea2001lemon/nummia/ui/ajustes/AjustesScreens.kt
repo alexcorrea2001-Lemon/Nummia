@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.alexcorrea2001lemon.nummia.BuildConfig
 import io.github.alexcorrea2001lemon.nummia.data.actualizar.esMasNueva
+import io.github.alexcorrea2001lemon.nummia.data.icono.IconoApp
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
@@ -193,7 +194,17 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
             }
             Text("Color del icono (independiente del de la app): ${a.iconoColor.nombre}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
             SelectorColores(seleccionado = a.iconoColor, alElegir = { vm.icono(a.iconoLogo, it) })
-            Text("El icono cambiará en tu pantalla de inicio al salir de Nummia. En algunos móviles puede tardar unos segundos.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+            Text("El icono cambiará en tu pantalla de inicio al salir de Nummia.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+            val ctx = LocalContext.current
+            if (IconoApp.puedeAnclar(ctx)) {
+                Text(
+                    "¿Tu móvil sigue mostrando el icono anterior? Algunos móviles guardan el icono y no lo actualizan. Pon un acceso directo con el icono elegido y, si quieres, quita el antiguo de la pantalla de inicio.",
+                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                )
+                OutlinedButton(onClick = { IconoApp.anclarAccesoDirecto(ctx, a.iconoLogo, a.iconoColor) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Poner este icono en la pantalla de inicio")
+                }
+            }
         }
 
         Text("Tamaño del texto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

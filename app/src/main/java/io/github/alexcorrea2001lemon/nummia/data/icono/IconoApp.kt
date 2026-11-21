@@ -2,7 +2,16 @@ package io.github.alexcorrea2001lemon.nummia.data.icono
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.core.content.ContextCompat
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
+import io.github.alexcorrea2001lemon.nummia.MainActivity
+import io.github.alexcorrea2001lemon.nummia.ui.comun.recursoIcono
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Acento
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Logo
 
@@ -13,7 +22,7 @@ import io.github.alexcorrea2001lemon.nummia.ui.theme.Logo
 object IconoApp {
     private const val PAQUETE_CODIGO = "io.github.alexcorrea2001lemon.nummia"
 
-    fun alias(logo: Logo, color: Acento) = "$PAQUETE_CODIGO.Icono_${logo.name}_${color.name.lowercase()}"
+    fun alias(logo: Logo, color: Acento) = "$PAQUETE_CODIGO.Lanzador_${logo.name}_${color.name.lowercase()}"
 
     private val POR_DEFECTO = alias(Logo.A, Acento.VIOLETA)
 
@@ -47,5 +56,27 @@ object IconoApp {
                 }
             }
         }
+    }
+
+    fun puedeAnclar(context: Context): Boolean = ShortcutManagerCompat.isRequestPinShortcutSupported(context)
+
+    /**
+     * Pide al móvil añadir a la pantalla de inicio un acceso directo con el icono elegido.
+     * El dibujo va dentro del propio acceso directo, así que se ve bien aunque el lanzador
+     * tenga guardado un icono antiguo de la app.
+     */
+    fun anclarAccesoDirecto(context: Context, logo: Logo, color: Acento): Boolean {
+        if (!puedeAnclar(context)) return false
+        val lado = 432
+        val mapa = Bitmap.createBitmap(lado, lado, Bitmap.Config.ARGB_8888)
+        val lienzo = Canvas(mapa)
+        val (fondo, arte) = recursoIcono(logo, color)
+        listOf(fondo, arte).forEach { id -> ContextCompat.getDrawable(context, id)?.apply { setBounds(0, 0, lado, lado); draw(lienzo) } }
+        val info = ShortcutInfoCompat.Builder(context, "nummia_${logo.name}_${color.name}".lowercase())
+            .setShortLabel("Nummia")
+            .setIcon(IconCompat.createWithAdaptiveBitmap(mapa))
+            .setIntent(Intent(context, MainActivity::class.java).setAction(Intent.ACTION_MAIN).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            .build()
+        return ShortcutManagerCompat.requestPinShortcut(context, info, null)
     }
 }

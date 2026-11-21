@@ -102,6 +102,11 @@ fun MovimientosScreen(
     val alcance = rememberCoroutineScope()
     val haptica = rememberHaptica()
     var verFiltros by rememberSaveable { mutableStateOf(false) }
+    // El texto del buscador vive aquí: si dependiera del estado (que se calcula en segundo plano),
+    // cada letra llegaría tarde y el campo «se comería» lo escrito.
+    var busqueda by rememberSaveable { mutableStateOf("") }
+    fun buscar(t: String) { busqueda = t; vm.texto(t) }
+    LaunchedEffect(Unit) { if (busqueda.isNotEmpty()) vm.texto(busqueda) } // tras cerrar y volver a abrir la app
     var eligiendoMes by rememberSaveable { mutableStateOf(false) }
     val seleccion by vm.seleccion.collectAsStateWithLifecycle()
     val seleccionando = seleccion.isNotEmpty()
@@ -167,10 +172,10 @@ fun MovimientosScreen(
                     // 2) Buscar y filtrar
                     Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalAlignment = Alignment.CenterVertically) {
                         TextField(
-                            value = e.filtros.texto, onValueChange = vm::texto, singleLine = true,
+                            value = busqueda, onValueChange = ::buscar, singleLine = true,
                             placeholder = { Text("Buscar", maxLines = 1) },
                             leadingIcon = { Icon(Iconos.Buscar, null) },
-                            trailingIcon = { if (e.filtros.texto.isNotEmpty()) IconButton(onClick = { vm.texto("") }) { Icon(Iconos.Cerrar, "Borrar búsqueda") } },
+                            trailingIcon = { if (busqueda.isNotEmpty()) IconButton(onClick = { buscar("") }) { Icon(Iconos.Cerrar, "Borrar búsqueda") } },
                             supportingText = null,
                             shape = RoundedCornerShape(28.dp),
                             colors = TextFieldDefaults.colors(

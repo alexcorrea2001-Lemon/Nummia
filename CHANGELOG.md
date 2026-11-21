@@ -2,6 +2,15 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.1.1] - 2026-11-22
+
+### Arreglado
+- **Buscador de Movimientos**: solo dejaba escribir una letra. Ahora puedes escribir con normalidad.
+
+### Mejorado
+- **Calendario más fluido**: al cambiar de mes, la cuadrícula se desliza hacia el lado al que vas con efecto muelle, el nombre del mes cambia con una animación y, al deslizar con el dedo, el calendario te sigue.
+- **Estadísticas → Año, barras más claras**: cada barra es lo que entró ese mes y la parte roja es lo que gastaste de ello («el 22 % de lo que entró»). Antes se comparaba con el mes que más gastaste, y por eso ese mes salía con la barra entera en rojo.
+
 ## [2.1.0] - 2026-11-21
 
 ### Nuevo

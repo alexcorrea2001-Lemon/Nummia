@@ -121,3 +121,11 @@ data class Comparacion(val a: ResumenAnual, val b: ResumenAnual) {
     val porMilIngreso get() = variacionPorMil(b.total.ingresos, a.total.ingresos)
     val porMilBalance get() = if (a.total.balance <= 0) null else porMil(b.total.balance - a.total.balance, a.total.balance)
 }
+
+/** Parte (0–1) de lo que entró en el mes que se gastó; null si no entró nada. Más de lo que entró → 1. */
+fun parteGastada(gasto: Long, ingresos: Long): Float? =
+    if (ingresos <= 0) null else (gasto.coerceAtLeast(0).toDouble() / ingresos).coerceIn(0.0, 1.0).toFloat()
+
+/** Porcentaje redondeado de lo que entró que se gastó (puede pasar de 100); null si no entró nada. */
+fun porcentajeGastado(gasto: Long, ingresos: Long): Int? =
+    if (ingresos <= 0) null else Math.round(gasto.coerceAtLeast(0).toDouble() * 100 / ingresos).toInt()

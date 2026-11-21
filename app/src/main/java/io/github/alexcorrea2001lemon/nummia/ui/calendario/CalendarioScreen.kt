@@ -1,6 +1,17 @@
 package io.github.alexcorrea2001lemon.nummia.ui.calendario
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -38,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -93,7 +103,18 @@ fun CalendarioScreen(
                 IconButton(onClick = vm::anterior) { Icon(Iconos.ChevronIzq, if (e.semana) "Semana anterior" else "Mes anterior") }
                 // Tocar el mes abre «Ir a…» para saltar a cualquier mes y año.
                 TextButton(onClick = { eligiendoMes = true }) {
-                    Text(nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    // El nombre del mes entra por el lado hacia el que avanzas.
+                    AnimatedContent(
+                        targetState = e.mes,
+                        transitionSpec = {
+                            val dir = if (targetState > initialState) 1 else -1
+                            (slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it * dir } + fadeIn()) togetherWith
+                                (slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { -it * dir } + fadeOut())
+                        },
+                        label = "mes",
+                    ) { mes ->
+                        Text(nombreMes(mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    }
                     Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp))
                 }
                 IconButton(onClick = vm::siguiente) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
@@ -108,15 +129,21 @@ fun CalendarioScreen(
             }
         }
         item {
-            var arrastre by remember { mutableFloatStateOf(0f) }
+            // Deslizar: la cuadrícula sigue al dedo y, al soltar, pasa de mes con efecto muelle (o vuelve a su sitio).
+            val alcance = rememberCoroutineScope()
+            val arrastre = remember { Animatable(0f) }
+            val umbral = with(LocalDensity.current) { 64.dp.toPx() }
+            val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
             Column(
                 Modifier.pointerInput(e.semana) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            if (arrastre > 120f) vm.anterior() else if (arrastre < -120f) vm.siguiente()
-                            arrastre = 0f
+                            val d = arrastre.value
+                            if (d > umbral) { haptica(); vm.anterior() } else if (d < -umbral) { haptica(); vm.siguiente() }
+                            alcance.launch { arrastre.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)) }
                         },
-                        onHorizontalDrag = { _, d -> arrastre += d },
+                        onDragCancel = { alcance.launch { arrastre.animateTo(0f, spring()) } },
+                        onHorizontalDrag = { cambio, d -> cambio.consume(); alcance.launch { arrastre.snapTo(arrastre.value + d * 0.5f) } },
                     )
                 },
             ) {
@@ -126,7 +153,20 @@ fun CalendarioScreen(
                 Spacer(Modifier.height(Espacio.xs))
                 AnimatedContent(
                     targetState = e.filas,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    modifier = Modifier.graphicsLayer {
+                        translationX = arrastre.value
+                        alpha = 1f - (kotlin.math.abs(arrastre.value) / (umbral * 6)).coerceAtMost(0.3f)
+                    },
+                    transitionSpec = {
+                        // Hacia delante entra por la derecha; hacia atrás, por la izquierda.
+                        val antes = initialState.firstOrNull()?.firstOrNull()?.fecha
+                        val ahora = targetState.firstOrNull()?.firstOrNull()?.fecha
+                        val dir = if (antes == null || ahora == null || ahora > antes) 1 else -1
+                        val muelle = spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
+                        ((slideInHorizontally(muelle) { it * dir / 2 } + fadeIn(tween(220))) togetherWith
+                            (slideOutHorizontally(muelle) { -it * dir / 2 } + fadeOut(tween(160))))
+                            .using(SizeTransform(clip = true))
+                    },
                     label = "cuadricula",
                     contentKey = { filas -> filas.firstOrNull()?.firstOrNull()?.fecha },
                 ) { filas ->

@@ -282,9 +282,13 @@ private fun LazyListScope.pestanaAnio(e: EstadoEst, vm: EstadisticasViewModel) {
     // 4) Cada mes, en una lista sencilla con su barra
     item {
         val c = LocalColoresNummia.current
-        val maximo = a.meses.maxOfOrNull { it.gastoReal }?.coerceAtLeast(1) ?: 1
         Tarjeta(relleno = false) {
-            Text("Toca un mes para verlo", style = MaterialTheme.typography.bodySmall, color = c.textoSuave, modifier = Modifier.padding(start = Espacio.l, top = Espacio.m))
+            // La barra entera es lo que entró ese mes; la parte roja, lo que gastaste de ello. El resto lo ahorraste.
+            Text(
+                "La barra es lo que entró cada mes y lo rojo, lo que gastaste. Toca un mes para verlo.",
+                style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                modifier = Modifier.padding(start = Espacio.l, end = Espacio.l, top = Espacio.m),
+            )
             a.meses.forEachIndexed { i, r ->
                 if (r.ingresos == 0L && r.gastoReal == 0L) return@forEachIndexed
                 Column(Modifier.fillMaxWidth().clickable { vm.verMes(i + 1) }.padding(horizontal = Espacio.l, vertical = Espacio.s)) {
@@ -292,10 +296,20 @@ private fun LazyListScope.pestanaAnio(e: EstadoEst, vm: EstadisticasViewModel) {
                         Text(nombre(i + 1), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                         Text(formatearEuros(r.balance, conSigno = true, discreto = e.discreto), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = if (r.balance >= 0) c.ingreso else c.gasto)
                     }
-                    Box(Modifier.fillMaxWidth().padding(top = 4.dp).height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
-                        Box(Modifier.fillMaxWidth((r.gastoReal.toFloat() / maximo).coerceIn(0f, 1f)).fillMaxHeight().background(c.gasto.copy(alpha = 0.7f), RoundedCornerShape(3.dp)))
+                    val parte = io.github.alexcorrea2001lemon.nummia.domain.calculo.parteGastada(r.gastoReal, r.ingresos) ?: 1f
+                    val pct = io.github.alexcorrea2001lemon.nummia.domain.calculo.porcentajeGastado(r.gastoReal, r.ingresos)
+                    val ancho by androidx.compose.animation.core.animateFloatAsState(parte, androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessLow), label = "barra")
+                    Box(Modifier.fillMaxWidth().padding(top = 4.dp).height(6.dp).background(c.ingreso.copy(alpha = 0.25f), RoundedCornerShape(3.dp))) {
+                        Box(Modifier.fillMaxWidth(ancho).fillMaxHeight().background(c.gasto.copy(alpha = 0.8f), RoundedCornerShape(3.dp)))
                     }
-                    Text("Gastaste ${formatearEuros(r.gastoReal, discreto = e.discreto)}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                    Text(
+                        "Gastaste ${formatearEuros(r.gastoReal, discreto = e.discreto)}" + when {
+                            pct == null -> " · no entró dinero"
+                            pct > 100 -> " · más de lo que entró"
+                            else -> " · el $pct % de lo que entró"
+                        },
+                        style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                    )
                 }
             }
         }

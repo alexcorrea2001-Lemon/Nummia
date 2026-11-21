@@ -32,6 +32,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.alexcorrea2001lemon.nummia.data.db.GastoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PagoMensualEntity
+import io.github.alexcorrea2001lemon.nummia.data.db.IngresoEntity
+import io.github.alexcorrea2001lemon.nummia.data.db.IngresoFijoEntity
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.TipoIngreso
 import io.github.alexcorrea2001lemon.nummia.data.repo.MovimientosRepo
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
@@ -66,6 +69,18 @@ class PagosViewModel @Inject constructor(private val repo: MovimientosRepo, priv
     )
 
     fun borrar(p: PagoMensualEntity) = viewModelScope.launch { repo.borrarPago(p.id) }
+
+    // Cobros fijos
+    val cobros: StateFlow<List<IngresoFijoEntity>?> = repo.ingresosFijos().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    fun historialCobro(id: String): Flow<List<IngresoEntity>> = repo.historialIngresoFijo(id)
+    fun guardarCobro(f: IngresoFijoEntity) = viewModelScope.launch {
+        repo.guardarIngresoFijo(f)
+        repo.asegurarIngresosPrevistos(reloj.hoy())
+    }
+    fun nuevoCobro(concepto: String, importe: Long, dia: Int) = guardarCobro(
+        IngresoFijoEntity(UUID.randomUUID().toString(), concepto.trim(), TipoIngreso.OTRO, importe, dia, createdAt = reloj.ahoraMs(), updatedAt = reloj.ahoraMs()),
+    )
+    fun borrarCobro(f: IngresoFijoEntity) = viewModelScope.launch { repo.borrarIngresoFijo(f.id) }
 }
 
 private val MES = DateTimeFormatter.ofPattern("MM/yyyy")
@@ -78,7 +93,12 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
     var creando by remember { mutableStateOf(false) }
     var abierto by remember { mutableStateOf<String?>(null) }
 
-    PantallaAjustes("Pagos mensuales", alVolver) {
+    val cobros by vm.cobros.collectAsStateWithLifecycle()
+    var editandoCobro by remember { mutableStateOf<IngresoFijoEntity?>(null) }
+    var creandoCobro by remember { mutableStateOf(false) }
+
+    PantallaAjustes("Pagos y cobros fijos", alVolver) {
+        Text("Pagos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         val lista = pagos.orEmpty()
         if (pagos != null && lista.isEmpty()) {
             Tarjeta {
@@ -130,6 +150,68 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
             }
             TextButton(onClick = { creando = true }) { Text("+ Añadir pago") }
         }
+
+        // ---------- Cobros: lo que entra cada mes ----------
+        Text("Cobros", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = Espacio.m))
+        val listaCobros = cobros.orEmpty()
+        if (cobros != null && listaCobros.isEmpty()) {
+            Tarjeta {
+                Text("Lo que cobras cada mes", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text(
+                    "Un alquiler, una pensión, una paga… Cada mes aparecerá en Inicio para confirmarlo con un toque. También puedes activar «Se cobra cada mes» al apuntar un ingreso.",
+                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                )
+                TextButton(onClick = { creandoCobro = true }) { Text("+ Añadir cobro") }
+            }
+        } else if (listaCobros.isNotEmpty()) {
+            val activos = listaCobros.filter { it.activo }
+            Tarjeta {
+                Text("Al mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+                Text(formatearEuros(activos.sumOf { it.importe }, conSigno = true), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = c.ingreso)
+                Text("${activos.size} cobros activos", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+            }
+            Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
+                listaCobros.forEachIndexed { n, f ->
+                    if (n > 0) HorizontalDivider(color = c.borde)
+                    Column(Modifier.fillMaxWidth().clickable { abierto = if (abierto == f.id) null else f.id }.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(f.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = if (f.activo) MaterialTheme.colorScheme.onSurface else c.textoSuave)
+                                Text("${formatearEuros(f.importe)} · día ${f.dia}${if (f.activo) "" else " · en pausa"}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                            }
+                            Switch(checked = f.activo, onCheckedChange = { vm.guardarCobro(f.copy(activo = it)) })
+                        }
+                        AnimatedVisibility(abierto == f.id) {
+                            val flujo = remember(f.id) { vm.historialCobro(f.id) }
+                            val hist by flujo.collectAsStateWithLifecycle(emptyList())
+                            Column(Modifier.padding(top = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                                Text("Lo que has cobrado", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
+                                if (hist.isEmpty()) Text("Aún no hay cobros confirmados.", style = MaterialTheme.typography.bodySmall)
+                                hist.take(12).forEach { i ->
+                                    Row {
+                                        Text(MES.format(i.fecha), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                        Text(formatearEuros(i.importe), style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                                    TextButton(onClick = { editandoCobro = f }) { Text("Editar") }
+                                    TextButton(onClick = { vm.borrarCobro(f) }) { Text("Borrar", color = c.gasto) }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            TextButton(onClick = { creandoCobro = true }) { Text("+ Añadir cobro") }
+        }
+    }
+
+    if (creandoCobro) DialogoPago(null, alCerrar = { creandoCobro = false }, titulo = "Nuevo cobro mensual") { concepto, importe, dia -> vm.nuevoCobro(concepto, importe, dia); creandoCobro = false }
+    editandoCobro?.let { f ->
+        DialogoPago(null, alCerrar = { editandoCobro = null }, titulo = "Editar cobro", inicial = Triple(f.concepto, f.importe, f.dia)) { concepto, importe, dia ->
+            vm.guardarCobro(f.copy(concepto = concepto.trim(), importe = importe, dia = dia))
+            editandoCobro = null
+        }
     }
 
     if (creando) DialogoPago(null, alCerrar = { creando = false }) { concepto, importe, dia -> vm.nuevo(concepto, importe, dia); creando = false }
@@ -142,14 +224,19 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
 }
 
 @Composable
-private fun DialogoPago(p: PagoMensualEntity?, alCerrar: () -> Unit, alGuardar: (String, Long, Int) -> Unit) {
-    var concepto by remember { mutableStateOf(p?.concepto.orEmpty()) }
-    var importe by remember { mutableStateOf(p?.importe?.let { formatearEuros(it).removeSuffix("€").trim() }.orEmpty()) }
-    var dia by remember { mutableStateOf(p?.dia?.toString() ?: "1") }
+private fun DialogoPago(
+    p: PagoMensualEntity?, alCerrar: () -> Unit,
+    titulo: String = if (p == null) "Nuevo pago mensual" else "Editar pago",
+    inicial: Triple<String, Long, Int>? = p?.let { Triple(it.concepto, it.importe, it.dia) },
+    alGuardar: (String, Long, Int) -> Unit,
+) {
+    var concepto by remember { mutableStateOf(inicial?.first.orEmpty()) }
+    var importe by remember { mutableStateOf(inicial?.second?.let { formatearEuros(it).removeSuffix("€").trim() }.orEmpty()) }
+    var dia by remember { mutableStateOf(inicial?.third?.toString() ?: "1") }
     var error by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = alCerrar,
-        title = { Text(if (p == null) "Nuevo pago mensual" else "Editar pago") },
+        title = { Text(titulo) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
                 OutlinedTextField(concepto, { concepto = it; error = null }, label = { Text("Concepto") }, singleLine = true)

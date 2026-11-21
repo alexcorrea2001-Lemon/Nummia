@@ -109,8 +109,9 @@ fun CampoImporteGrande(
 @Composable
 fun TecladoImporte(valor: String, alCambiar: (String) -> Unit, alListo: () -> Unit) {
     val haptica = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val vibrar = io.github.alexcorrea2001lemon.nummia.ui.theme.LocalPreferenciasUi.current.vibracion
     fun pulsar(k: String) {
-        haptica.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+        if (vibrar) haptica.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
         val ultimo = valor.substringAfterLast('+').substringAfterLast('−')
         val nuevo = when (k) {
             "⌫" -> valor.dropLast(1)

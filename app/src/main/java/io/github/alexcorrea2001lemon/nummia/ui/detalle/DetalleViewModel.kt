@@ -18,6 +18,10 @@ import io.github.alexcorrea2001lemon.nummia.data.repo.reembolsoTardio
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -38,6 +42,17 @@ data class DetalleEstado(
     val tardio: LocalDate? get() = gasto?.reembolsoTardio
 }
 
+/** Gasto anterior (más reciente) y siguiente (más antiguo) del mismo mes, en el orden de Movimientos. */
+@Immutable
+data class Vecinos(val anterior: String? = null, val siguiente: String? = null, val posicion: Int = 0, val total: Int = 0)
+
+fun vecinos(ordenados: List<String>, id: String): Vecinos {
+    val i = ordenados.indexOf(id)
+    if (i < 0) return Vecinos()
+    return Vecinos(ordenados.getOrNull(i - 1), ordenados.getOrNull(i + 1), i + 1, ordenados.size)
+}
+
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class DetalleViewModel @Inject constructor(
     estadoGuardado: SavedStateHandle,
@@ -51,6 +66,18 @@ class DetalleViewModel @Inject constructor(
     ) { g, h, p, c, a ->
         DetalleEstado(g, h, p.associate { it.id to it.nombre }, c.associate { it.id to it.nombre }, a.modoDiscreto, false)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetalleEstado())
+
+    val vecinos: StateFlow<Vecinos> = repo.gasto(id)
+        .map { it?.gasto?.fecha?.let(java.time.YearMonth::from) }
+        .distinctUntilChanged()
+        .flatMapLatest { ym -> if (ym == null) flowOf(null) else repo.mes(ym) }
+        .map { datos ->
+            val ids = datos?.gastos.orEmpty().map { it.gasto }
+                .sortedWith(compareByDescending<io.github.alexcorrea2001lemon.nummia.data.db.GastoEntity> { it.fecha }.thenByDescending { it.createdAt })
+                .map { it.id }
+            vecinos(ids, id)
+        }
+        .flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Vecinos())
 
     fun devueltoEntero() = viewModelScope.launch { repo.devueltoEntero(id) }
     fun borrarReembolso(rid: String) = viewModelScope.launch { repo.borrarReembolso(rid) }

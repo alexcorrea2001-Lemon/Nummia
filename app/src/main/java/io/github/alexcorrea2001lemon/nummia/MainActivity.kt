@@ -61,6 +61,7 @@ class MainActivity : FragmentActivity() {
                     Box(if (cerrada) Modifier.clearAndSetSemantics { } else Modifier) {
                         AppNummia(a, alTerminarBienvenida = vm::terminarBienvenida)
                     }
+                    if (!cerrada) io.github.alexcorrea2001lemon.nummia.ui.comun.CapaHecho()
                     if (cerrada) PantallaBloqueo(a.iconoLogo, a.iconoColor)
                 }
                 }

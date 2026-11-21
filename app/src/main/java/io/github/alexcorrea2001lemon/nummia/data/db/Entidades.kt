@@ -57,6 +57,24 @@ data class IngresoEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+    /** Ingreso fijo del que viene (si se cobra cada mes). */
+    val ingresoFijoId: String? = null,
+)
+
+/** Algo que se cobra cada mes. Cada mes se crea un ingreso PREVISTO enlazado. */
+@Entity(tableName = "ingresos_fijos")
+data class IngresoFijoEntity(
+    @PrimaryKey val id: String,
+    val concepto: String,
+    val tipo: TipoIngreso,
+    /** Importe actual: el del próximo previsto. */
+    val importe: Long,
+    /** Día del mes (1–31; en meses más cortos, el último día). */
+    val dia: Int,
+    val activo: Boolean = true,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
 )
 
 @Entity(tableName = "personas")

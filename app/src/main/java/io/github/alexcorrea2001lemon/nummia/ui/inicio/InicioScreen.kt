@@ -48,6 +48,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.clickable
+import io.github.alexcorrea2001lemon.nummia.ui.bloqueo.actividad
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -87,6 +89,7 @@ fun InicioScreen(
     val presupuestos by vm.presupuestos.collectAsStateWithLifecycle()
     var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
     var cambiandoPago by remember { mutableStateOf<PagoPendiente?>(null) }
+    var cambiandoCobro by remember { mutableStateOf<CobroPendiente?>(null) }
     var eligiendoMes by rememberSaveable { mutableStateOf(false) }
 
     val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
@@ -110,7 +113,18 @@ fun InicioScreen(
                 io.github.alexcorrea2001lemon.nummia.ui.drive.IconoEstadoDrive(alDrive)
             }
         }
-        item { TarjetaBalance(e, vm::alternarDiscreto) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) } }
+        item {
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            TarjetaBalance(
+                e, vm::alternarDiscreto,
+                alRevelar = {
+                    // Modo discreto: mantener pulsado + huella muestra los importes hasta salir de la app
+                    ctx.actividad()?.let { act ->
+                        io.github.alexcorrea2001lemon.nummia.ui.bloqueo.Bloqueo.pedir(act, "Mostrar los importes", alConseguir = { haptica(); vm.mostrarImportes() }, alFallar = {})
+                    }
+                },
+            ) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) }
+        }
         item { Indicadores(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) } }
 
         if (presupuestos.isNotEmpty()) {
@@ -124,7 +138,7 @@ fun InicioScreen(
             }
         }
 
-        if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty() || e.pagosPendientes.isNotEmpty()) {
+        if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty() || e.pagosPendientes.isNotEmpty() || e.cobrosPendientes.isNotEmpty()) {
             item { EncabezadoSeccion("Pendientes") }
             items(e.sueldosPendientes, key = { "s" + it.id }) { s ->
                 Tarjeta {
@@ -135,6 +149,25 @@ fun InicioScreen(
                             Text(formatearEuros(s.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
                         }
                         Button(onClick = { confirmando = s }) { Text("Confirmar") }
+                    }
+                }
+            }
+            items(e.cobrosPendientes, key = { "c" + it.id }) { p ->
+                Tarjeta(modifier = Modifier.animateItem()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                        Avatar("€", LocalColoresNummia.current.ingresoFondo, LocalColoresNummia.current.ingreso, Iconos.Repetir)
+                        Column(Modifier.weight(1f)) {
+                            Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text(
+                                "${formatearEuros(p.importe, discreto = e.discreto)} · se cobra cada mes, día ${p.fecha.dayOfMonth}",
+                                style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
+                            )
+                        }
+                    }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                        Button(onClick = { haptica(); vm.confirmarCobro(p.id, p.importe) }) { Text("Cobrado") }
+                        OutlinedButton(onClick = { cambiandoCobro = p }) { Text("Otro importe") }
+                        TextButton(onClick = { vm.omitirCobro(p.id) }) { Text("Este mes no") }
                     }
                 }
             }
@@ -221,6 +254,9 @@ fun InicioScreen(
     if (eligiendoMes) {
         io.github.alexcorrea2001lemon.nummia.ui.comun.SelectorMes(e.mes, vm.hoy(), alCerrar = { eligiendoMes = false }) { vm.irAMes(it); eligiendoMes = false }
     }
+    cambiandoCobro?.let { p ->
+        DialogoImporte("${p.concepto}: ¿cuánto has cobrado este mes?", p.importe, alCerrar = { cambiandoCobro = null }) { vm.confirmarCobro(p.id, it); cambiandoCobro = null }
+    }
     cambiandoPago?.let { p ->
         DialogoImporte("${p.concepto}: ¿cuánto has pagado este mes?", p.importe, alCerrar = { cambiandoPago = null }) { vm.confirmarPago(p.id, it); cambiandoPago = null }
     }
@@ -246,9 +282,17 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
 }
 
 @Composable
-private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alPulsar: () -> Unit) {
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alRevelar: () -> Unit, alPulsar: () -> Unit) {
     val c = LocalColoresNummia.current
-    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPulsar), fondo = c.heroe) {
+    Tarjeta(
+        Modifier.clip(MaterialTheme.shapes.medium).combinedClickable(
+            onClick = alPulsar,
+            onLongClick = if (e.discreto) alRevelar else null,
+            onLongClickLabel = if (e.discreto) "Mostrar los importes con tu huella" else null,
+        ),
+        fondo = c.heroe,
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Balance del mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.weight(1f))
             IconButton(onClick = alternarDiscreto) {
@@ -272,6 +316,9 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alPuls
         }
         AnimatedVisibility(texto != null) {
             Text(texto.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+        }
+        AnimatedVisibility(e.discreto) {
+            Text("Mantén pulsado para verlos con tu huella", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
         }
         // Sin el sueldo confirmado el mes parece en negativo: se enseña cómo quedará.
         AnimatedVisibility(e.sueldoPrevistoMes > 0) {

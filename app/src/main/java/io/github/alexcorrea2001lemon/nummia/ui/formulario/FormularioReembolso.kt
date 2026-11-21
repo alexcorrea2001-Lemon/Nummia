@@ -127,6 +127,7 @@ class FormularioReembolsoViewModel @Inject constructor(
         _form.update { it.copy(guardando = true) }
         viewModelScope.launch {
             repo.anadirReembolso(g.gasto.id, r.getOrThrow(), f.fecha, f.personaId, f.nota)
+            io.github.alexcorrea2001lemon.nummia.ui.comun.Hecho.avisar("Devolución guardada")
             _hecho.send(Unit)
         }
     }

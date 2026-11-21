@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,6 +39,9 @@ data class MovimientosEstado(
     val cargando: Boolean = true,
 )
 
+/** Buscar texto, mirar pendientes o filtrar por tienda o persona busca en todos los meses. */
+private fun enTodo(f: Filtros) = f.texto.isNotBlank() || f.pestana == Pestana.PENDIENTES || f.tienda != null || f.persona != null
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MovimientosViewModel @Inject constructor(
@@ -50,7 +54,7 @@ class MovimientosViewModel @Inject constructor(
 
     private val fuente = combine(mes, filtros) { m, f -> m to f }.flatMapLatest { (m, f) ->
         // Al buscar texto o mirar pendientes, se busca en todos los meses.
-        if (f.texto.isNotBlank() || f.pestana == Pestana.PENDIENTES) repo.todo() else repo.mes(m)
+        if (enTodo(f)) repo.todo() else repo.mes(m)
     }
 
     val estado: StateFlow<MovimientosEstado> = combine(
@@ -63,7 +67,7 @@ class MovimientosViewModel @Inject constructor(
         MovimientosEstado(
             mes = m, filtros = f, grupos = agrupar(filtradas, f.orden), cuenta = filtradas.size,
             totalGasto = filtradas.filter { it.esGasto && it.etiqueta != EtiquetaMov.Previsto }.sumOf { it.importe },
-            buscandoEnTodo = f.texto.isNotBlank() || f.pestana == Pestana.PENDIENTES,
+            buscandoEnTodo = enTodo(f),
             hoy = reloj.hoy(), cargando = false,
         )
     }.combine(ajustesRepo.ajustes) { e, a -> e.copy(discreto = a.modoDiscreto) }
@@ -76,9 +80,22 @@ class MovimientosViewModel @Inject constructor(
     fun pestana(p: Pestana) = filtros.update { it.copy(pestana = p) }
     fun texto(t: String) = filtros.update { it.copy(texto = t) }
     fun orden(o: Orden) = filtros.update { it.copy(orden = o) }
-    fun avanzados(conReembolso: Boolean?, minimo: Long?, maximo: Long?) =
-        filtros.update { it.copy(conReembolso = conReembolso, minimo = minimo, maximo = maximo) }
-    fun limpiarAvanzados() = avanzados(null, null, null)
+    fun avanzados(n: Filtros) = filtros.update {
+        it.copy(conReembolso = n.conReembolso, minimo = n.minimo, maximo = n.maximo, categoria = n.categoria, persona = n.persona, tienda = n.tienda)
+    }
+    fun limpiarAvanzados() = avanzados(Filtros())
+    fun quitar(categoria: Boolean = false, tienda: Boolean = false, persona: Boolean = false) = filtros.update {
+        it.copy(
+            categoria = if (categoria) null else it.categoria,
+            tienda = if (tienda) null else it.tienda,
+            persona = if (persona) null else it.persona,
+        )
+    }
+
+    /** Opciones para los filtros: personas y las tiendas más usadas. */
+    val personas = repo.personas().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val tiendas = repo.tiendas().map { ts -> ts.sortedByDescending { it.veces }.take(20).map { it.nombre }.filter { it.isNotBlank() } }
+        .flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun borrar(id: String, esGasto: Boolean) = viewModelScope.launch {
         if (esGasto) repo.borrarGasto(id) else repo.borrarIngreso(id)

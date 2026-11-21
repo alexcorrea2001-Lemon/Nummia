@@ -53,13 +53,20 @@ object Espacio {
     val xxl = 24.dp
 }
 
-private val formas = Shapes(
+/** Forma de las tarjetas, a gusto de cada uno (Apariencia). */
+enum class FormaTarjetas(val nombre: String, val radio: Int) { REDONDA("Redondas", 28), NORMAL("Normales", 20), RECTA("Rectas", 8) }
+
+private fun formas(f: FormaTarjetas) = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(32.dp),
+    small = RoundedCornerShape((f.radio * 0.6f).dp),
+    medium = RoundedCornerShape(f.radio.dp),
+    large = RoundedCornerShape((f.radio + 8).dp),
+    extraLarge = RoundedCornerShape((f.radio + 12).dp),
 )
+
+/** Preferencias de la interfaz que leen los componentes (vibración y listas compactas). */
+data class PreferenciasUi(val vibracion: Boolean = true, val compacto: Boolean = false, val radio: Int = 20)
+val LocalPreferenciasUi = androidx.compose.runtime.staticCompositionLocalOf { PreferenciasUi() }
 
 /** Cifras tabulares en todos los estilos: los céntimos quedan en columna. */
 private fun TextStyle.tabular() = copy(fontFeatureSettings = "tnum")
@@ -157,8 +164,9 @@ fun NummiaTheme(ajustes: Ajustes, contenido: @Composable () -> Unit) {
     val densidad = LocalDensity.current
     CompositionLocalProvider(
         LocalColoresNummia provides colores,
+        LocalPreferenciasUi provides PreferenciasUi(ajustes.vibracion, ajustes.compacto, ajustes.formaTarjetas.radio),
         LocalDensity provides Density(densidad.density, densidad.fontScale * ajustes.tamanoTexto.escala),
     ) {
-        MaterialTheme(colorScheme = esquema, typography = tipografia, shapes = formas, content = contenido)
+        MaterialTheme(colorScheme = esquema, typography = tipografia, shapes = formas(ajustes.formaTarjetas), content = contenido)
     }
 }

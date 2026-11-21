@@ -53,6 +53,20 @@ class FiltrosTest {
         assertEquals(listOf("3"), r.map { it.id })
     }
 
+    @Test fun filtraPorCategoriaPersonaYTienda() {
+        val conDatos = listOf(
+            g("a", "Cine", 900, 2).copy(categoriaId = "ocio"),
+            g("b", "Cena", 3000, 4).copy(categoriaId = "comida", personaId = "p1"),
+            g("c", "Súper Ejemplo", 4500, 6, tienda = "Súper Ejemplo").copy(categoriaId = "comida"),
+            i("d", 100000, 7),
+        )
+        assertEquals(listOf("b", "c"), aplicar(conDatos, Filtros(categoria = "comida")).map { it.id })
+        assertEquals(listOf("b"), aplicar(conDatos, Filtros(persona = "p1")).map { it.id })
+        assertEquals(listOf("c"), aplicar(conDatos, Filtros(tienda = "super ejemplo")).map { it.id })
+        assertEquals(listOf("b"), aplicar(conDatos, Filtros(categoria = "comida", persona = "p1")).map { it.id })
+        assertEquals(3, Filtros(categoria = "x", persona = "y", tienda = "z").avanzados)
+    }
+
     @Test fun agrupaPorDiaConTotal() {
         val dias = agrupar(filas + g("5", "Panadería", 120, 3), Orden.FECHA)
         assertEquals(LocalDate.of(2030, 1, 31), dias.first().fecha)

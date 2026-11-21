@@ -26,6 +26,18 @@
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Botón «Nuevo gasto» en los Ajustes rápidos -->
+        <service
+            android:name=".ui.atajos.TileGasto"
+            android:exported="true"
+            android:icon="@drawable/tile_gasto"
+            android:label="@string/atajo_gasto"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <receiver
             android:name=".data.avisos.ReceptorAvisos"
             android:exported="false" />

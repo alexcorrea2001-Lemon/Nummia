@@ -141,6 +141,7 @@ class FormularioGastoViewModel @Inject constructor(
                 ),
             )
             _form.value = if (otro) FormGasto(fecha = f.fecha) else f.copy(guardando = false)
+            io.github.alexcorrea2001lemon.nummia.ui.comun.Hecho.avisar(if (f.id == null) "Gasto guardado" else "Cambios guardados")
             _eventos.send(EventoForm.Guardado(id, otro, antes))
         }
     }

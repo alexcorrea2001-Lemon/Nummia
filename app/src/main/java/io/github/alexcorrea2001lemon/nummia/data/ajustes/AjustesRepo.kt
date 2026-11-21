@@ -41,6 +41,11 @@ data class Ajustes(
     val avisoPagos: Boolean = true,
     val avisoPresupuestos: Boolean = true,
     val bloqueo: Boolean = false,
+    val vibracion: Boolean = true,
+    val compacto: Boolean = false,
+    val formaTarjetas: io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas = io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas.NORMAL,
+    /** Importes mostrados con la huella: se vuelven a ocultar al salir de la app. */
+    val discretoTemporal: Boolean = false,
 )
 
 private val Context.almacen: DataStore<Preferences> by preferencesDataStore(name = "ajustes")
@@ -71,6 +76,10 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
         val avisosHechos = stringSetPreferencesKey("avisos_hechos")
         val bloqueo = booleanPreferencesKey("bloqueo")
         val mantenimiento = longPreferencesKey("ultimo_mantenimiento")
+        val vibracion = booleanPreferencesKey("vibracion")
+        val compacto = booleanPreferencesKey("compacto")
+        val formaTarjetas = stringPreferencesKey("forma_tarjetas")
+        val discretoTemporal = booleanPreferencesKey("discreto_temporal")
     }
 
     val ajustes: Flow<Ajustes> = store.data.map { p ->
@@ -95,6 +104,10 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
             avisoPagos = p[K.avisoPagos] ?: d.avisoPagos,
             avisoPresupuestos = p[K.avisoPresupuestos] ?: d.avisoPresupuestos,
             bloqueo = p[K.bloqueo] ?: d.bloqueo,
+            vibracion = p[K.vibracion] ?: d.vibracion,
+            compacto = p[K.compacto] ?: d.compacto,
+            formaTarjetas = enumO(p[K.formaTarjetas], d.formaTarjetas),
+            discretoTemporal = p[K.discretoTemporal] ?: d.discretoTemporal,
         )
     }
 
@@ -104,7 +117,7 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
     suspend fun acentoFondoPantalla() = store.edit { it[K.modoAcento] = ModoAcento.FONDO_PANTALLA.name }
     suspend fun icono(logo: Logo, color: Acento) = store.edit { it[K.iconoLogo] = logo.name; it[K.iconoColor] = color.name }
     suspend fun tamanoTexto(t: TamanoTexto) = store.edit { it[K.tamanoTexto] = t.name }
-    suspend fun modoDiscreto(v: Boolean) = store.edit { it[K.modoDiscreto] = v }
+    suspend fun modoDiscreto(v: Boolean) = store.edit { it[K.modoDiscreto] = v; it[K.discretoTemporal] = false }
     suspend fun sueldoHabitual(c: Long?) = store.edit { if (c == null) it.remove(K.sueldo) else it[K.sueldo] = c }
     suspend fun actualizacionesSoloWifi(v: Boolean) = store.edit { it[K.soloWifi] = v }
     suspend fun buscarActualizaciones(v: Boolean) = store.edit { it[K.buscar] = v }
@@ -114,6 +127,18 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
     suspend fun avisoPagos(v: Boolean) = store.edit { it[K.avisoPagos] = v }
     suspend fun avisoPresupuestos(v: Boolean) = store.edit { it[K.avisoPresupuestos] = v }
     suspend fun bloqueo(v: Boolean) = store.edit { it[K.bloqueo] = v }
+
+    suspend fun vibracion(v: Boolean) = store.edit { it[K.vibracion] = v }
+    suspend fun compacto(v: Boolean) = store.edit { it[K.compacto] = v }
+    suspend fun formaTarjetas(f: io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas) = store.edit { it[K.formaTarjetas] = f.name }
+
+    /** Muestra los importes hasta salir de la app (tras pedir la huella). */
+    suspend fun mostrarImportesTemporal() = store.edit { it[K.modoDiscreto] = false; it[K.discretoTemporal] = true }
+
+    /** Al salir de la app: si se mostraron con la huella, se vuelven a ocultar. */
+    suspend fun volverADiscretoSiTemporal() = store.edit {
+        if (it[K.discretoTemporal] == true) { it[K.modoDiscreto] = true; it[K.discretoTemporal] = false }
+    }
 
     suspend fun ultimoMantenimiento(): Long? = store.data.first()[K.mantenimiento]
     suspend fun ultimoMantenimiento(dia: Long) = store.edit { it[K.mantenimiento] = dia }

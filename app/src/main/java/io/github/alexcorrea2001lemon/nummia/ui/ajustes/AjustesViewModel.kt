@@ -51,6 +51,9 @@ class AjustesViewModel @Inject constructor(
     fun avisoPagos(v: Boolean) = viewModelScope.launch { ajustesRepo.avisoPagos(v) }
     fun avisoPresupuestos(v: Boolean) = viewModelScope.launch { ajustesRepo.avisoPresupuestos(v) }
     fun bloqueo(v: Boolean) = viewModelScope.launch { ajustesRepo.bloqueo(v) }
+    fun vibracion(v: Boolean) = viewModelScope.launch { ajustesRepo.vibracion(v) }
+    fun compacto(v: Boolean) = viewModelScope.launch { ajustesRepo.compacto(v) }
+    fun formaTarjetas(f: io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas) = viewModelScope.launch { ajustesRepo.formaTarjetas(f) }
 
     /** Solo se guarda: el cambio real del icono lo hace NummiaApp al pasar la app a segundo plano. */
     fun icono(logo: Logo, color: Acento) = viewModelScope.launch { ajustesRepo.icono(logo, color) }

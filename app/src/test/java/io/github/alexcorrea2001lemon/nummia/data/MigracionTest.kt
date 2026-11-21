@@ -42,9 +42,16 @@ class MigracionTest {
         val fichero = ctx.getDatabasePath(nombre).apply { parentFile?.mkdirs(); delete() }
         SQLiteDatabase.openOrCreateDatabase(fichero, null).use { db ->
             esquema.forEach { (tabla, sql) ->
+                if (tabla == "ingresos_fijos" && version < 4) return@forEach
                 if (tabla == "presupuestos" && version < 3) return@forEach
                 if (tabla == "pagos_mensuales" && version < 2) return@forEach
-                db.execSQL(if (tabla == "gastos" && version < 2) sql.replace(Regex(""",\s*`pagoMensualId` TEXT"""), "") else sql)
+                db.execSQL(
+                    when {
+                        tabla == "gastos" && version < 2 -> sql.replace(Regex(""",\s*`pagoMensualId` TEXT"""), "")
+                        tabla == "ingresos" && version < 4 -> sql.replace(Regex(""",\s*`ingresoFijoId` TEXT"""), "")
+                        else -> sql
+                    },
+                )
             }
             db.insertOrThrow("gastos", null, ContentValues().apply {
                 put("id", "g1"); put("codigo", "G-0001"); put("fecha", 21_990L); put("concepto", "Café"); put("tienda", "Cafetería")
@@ -61,6 +68,7 @@ class MigracionTest {
         assertNull(g.pagoMensualId)
         assertTrue(db.pagos().activos().isEmpty())
         assertTrue(db.presupuestos().volcar().isEmpty())
+        assertTrue(db.ingresosFijos().activos().isEmpty())
         db.close()
     }
 
@@ -68,6 +76,12 @@ class MigracionTest {
         assertTrue(esquemaActual().any { it.first == "gastos" && "pagoMensualId" in it.second })
         crearAntigua("v1.db", 1)
         comprobar("v1.db")
+    }
+
+    @Test fun desdeLaVersion3() {
+        assertTrue(esquemaActual().any { it.first == "ingresos" && "ingresoFijoId" in it.second })
+        crearAntigua("v3.db", 3)
+        comprobar("v3.db")
     }
 
     @Test fun desdeLaVersion2() {

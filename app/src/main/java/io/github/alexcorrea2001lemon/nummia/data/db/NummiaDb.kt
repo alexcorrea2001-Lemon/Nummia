@@ -10,9 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         GastoEntity::class, ReembolsoEntity::class, IngresoEntity::class,
         PersonaEntity::class, CategoriaEntity::class, HistorialEntity::class, PagoMensualEntity::class,
-        PresupuestoEntity::class,
+        PresupuestoEntity::class, IngresoFijoEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(Conversores::class)
@@ -26,6 +26,7 @@ abstract class NummiaDb : RoomDatabase() {
     abstract fun vaciar(): VaciarDao
     abstract fun pagos(): PagoMensualDao
     abstract fun presupuestos(): PresupuestoDao
+    abstract fun ingresosFijos(): IngresoFijoDao
 
     companion object {
         /** v1.4.0: presupuestos. Solo añade una tabla. */
@@ -37,7 +38,18 @@ abstract class NummiaDb : RoomDatabase() {
                 )
             }
         }
-        val MIGRACIONES: Array<Migration> get() = arrayOf(MIGRACION_1_2, MIGRACION_2_3)
+        /** v2.0.0: ingresos que se cobran cada mes. Solo añade. */
+        val MIGRACION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `ingresos` ADD COLUMN `ingresoFijoId` TEXT")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `ingresos_fijos` (`id` TEXT NOT NULL, `concepto` TEXT NOT NULL, `tipo` TEXT NOT NULL, " +
+                        "`importe` INTEGER NOT NULL, `dia` INTEGER NOT NULL, `activo` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
+                )
+            }
+        }
+        val MIGRACIONES: Array<Migration> get() = arrayOf(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4)
 
         /** v1.3.0: pagos mensuales. Solo añade: no toca ningún dato existente. */
         val MIGRACION_1_2 = object : Migration(1, 2) {

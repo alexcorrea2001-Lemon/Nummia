@@ -66,6 +66,13 @@ class TiendasCategoriasTest {
         assertTrue(db.presupuestos().volcar().isEmpty())
     }
 
+    @Test fun reordenarCategoriasGuardaElOrden() = runBlocking {
+        val antes = db.categorias().volcar().sortedBy { it.orden }.map { it.id }
+        val nuevo = listOf(antes.last()) + antes.dropLast(1)
+        repo.ordenarCategorias(nuevo)
+        assertEquals(nuevo, db.categorias().todas().first().map { it.id })
+    }
+
     @Test fun lasCategoriasDeSerieNoSeBorran() = runBlocking {
         val c = db.categorias().volcar().first { it.predefinida }
         repo.borrarCategoria(c)

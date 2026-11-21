@@ -15,8 +15,12 @@ data class Filtros(
     val conReembolso: Boolean? = null,
     val minimo: Long? = null,
     val maximo: Long? = null,
+    /** Id de categoría, id de persona y nombre de tienda (cualquier grafía). */
+    val categoria: String? = null,
+    val persona: String? = null,
+    val tienda: String? = null,
 ) {
-    val avanzados: Int get() = listOfNotNull(conReembolso, minimo, maximo).size
+    val avanzados: Int get() = listOfNotNull(conReembolso, minimo, maximo, categoria, persona, tienda).size
 }
 
 data class GrupoDia(val fecha: LocalDate, val total: Long, val filas: List<FilaMov>)
@@ -27,6 +31,7 @@ fun normalizar(s: String): String =
 
 fun aplicar(filas: List<FilaMov>, f: Filtros): List<FilaMov> {
     val q = normalizar(f.texto.trim())
+    val tienda = f.tienda?.let { normalizar(it.trim()) }
     return filas.asSequence()
         .filter {
             when (f.pestana) {
@@ -43,6 +48,9 @@ fun aplicar(filas: List<FilaMov>, f: Filtros): List<FilaMov> {
         .filter { f.conReembolso == null || (it.esGasto && (it.pagado != null || it.etiqueta is EtiquetaMov.AFavor) == f.conReembolso) }
         .filter { f.minimo == null || kotlin.math.abs(it.importe) >= f.minimo }
         .filter { f.maximo == null || kotlin.math.abs(it.importe) <= f.maximo }
+        .filter { f.categoria == null || it.categoriaId == f.categoria }
+        .filter { f.persona == null || it.personaId == f.persona }
+        .filter { tienda == null || normalizar(it.tienda.trim()) == tienda }
         .toList()
 }
 

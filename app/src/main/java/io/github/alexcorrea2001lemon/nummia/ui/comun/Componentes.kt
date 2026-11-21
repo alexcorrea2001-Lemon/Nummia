@@ -53,10 +53,13 @@ import kotlin.math.roundToLong
 @Composable
 fun rememberHaptica(): () -> Unit {
     val view = LocalView.current
-    return remember(view) {
+    val activa = io.github.alexcorrea2001lemon.nummia.ui.theme.LocalPreferenciasUi.current.vibracion
+    return remember(view, activa) {
         {
-            val tipo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.CONTEXT_CLICK
-            view.performHapticFeedback(tipo)
+            if (activa) {
+                val tipo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.CONTEXT_CLICK
+                view.performHapticFeedback(tipo)
+            }
         }
     }
 }

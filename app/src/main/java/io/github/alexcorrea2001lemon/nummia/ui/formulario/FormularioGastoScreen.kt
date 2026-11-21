@@ -187,7 +187,7 @@ fun FormularioGastoScreen(
                         Column(Modifier.weight(1f)) {
                             Text("Se paga cada mes", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                             Text(
-                                "Cada mes aparecerá en Inicio el día ${f.fecha.dayOfMonth} para confirmarlo o cambiar el importe. Lo verás en Ajustes → Pagos mensuales",
+                                "Cada mes aparecerá en Inicio el día ${f.fecha.dayOfMonth} para confirmarlo o cambiar el importe. Lo verás en Ajustes → Pagos y cobros fijos",
                                 style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
                             )
                         }

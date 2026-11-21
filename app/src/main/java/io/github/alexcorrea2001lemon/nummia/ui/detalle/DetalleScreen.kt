@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -78,16 +80,33 @@ fun DetalleScreen(
     alTienda: (String) -> Unit = {},
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
+    val vec by vm.vecinos.collectAsStateWithLifecycle()
     val alcance = rememberCoroutineScope()
+    val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
+    // Deslizar a los lados: gasto anterior / siguiente del mes (como en la lista de Movimientos).
+    val desplazamiento = remember { androidx.compose.animation.core.Animatable(0f) }
+    val umbral = with(androidx.compose.ui.platform.LocalDensity.current) { 96.dp.toPx() }
+    fun ir(destino: String?) { if (destino != null) { haptica(); alAbrirGasto(destino) } }
     var borrandoReembolso by remember { mutableStateOf<ReembolsoEntity?>(null) }
     val c = LocalColoresNummia.current
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Gasto") },
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Gasto")
+                        if (vec.total > 1) Text("${vec.posicion} de ${vec.total} del mes", style = MaterialTheme.typography.labelSmall, color = c.textoSuave)
+                    }
+                },
                 navigationIcon = { IconButton(onClick = alVolver) { Icon(Iconos.Atras, "Volver") } },
-                actions = { IconButton(onClick = { alEditar(vm.id) }, enabled = e.gasto != null) { Icon(Iconos.Lapiz, "Editar") } },
+                actions = {
+                    if (vec.total > 1) {
+                        IconButton(onClick = { ir(vec.anterior) }, enabled = vec.anterior != null) { Icon(Iconos.ChevronIzq, "Gasto anterior") }
+                        IconButton(onClick = { ir(vec.siguiente) }, enabled = vec.siguiente != null) { Icon(Iconos.ChevronDer, "Gasto siguiente") }
+                    }
+                    IconButton(onClick = { alEditar(vm.id) }, enabled = e.gasto != null) { Icon(Iconos.Lapiz, "Editar") }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -99,7 +118,27 @@ fun DetalleScreen(
         }
         val gasto = g.gasto
         LazyColumn(
-            Modifier.fillMaxSize().padding(p).compartido("gasto-${gasto.id}"),
+            Modifier.fillMaxSize().padding(p).compartido("gasto-${gasto.id}")
+                .draggable(
+                    androidx.compose.foundation.gestures.rememberDraggableState { dx ->
+                        // Sin gasto a ese lado, el arrastre se resiste.
+                        val libre = if ((dx < 0 && vec.siguiente == null) || (dx > 0 && vec.anterior == null)) 0.2f else 1f
+                        alcance.launch { desplazamiento.snapTo(desplazamiento.value + dx * libre) }
+                    },
+                    androidx.compose.foundation.gestures.Orientation.Horizontal,
+                    onDragStopped = {
+                        val d = desplazamiento.value
+                        when {
+                            d < -umbral && vec.siguiente != null -> ir(vec.siguiente)
+                            d > umbral && vec.anterior != null -> ir(vec.anterior)
+                        }
+                        desplazamiento.animateTo(0f, androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow))
+                    },
+                )
+                .graphicsLayer {
+                    translationX = desplazamiento.value * 0.6f
+                    alpha = 1f - (kotlin.math.abs(desplazamiento.value) / (umbral * 4)).coerceAtMost(0.35f)
+                },
             contentPadding = PaddingValues(start = Espacio.l, end = Espacio.l, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(Espacio.l),
         ) {

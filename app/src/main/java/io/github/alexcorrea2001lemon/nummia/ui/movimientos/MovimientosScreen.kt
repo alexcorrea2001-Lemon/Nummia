@@ -95,6 +95,10 @@ fun MovimientosScreen(
     relleno: PaddingValues,
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
+    val catsLista by vm.categorias.collectAsStateWithLifecycle()
+    val persLista by vm.personas.collectAsStateWithLifecycle()
+    val nombresCat = remember(catsLista) { catsLista.associate { it.id to it.nombre } }
+    val nombresPer = remember(persLista) { persLista.associate { it.id to it.nombre } }
     val alcance = rememberCoroutineScope()
     val haptica = rememberHaptica()
     var verFiltros by rememberSaveable { mutableStateOf(false) }
@@ -179,6 +183,22 @@ fun MovimientosScreen(
                             IconButton(onClick = { verFiltros = true }) { Icon(Iconos.Filtro, "Filtros y orden") }
                         }
                     }
+                    // Filtros activos a la vista, y se quitan con un toque
+                    val activos = listOfNotNull(
+                        e.filtros.categoria?.let { id -> (nombresCat[id] ?: "Categoría") to { vm.quitar(categoria = true) } },
+                        e.filtros.tienda?.let { t -> t to { vm.quitar(tienda = true) } },
+                        e.filtros.persona?.let { id -> (nombresPer[id] ?: "Persona") to { vm.quitar(persona = true) } },
+                    )
+                    if (activos.isNotEmpty()) {
+                        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = Espacio.s), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                            activos.forEach { (nombre, quitar) ->
+                                androidx.compose.material3.InputChip(
+                                    selected = true, onClick = { haptica(); quitar() }, label = { Text(nombre, maxLines = 1) },
+                                    trailingIcon = { Icon(Iconos.Cerrar, "Quitar filtro $nombre", Modifier.size(18.dp)) },
+                                )
+                            }
+                        }
+                    }
                 }
             }
             // 3) Qué tipo ver: pestañas de ancho fijo, siempre visibles enteras
@@ -223,7 +243,7 @@ fun MovimientosScreen(
                     }
                 }
                 itemsIndexed(g.filas, key = { _, it -> (if (it.esGasto) "g" else "i") + it.id }) { i, f ->
-                    val grande = 20.dp
+                    val grande = io.github.alexcorrea2001lemon.nummia.ui.theme.LocalPreferenciasUi.current.radio.dp
                     val chica = 4.dp
                     val forma = RoundedCornerShape(
                         topStart = if (i == 0) grande else chica, topEnd = if (i == 0) grande else chica,
@@ -291,7 +311,14 @@ fun MovimientosScreen(
     }
     if (verFiltros) {
         ModalBottomSheet(onDismissRequest = { verFiltros = false }) {
-            HojaFiltros(e.filtros, vm::orden, alAplicar = { cr, mi, ma -> vm.avanzados(cr, mi, ma); verFiltros = false }, alLimpiar = { vm.limpiarAvanzados(); verFiltros = false })
+            val cats by vm.categorias.collectAsStateWithLifecycle()
+            val pers by vm.personas.collectAsStateWithLifecycle()
+            val tnds by vm.tiendas.collectAsStateWithLifecycle()
+            HojaFiltros(
+                e.filtros, vm::orden,
+                categorias = cats.map { it.id to it.nombre }, personas = pers.map { it.id to it.nombre }, tiendas = tnds,
+                alAplicar = { vm.avanzados(it); verFiltros = false }, alLimpiar = { vm.limpiarAvanzados(); verFiltros = false },
+            )
         }
     }
 }
@@ -357,17 +384,30 @@ private fun FilaDeslizable(
 }
 
 @Composable
-private fun HojaFiltros(f: Filtros, alOrden: (Orden) -> Unit, alAplicar: (Boolean?, Long?, Long?) -> Unit, alLimpiar: () -> Unit) {
+private fun HojaFiltros(
+    f: Filtros, alOrden: (Orden) -> Unit,
+    categorias: List<Pair<String, String>>, personas: List<Pair<String, String>>, tiendas: List<String>,
+    alAplicar: (Filtros) -> Unit, alLimpiar: () -> Unit,
+) {
     var conReembolso by remember { mutableStateOf(f.conReembolso) }
-    var minimo by remember { mutableStateOf(f.minimo?.let { formatearEuros(it).removeSuffix(" €") }.orEmpty()) }
-    var maximo by remember { mutableStateOf(f.maximo?.let { formatearEuros(it).removeSuffix(" €") }.orEmpty()) }
-    Column(Modifier.fillMaxWidth().padding(horizontal = Espacio.xl).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+    var minimo by remember { mutableStateOf(f.minimo?.let { formatearEuros(it).removeSuffix("€").trim() }.orEmpty()) }
+    var maximo by remember { mutableStateOf(f.maximo?.let { formatearEuros(it).removeSuffix("€").trim() }.orEmpty()) }
+    var categoria by remember { mutableStateOf(f.categoria) }
+    var persona by remember { mutableStateOf(f.persona) }
+    var tienda by remember { mutableStateOf(f.tienda) }
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = Espacio.xl).navigationBarsPadding(),
+        verticalArrangement = Arrangement.spacedBy(Espacio.m),
+    ) {
         Text("Ordenar por", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
             Orden.entries.forEach { o -> FilterChip(selected = f.orden == o, onClick = { alOrden(o) }, label = { Text(o.nombre) }) }
         }
+        if (categorias.isNotEmpty()) FilaOpciones("Categoría", categorias, categoria) { categoria = it }
+        if (tiendas.isNotEmpty()) FilaOpciones("Tienda", tiendas.map { it to it }, tienda) { tienda = it }
+        if (personas.isNotEmpty()) FilaOpciones("Persona", personas, persona) { persona = it }
         Text("Reembolsos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
             FilterChip(selected = conReembolso == null, onClick = { conReembolso = null }, label = { Text("Todos") })
             FilterChip(selected = conReembolso == true, onClick = { conReembolso = true }, label = { Text("Con reembolso") })
             FilterChip(selected = conReembolso == false, onClick = { conReembolso = false }, label = { Text("Sin reembolso") })
@@ -379,8 +419,25 @@ private fun HojaFiltros(f: Filtros, alOrden: (Orden) -> Unit, alAplicar: (Boolea
         }
         Row(Modifier.fillMaxWidth().padding(bottom = Espacio.l), horizontalArrangement = Arrangement.spacedBy(Espacio.s, Alignment.End)) {
             TextButton(onClick = alLimpiar) { Text("Quitar filtros") }
-            Button(onClick = { alAplicar(conReembolso, leerImporte(minimo).getOrNull(), leerImporte(maximo).getOrNull()) }) { Text("Aplicar") }
+            Button(onClick = {
+                alAplicar(Filtros(
+                    conReembolso = conReembolso, minimo = leerImporte(minimo).getOrNull(), maximo = leerImporte(maximo).getOrNull(),
+                    categoria = categoria, persona = persona, tienda = tienda,
+                ))
+            }) { Text("Aplicar") }
         }
         Spacer(Modifier.height(Espacio.s))
+    }
+}
+
+/** Una fila de chips deslizable: «Todas» + cada opción (id a nombre visible). */
+@Composable
+private fun FilaOpciones(titulo: String, opciones: List<Pair<String, String>>, elegida: String?, alElegir: (String?) -> Unit) {
+    Text(titulo, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+        FilterChip(selected = elegida == null, onClick = { alElegir(null) }, label = { Text("Todas") })
+        opciones.forEach { (id, nombre) ->
+            FilterChip(selected = elegida == id, onClick = { alElegir(if (elegida == id) null else id) }, label = { Text(nombre) })
+        }
     }
 }

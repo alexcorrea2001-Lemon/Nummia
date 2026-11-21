@@ -53,6 +53,7 @@ data class FilaMov(
     val etiqueta: EtiquetaMov?,
     val creado: Long,
     val categoriaId: String? = null,
+    val personaId: String? = null,
 )
 
 private val nombresTipo = mapOf(
@@ -76,7 +77,7 @@ fun GastoConReembolsos.aFila(personas: Map<String, String>, categorias: Map<Stri
         g.tienda.takeIf { it.isNotBlank() && !it.equals(g.concepto, ignoreCase = true) },
         g.categoriaId?.let(categorias::get),
     ).joinToString(" · ").ifEmpty { g.codigo }
-    return FilaMov(g.id, true, g.concepto, sub, real, g.importe.takeIf { devuelto > 0 }, g.fecha, g.tienda, etiqueta, g.createdAt, g.categoriaId)
+    return FilaMov(g.id, true, g.concepto, sub, real, g.importe.takeIf { devuelto > 0 }, g.fecha, g.tienda, etiqueta, g.createdAt, g.categoriaId, g.personaId)
 }
 
 fun IngresoEntity.aFila(): FilaMov = FilaMov(
@@ -108,7 +109,7 @@ fun FilaMovimiento(
         modifier.fillMaxWidth()
             .then(if (seleccionado) Modifier.background(MaterialTheme.colorScheme.primaryContainer) else Modifier)
             .combinedClickable(onClick = alPulsar, onLongClick = alMantener, onLongClickLabel = if (alMantener != null) "Seleccionar varios" else null)
-            .padding(horizontal = Espacio.l, vertical = Espacio.m),
+            .padding(horizontal = Espacio.l, vertical = if (io.github.alexcorrea2001lemon.nummia.ui.theme.LocalPreferenciasUi.current.compacto) Espacio.xs + 2.dp else Espacio.m),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Espacio.m),
     ) {

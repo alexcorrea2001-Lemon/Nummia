@@ -8,6 +8,7 @@ import io.github.alexcorrea2001lemon.nummia.data.db.IngresoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.NummiaDb
 import io.github.alexcorrea2001lemon.nummia.data.db.Origen
 import io.github.alexcorrea2001lemon.nummia.data.db.PagoMensualEntity
+import io.github.alexcorrea2001lemon.nummia.data.db.IngresoFijoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PresupuestoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.ReembolsoEntity
@@ -42,6 +43,11 @@ class CopiaInvalida(motivo: String) : Exception(motivo)
 @Serializable data class IngresoDto(
     val id: String, val codigo: String, val fecha: Long, val concepto: String, val tipo: String, val importe: Long,
     val notas: String, val estado: String, val createdAt: Long, val updatedAt: Long, val deletedAt: Long?,
+    val ingresoFijoId: String? = null,
+)
+@Serializable data class IngresoFijoDto(
+    val id: String, val concepto: String, val tipo: String, val importe: Long, val dia: Int,
+    val activo: Boolean, val createdAt: Long, val updatedAt: Long, val deletedAt: Long?,
 )
 @Serializable data class PersonaDto(val id: String, val nombre: String, val createdAt: Long, val deletedAt: Long?)
 @Serializable data class CategoriaDto(val id: String, val nombre: String, val icono: String, val color: Long, val predefinida: Boolean, val orden: Int)
@@ -60,6 +66,7 @@ data class Copia(
     val historial: List<HistorialDto>,
     val pagos: List<PagoDto> = emptyList(),
     val presupuestos: List<PresupuestoDto> = emptyList(),
+    val ingresosFijos: List<IngresoFijoDto> = emptyList(),
 ) {
     companion object { const val VERSION = 1 }
 }
@@ -79,6 +86,7 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
             categorias = db.categorias().volcar().map { CategoriaDto(it.id, it.nombre, it.icono, it.color, it.predefinida, it.orden) },
             historial = db.historial().volcar().map { HistorialDto(it.entidad, it.entidadId, it.campo, it.antes, it.despues, it.origen.name, it.fecha) },
             presupuestos = db.presupuestos().volcar().map { PresupuestoDto(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt) },
+            ingresosFijos = db.ingresosFijos().volcar().map { IngresoFijoDto(it.id, it.concepto, it.tipo.name, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt) },
             pagos = db.pagos().volcar().map { PagoDto(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt) },
         )
         val salida = ByteArrayOutputStream()
@@ -100,7 +108,8 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
 
     /** Sustituye TODOS los datos por los de la copia, en una sola transacción. */
     suspend fun restaurar(c: Copia) = db.withTransaction {
-        db.vaciar().apply { gastos(); reembolsos(); ingresos(); personas(); categorias(); historial(); pagos(); presupuestos() }
+        db.vaciar().apply { gastos(); reembolsos(); ingresos(); personas(); categorias(); historial(); pagos(); presupuestos(); ingresosFijos() }
+        c.ingresosFijos.forEach { db.ingresosFijos().guardar(IngresoFijoEntity(it.id, it.concepto, TipoIngreso.valueOf(it.tipo), it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt)) }
         c.presupuestos.forEach { db.presupuestos().guardar(PresupuestoEntity(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt)) }
         c.pagos.forEach { db.pagos().guardar(PagoMensualEntity(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt)) }
         c.personas.forEach { db.personas().guardar(PersonaEntity(it.id, it.nombre, it.createdAt, it.deletedAt)) }
@@ -115,6 +124,6 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
     private fun GastoDto.entidad() = GastoEntity(id, codigo, LocalDate.ofEpochDay(fecha), concepto, tienda, categoriaId, importe, meLoDevuelven, personaId, importeEsperado, notas, Estado.valueOf(estado), createdAt, updatedAt, deletedAt, pagoMensualId)
     private fun ReembolsoEntity.dto() = ReembolsoDto(id, codigo, gastoId, fecha?.toEpochDay(), importe, personaId, nota, createdAt, updatedAt, deletedAt)
     private fun ReembolsoDto.entidad() = ReembolsoEntity(id, codigo, gastoId, fecha?.let(LocalDate::ofEpochDay), importe, personaId, nota, createdAt, updatedAt, deletedAt)
-    private fun IngresoEntity.dto() = IngresoDto(id, codigo, fecha.toEpochDay(), concepto, tipo.name, importe, notas, estado.name, createdAt, updatedAt, deletedAt)
-    private fun IngresoDto.entidad() = IngresoEntity(id, codigo, LocalDate.ofEpochDay(fecha), concepto, TipoIngreso.valueOf(tipo), importe, notas, Estado.valueOf(estado), createdAt, updatedAt, deletedAt)
+    private fun IngresoEntity.dto() = IngresoDto(id, codigo, fecha.toEpochDay(), concepto, tipo.name, importe, notas, estado.name, createdAt, updatedAt, deletedAt, ingresoFijoId)
+    private fun IngresoDto.entidad() = IngresoEntity(id, codigo, LocalDate.ofEpochDay(fecha), concepto, TipoIngreso.valueOf(tipo), importe, notas, Estado.valueOf(estado), createdAt, updatedAt, deletedAt, ingresoFijoId)
 }

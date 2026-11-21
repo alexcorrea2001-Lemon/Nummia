@@ -9,6 +9,7 @@ import io.github.alexcorrea2001lemon.nummia.data.db.IngresoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.NummiaDb
 import io.github.alexcorrea2001lemon.nummia.data.db.Origen
 import io.github.alexcorrea2001lemon.nummia.data.db.PagoMensualEntity
+import io.github.alexcorrea2001lemon.nummia.data.db.IngresoFijoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PresupuestoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.ReembolsoEntity
@@ -59,6 +60,8 @@ data class IngresoInput(
     val tipo: TipoIngreso,
     val importe: Long,
     val notas: String = "",
+    /** «Se cobra cada mes»: true crea el ingreso fijo, false lo quita, null lo deja como está. */
+    val cadaMes: Boolean? = null,
 )
 
 @Singleton
@@ -361,14 +364,25 @@ class MovimientosRepo @Inject constructor(
         val ahora = reloj.ahoraMs()
         val previo = input.id?.let { db.ingresos().obtener(it) }
         val id = previo?.id ?: UUID.randomUUID().toString()
+        val fijoActual = previo?.ingresoFijoId?.let { db.ingresosFijos().obtener(it) }?.takeIf { it.deletedAt == null }
+        val nuevoFijo = if (input.cadaMes == true && fijoActual == null) UUID.randomUUID().toString() else null
+        val quitarFijo = input.cadaMes == false && fijoActual != null
         val nuevo = IngresoEntity(
             id = id,
             codigo = previo?.codigo ?: codigo("I", db.ingresos().maxCodigo()),
             fecha = input.fecha, concepto = input.concepto.trim(), tipo = input.tipo, importe = input.importe,
             notas = input.notas.trim(), estado = Estado.CONFIRMADO,
             createdAt = previo?.createdAt ?: ahora, updatedAt = ahora, deletedAt = previo?.deletedAt,
+            ingresoFijoId = if (quitarFijo) null else nuevoFijo ?: previo?.ingresoFijoId,
         )
+        if (nuevoFijo != null) {
+            db.ingresosFijos().guardar(
+                IngresoFijoEntity(nuevoFijo, nuevo.concepto, nuevo.tipo, nuevo.importe, nuevo.fecha.dayOfMonth, createdAt = ahora, updatedAt = ahora),
+            )
+        }
         db.ingresos().guardar(nuevo)
+        // Al editar y quitar «Se cobra cada mes», deja de repetirse (este ingreso se queda).
+        if (quitarFijo) borrarIngresoFijo(fijoActual!!.id)
         if (previo == null) anotar("ingreso", id, "creado", null, nuevo.codigo) else anotarCambiosIngreso(previo, nuevo)
         id
     }
@@ -403,6 +417,69 @@ class MovimientosRepo @Inject constructor(
         val nuevo = i.copy(fecha = fecha, importe = importe, estado = Estado.CONFIRMADO, updatedAt = reloj.ahoraMs())
         db.ingresos().guardar(nuevo)
         anotar("ingreso", id, "confirmado", null, "${formatearEuros(importe)} · ${fechaCorta.format(fecha)}")
+    }
+
+    // ---------- Ingresos fijos (se cobran cada mes) ----------
+
+    fun ingresosFijos(): Flow<List<IngresoFijoEntity>> = db.ingresosFijos().todos()
+    fun historialIngresoFijo(id: String): Flow<List<IngresoEntity>> = db.ingresosFijos().historial(id)
+    suspend fun esIngresoFijo(i: IngresoEntity): Boolean = i.ingresoFijoId?.let { db.ingresosFijos().obtener(it) }?.let { it.deletedAt == null } == true
+
+    suspend fun guardarIngresoFijo(f: IngresoFijoEntity) = db.withTransaction {
+        val previo = db.ingresosFijos().obtener(f.id)
+        db.ingresosFijos().guardar(f.copy(dia = f.dia.coerceIn(1, 31), updatedAt = reloj.ahoraMs()))
+        // Los previstos aún sin confirmar se ajustan (o desaparecen si se pausa).
+        db.ingresosFijos().previstosDe(f.id).forEach { iid ->
+            val i = db.ingresos().obtener(iid) ?: return@forEach
+            if (!f.activo) { db.ingresos().eliminar(listOf(iid)); db.historial().eliminarDe(listOf(iid)); return@forEach }
+            val ym = YearMonth.from(i.fecha)
+            db.ingresos().guardar(
+                i.copy(importe = f.importe, concepto = f.concepto, tipo = f.tipo, fecha = ym.atDay(f.dia.coerceIn(1, ym.lengthOfMonth())), updatedAt = reloj.ahoraMs()),
+            )
+        }
+        if (previo == null) aviso.cambio()
+    }
+
+    /** Deja de existir; los ingresos ya cobrados se quedan, los previstos se quitan. */
+    suspend fun borrarIngresoFijo(id: String) = db.withTransaction {
+        val f = db.ingresosFijos().obtener(id) ?: return@withTransaction
+        db.ingresosFijos().guardar(f.copy(deletedAt = reloj.ahoraMs(), activo = false, updatedAt = reloj.ahoraMs()))
+        val previstos = db.ingresosFijos().previstosDe(id)
+        db.ingresos().eliminar(previstos)
+        db.historial().eliminarDe(previstos)
+    }
+
+    /** Crea el ingreso PREVISTO de cada fijo activo para el mes de [hoy] si aún no tiene ninguno (tampoco uno borrado). */
+    suspend fun asegurarIngresosPrevistos(hoy: LocalDate) = db.withTransaction {
+        val ym = YearMonth.from(hoy)
+        for (f in db.ingresosFijos().activos()) {
+            if (db.ingresosFijos().ingresosEnMes(f.id, ym.atDay(1), ym.atEndOfMonth()) > 0) continue
+            // Un sueldo fijo no se suma al sueldo habitual previsto si ya está.
+            if (f.tipo == TipoIngreso.SUELDO && db.ingresos().contarTipoEntre(TipoIngreso.SUELDO, ym.atDay(1), ym.atEndOfMonth()) > 0) continue
+            val ahora = reloj.ahoraMs()
+            val i = IngresoEntity(
+                id = UUID.randomUUID().toString(), codigo = codigo("I", db.ingresos().maxCodigo()),
+                fecha = ym.atDay(f.dia.coerceIn(1, ym.lengthOfMonth())), concepto = f.concepto, tipo = f.tipo,
+                importe = f.importe, estado = Estado.PREVISTO, createdAt = ahora, updatedAt = ahora, ingresoFijoId = f.id,
+            )
+            db.ingresos().guardar(i)
+            db.historial().insertar(listOf(HistorialEntity(0, "ingreso", i.id, "previsto", null, i.codigo, Origen.MOVIL, ahora)))
+        }
+    }
+
+    /** Confirma el cobro del mes. Si el importe cambia, el fijo pasa a tener ese importe. */
+    suspend fun confirmarIngresoFijo(ingresoId: String, importe: Long) = db.withTransaction {
+        val i = requireNotNull(db.ingresos().obtener(ingresoId))
+        confirmarIngreso(ingresoId, i.fecha, importe)
+        val fid = i.ingresoFijoId ?: return@withTransaction
+        val f = db.ingresosFijos().obtener(fid) ?: return@withTransaction
+        if (f.importe != importe) db.ingresosFijos().guardar(f.copy(importe = importe, updatedAt = reloj.ahoraMs()))
+    }
+
+    /** «Este mes no»: el previsto se quita (queda marcado para no volver a crearse este mes). */
+    suspend fun omitirIngreso(ingresoId: String) = db.withTransaction {
+        db.ingresos().marcarBorrado(ingresoId, reloj.ahoraMs())
+        anotar("ingreso", ingresoId, "este mes no", null, null)
     }
 
     // ---------- Personas ----------
@@ -534,6 +611,12 @@ class MovimientosRepo @Inject constructor(
         val c = CategoriaEntity(UUID.randomUUID().toString(), nombre.trim(), icono, color, false, (todas.maxOfOrNull { it.orden } ?: 0) + 1)
         db.categorias().guardar(c)
         return c.id
+    }
+
+    /** Guarda el orden elegido arrastrando (el de los chips del formulario y las listas). */
+    suspend fun ordenarCategorias(ids: List<String>) = db.withTransaction {
+        val todas = db.categorias().volcar().associateBy { it.id }
+        ids.forEachIndexed { n, id -> todas[id]?.takeIf { it.orden != n }?.let { db.categorias().guardar(it.copy(orden = n)) } }
     }
 
     suspend fun editarCategoria(c: CategoriaEntity) {

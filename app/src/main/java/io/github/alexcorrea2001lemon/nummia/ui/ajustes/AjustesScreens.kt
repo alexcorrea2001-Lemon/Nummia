@@ -105,7 +105,7 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
         EntradaAjuste("Tus datos", Iconos.Nube, "Tu Drive", "Sincroniza con Google Drive y guarda copias de seguridad", R.DRIVE, "google sincronizar copia nube hoja excel"),
         EntradaAjuste("Tus datos", Iconos.Descargar, "Datos", "Importar Excel, papelera y copia en archivo", R.DATOS, "importar exportar excel papelera borrado restaurar copia archivo"),
         EntradaAjuste("Dinero", Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar", R.SUELDO, "nomina salario ingreso"),
-        EntradaAjuste("Dinero", Iconos.Repetir, "Pagos mensuales", "Gimnasio, móvil, suscripciones…", R.PAGOS, "suscripcion recibo cada mes fijo"),
+        EntradaAjuste("Dinero", Iconos.Repetir, "Pagos y cobros fijos", "Suscripciones, gimnasio, lo que cobras cada mes…", R.PAGOS, "suscripcion recibo cada mes fijo pagos mensuales ingreso cobro"),
         EntradaAjuste("Dinero", Iconos.Estadisticas, "Presupuestos", "Límites de gasto al mes", R.PRESUPUESTOS, "limite tope ahorro"),
         EntradaAjuste("Dinero", Iconos.Persona, "Personas", "Quién te devuelve el dinero", R.PERSONAS, "deben deuda devolver amigos familia"),
         EntradaAjuste("Dinero", Iconos.Bolsa, "Tiendas", "Unir nombres repetidos o cambiarlos", R.TIENDAS, "comercio lugar duplicados unir"),
@@ -242,6 +242,28 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
         Text("Tamaño del texto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
             TamanoTexto.entries.forEach { t -> FilterChip(selected = a.tamanoTexto == t, onClick = { vm.tamano(t) }, label = { Text(t.nombre) }) }
+        }
+
+        Text("Forma de las tarjetas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+            io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas.entries.forEach { f ->
+                val sel = a.formaTarjetas == f
+                Surface(
+                    onClick = { vm.formaTarjetas(f) }, selected = sel,
+                    shape = RoundedCornerShape(f.radio.dp),
+                    color = if (sel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                    border = BorderStroke(if (sel) 2.dp else 1.dp, if (sel) MaterialTheme.colorScheme.primary else c.borde),
+                    modifier = Modifier.weight(1f).height(64.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) { Text(f.nombre, fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal) }
+                }
+            }
+        }
+
+        Tarjeta(relleno = false) {
+            OpcionInterruptor(Iconos.Movimientos, "Listas compactas", "Filas más bajas: caben más movimientos en pantalla", a.compacto, vm::compacto)
+            HorizontalDivider(color = c.borde)
+            OpcionInterruptor(Iconos.Check, "Vibración", "Una pequeña vibración al tocar y al guardar", a.vibracion, vm::vibracion)
         }
     }
 

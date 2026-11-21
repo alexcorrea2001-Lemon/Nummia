@@ -32,6 +32,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.draw.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -71,6 +80,7 @@ class TiendasViewModel @Inject constructor(private val repo: MovimientosRepo) : 
     fun crearCategoria(nombre: String, color: Long, icono: String) = viewModelScope.launch { repo.crearCategoria(nombre, color, icono) }
     fun editarCategoria(c: CategoriaEntity) = viewModelScope.launch { repo.editarCategoria(c) }
     fun borrarCategoria(c: CategoriaEntity) = viewModelScope.launch { repo.borrarCategoria(c) }
+    fun ordenarCategorias(ids: List<String>) = viewModelScope.launch { repo.ordenarCategorias(ids) }
 }
 
 /** Grupos de nombres que parecen la misma tienda (mayúsculas, tildes, espacios o una errata). */
@@ -167,11 +177,53 @@ fun CategoriasScreen(vm: TiendasViewModel, alVolver: () -> Unit) {
 
     PantallaAjustes("Categorías", alVolver) {
         Text("Las categorías son opcionales. Las de serie se pueden renombrar y cambiar de color.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+        // Ordenar arrastrando (desde el asa o manteniendo pulsado). El orden es el de los chips del formulario.
+        var orden by remember(categorias) { mutableStateOf(categorias.orEmpty()) }
+        var arrastrando by remember { mutableStateOf<String?>(null) }
+        var dy by remember { mutableFloatStateOf(0f) }
+        var alto by remember { mutableFloatStateOf(1f) }
+        val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
+        fun mover(id: String, pasos: Int): Boolean {
+            val i = orden.indexOfFirst { it.id == id }
+            val j = (i + pasos).coerceIn(0, orden.lastIndex)
+            if (i < 0 || i == j) return false
+            orden = orden.toMutableList().apply { add(j, removeAt(i)) }
+            return true
+        }
+        fun terminar() { arrastrando = null; dy = 0f; vm.ordenarCategorias(orden.map { it.id }) }
         Tarjeta(relleno = false) {
-            categorias.orEmpty().forEachIndexed { n, cat ->
+            orden.forEachIndexed { n, cat -> androidx.compose.runtime.key(cat.id) {
                 if (n > 0) HorizontalDivider(color = c.borde)
+                val moviendo = arrastrando == cat.id
+                val gesto: suspend androidx.compose.ui.input.pointer.PointerInputScope.(Boolean) -> Unit = { tras ->
+                    val alEmpezar: (androidx.compose.ui.geometry.Offset) -> Unit = { arrastrando = cat.id; dy = 0f; haptica() }
+                    val alMover: (androidx.compose.ui.input.pointer.PointerInputChange, androidx.compose.ui.geometry.Offset) -> Unit = { cambio, d ->
+                        cambio.consume()
+                        dy += d.y
+                        val pasos = kotlin.math.round(dy / alto).toInt()
+                        if (pasos != 0 && mover(cat.id, pasos)) { dy -= pasos * alto; haptica() }
+                    }
+                    if (tras) detectDragGesturesAfterLongPress(alEmpezar, { terminar() }, { terminar() }, alMover)
+                    else detectDragGestures(alEmpezar, { terminar() }, { terminar() }, alMover)
+                }
                 Row(
-                    Modifier.fillMaxWidth().clickable { editando = cat }.padding(horizontal = Espacio.l, vertical = Espacio.m),
+                    Modifier.fillMaxWidth()
+                        .onSizeChanged { alto = it.height.toFloat().coerceAtLeast(1f) }
+                        .zIndex(if (moviendo) 1f else 0f)
+                        .graphicsLayer {
+                            translationY = if (moviendo) dy else 0f
+                            shadowElevation = if (moviendo) 8.dp.toPx() else 0f
+                        }
+                        .background(if (moviendo) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent)
+                        .pointerInput(cat.id) { gesto(true) }
+                        .clickable { editando = cat }
+                        .semantics {
+                            customActions = listOf(
+                                CustomAccessibilityAction("Subir") { mover(cat.id, -1).also { if (it) vm.ordenarCategorias(orden.map { o -> o.id }) } },
+                                CustomAccessibilityAction("Bajar") { mover(cat.id, 1).also { if (it) vm.ordenarCategorias(orden.map { o -> o.id }) } },
+                            )
+                        }
+                        .padding(start = Espacio.l, top = Espacio.m, bottom = Espacio.m),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m),
                 ) {
                     io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar(
@@ -180,9 +232,14 @@ fun CategoriasScreen(vm: TiendasViewModel, alVolver: () -> Unit) {
                     )
                     Text(cat.nombre, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     if (!cat.predefinida) Text("tuya", style = MaterialTheme.typography.labelSmall, color = c.textoSuave)
+                    androidx.compose.material3.Icon(
+                        Iconos.Arrastrar, "Arrastra para ordenar", tint = c.textoSuave,
+                        modifier = Modifier.pointerInput(cat.id) { gesto(false) }.padding(horizontal = Espacio.l, vertical = Espacio.s).size(20.dp),
+                    )
                 }
-            }
+            } }
         }
+        Text("Arrastra ☰ para cambiar el orden.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
         TextButton(onClick = { creando = true }) { Text("+ Nueva categoría") }
     }
 

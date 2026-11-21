@@ -36,6 +36,7 @@ class NummiaApp : Application(), Configuration.Provider {
             override fun onStop(owner: LifecycleOwner) {
                 io.github.alexcorrea2001lemon.nummia.ui.bloqueo.Cerrojo.alSalir()
                 alcance.launch {
+                    runCatching { ajustes.volverADiscretoSiTemporal() } // importes vistos con la huella: se ocultan de nuevo
                     val a = ajustes.ajustes.first()
                     runCatching { IconoApp.aplicarSiCambia(this@NummiaApp, a.iconoLogo, a.iconoColor) }
                 }

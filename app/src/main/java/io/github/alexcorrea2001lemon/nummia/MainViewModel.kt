@@ -48,6 +48,7 @@ class MainViewModel @Inject constructor(
                 runCatching { repo.unificarTiendasIguales() }
                 runCatching { repo.completarCategorias() }
                 runCatching { repo.asegurarPagosPrevistos(reloj.hoy()) }
+                runCatching { repo.asegurarIngresosPrevistos(reloj.hoy()) }
                 ajustesRepo.ultimoMantenimiento(hoy)
                 io.github.alexcorrea2001lemon.nummia.ui.widget.WidgetBalance.actualizar(context) // cambio de día / de mes
             }

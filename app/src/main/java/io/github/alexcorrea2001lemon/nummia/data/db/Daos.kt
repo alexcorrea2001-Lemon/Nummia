@@ -108,6 +108,25 @@ interface PagoMensualDao {
 }
 
 @Dao
+interface IngresoFijoDao {
+    @Upsert suspend fun guardar(f: IngresoFijoEntity)
+    @Query("SELECT * FROM ingresos_fijos WHERE id = :id") suspend fun obtener(id: String): IngresoFijoEntity?
+    @Query("SELECT * FROM ingresos_fijos WHERE deletedAt IS NULL ORDER BY dia, concepto COLLATE NOCASE") fun todos(): Flow<List<IngresoFijoEntity>>
+    @Query("SELECT * FROM ingresos_fijos WHERE deletedAt IS NULL AND activo = 1") suspend fun activos(): List<IngresoFijoEntity>
+    @Query("SELECT * FROM ingresos_fijos") suspend fun volcar(): List<IngresoFijoEntity>
+
+    /** Ingresos de este fijo en un mes, incluidos los borrados («este mes no»): así no se vuelve a crear. */
+    @Query("SELECT COUNT(*) FROM ingresos WHERE ingresoFijoId = :fijo AND fecha BETWEEN :desde AND :hasta")
+    suspend fun ingresosEnMes(fijo: String, desde: LocalDate, hasta: LocalDate): Int
+
+    @Query("SELECT * FROM ingresos WHERE ingresoFijoId = :fijo AND deletedAt IS NULL AND estado = 'CONFIRMADO' ORDER BY fecha DESC LIMIT 24")
+    fun historial(fijo: String): Flow<List<IngresoEntity>>
+
+    @Query("SELECT id FROM ingresos WHERE ingresoFijoId = :fijo AND estado = 'PREVISTO' AND deletedAt IS NULL")
+    suspend fun previstosDe(fijo: String): List<String>
+}
+
+@Dao
 interface PresupuestoDao {
     @Upsert suspend fun guardar(p: PresupuestoEntity)
     @Query("DELETE FROM presupuestos WHERE id = :id") suspend fun borrar(id: String)
@@ -149,4 +168,5 @@ interface VaciarDao {
     @Query("DELETE FROM historial") suspend fun historial()
     @Query("DELETE FROM pagos_mensuales") suspend fun pagos()
     @Query("DELETE FROM presupuestos") suspend fun presupuestos()
+    @Query("DELETE FROM ingresos_fijos") suspend fun ingresosFijos()
 }

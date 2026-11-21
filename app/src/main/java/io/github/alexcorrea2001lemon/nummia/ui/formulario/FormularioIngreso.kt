@@ -76,6 +76,7 @@ data class FormIngreso(
     val fecha: LocalDate,
     val notas: String = "",
     val previsto: Boolean = false,
+    val cadaMes: Boolean = false,
     val errorImporte: String? = null,
     val guardando: Boolean = false,
 )
@@ -97,7 +98,7 @@ class FormularioIngresoViewModel @Inject constructor(
             repo.ingreso(idEdicion)?.let { i ->
                 _form.value = FormIngreso(
                     id = i.id, tipo = i.tipo, importe = textoImporte(i.importe), concepto = i.concepto, conceptoTocado = true,
-                    fecha = i.fecha, notas = i.notas, previsto = i.estado == Estado.PREVISTO,
+                    fecha = i.fecha, notas = i.notas, previsto = i.estado == Estado.PREVISTO, cadaMes = repo.esIngresoFijo(i),
                 )
             }
         }
@@ -108,6 +109,7 @@ class FormularioIngresoViewModel @Inject constructor(
     fun concepto(v: String) = _form.update { it.copy(concepto = v, conceptoTocado = true) }
     fun fecha(v: LocalDate) = _form.update { it.copy(fecha = v) }
     fun notas(v: String) = _form.update { it.copy(notas = v) }
+    fun cadaMes(v: Boolean) = _form.update { it.copy(cadaMes = v) }
 
     fun guardar() {
         val f = _form.value
@@ -115,7 +117,8 @@ class FormularioIngresoViewModel @Inject constructor(
         if (r.isFailure) { _form.update { it.copy(errorImporte = (r.exceptionOrNull() as? ImporteInvalido)?.motivo) }; return }
         _form.update { it.copy(guardando = true) }
         viewModelScope.launch {
-            repo.guardarIngreso(IngresoInput(f.id, f.fecha, f.concepto.ifBlank { nombreTipo(f.tipo) }, f.tipo, r.getOrThrow(), f.notas))
+            repo.guardarIngreso(IngresoInput(f.id, f.fecha, f.concepto.ifBlank { nombreTipo(f.tipo) }, f.tipo, r.getOrThrow(), f.notas, cadaMes = f.cadaMes))
+            io.github.alexcorrea2001lemon.nummia.ui.comun.Hecho.avisar(if (f.previsto) "Cobro confirmado" else "Ingreso guardado")
             _hecho.send(Unit)
         }
     }
@@ -164,6 +167,21 @@ fun FormularioIngresoScreen(vm: FormularioIngresoViewModel, alCerrar: () -> Unit
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
             SelectorFecha(f.fecha, vm.reloj.hoy(), vm::fecha)
+            Surface(
+                shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(1.dp, if (f.cadaMes) MaterialTheme.colorScheme.primary else LocalColoresNummia.current.borde),
+            ) {
+                Row(Modifier.padding(Espacio.l), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Se cobra cada mes", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Cada mes aparecerá en Inicio el día ${f.fecha.dayOfMonth} para confirmarlo o cambiar el importe. Lo verás en Ajustes → Pagos y cobros fijos",
+                            style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave,
+                        )
+                    }
+                    androidx.compose.material3.Switch(checked = f.cadaMes, onCheckedChange = { haptica(); vm.cadaMes(it) })
+                }
+            }
             OutlinedTextField(f.notas, vm::notas, label = { Text("Notas (opcional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
         }
     }

@@ -44,6 +44,9 @@ data class SueldoPendiente(val id: String, val importe: Long, val fecha: LocalDa
 data class PagoPendiente(val id: String, val concepto: String, val importe: Long, val fecha: LocalDate)
 
 @Immutable
+data class CobroPendiente(val id: String, val concepto: String, val importe: Long, val fecha: LocalDate)
+
+@Immutable
 data class InicioEstado(
     val mes: YearMonth,
     val resumen: Resumen = Resumen.VACIO,
@@ -53,6 +56,7 @@ data class InicioEstado(
     /** Sueldo PREVISTO del mes aún sin confirmar (para el «Con el sueldo previsto…» del balance). */
     val sueldoPrevistoMes: Long = 0,
     val pagosPendientes: List<PagoPendiente> = emptyList(),
+    val cobrosPendientes: List<CobroPendiente> = emptyList(),
     val teDeben: List<Pair<String, Long>> = emptyList(),
     val top: List<TopTienda> = emptyList(),
     val ahorradoAnio: Long = 0,
@@ -104,7 +108,7 @@ class InicioViewModel @Inject constructor(
         val ahorrado = resumen(LocalDate.of(ym.year, 1, 1), LocalDate.of(ym.year, 12, 31), anio.movGastos, anio.movReembolsos, anio.movIngresos).balance
 
         val sueldos = anio.ingresos
-            .filter { it.tipo == TipoIngreso.SUELDO && it.estado == Estado.PREVISTO }
+            .filter { it.tipo == TipoIngreso.SUELDO && it.estado == Estado.PREVISTO && it.ingresoFijoId == null }
             .filter { val m = YearMonth.from(it.fecha); m < YearMonth.from(hoy) || (m == YearMonth.from(hoy) && hoy.dayOfMonth >= 27) }
             .map { SueldoPendiente(it.id, it.importe, it.fecha) }
 
@@ -113,6 +117,12 @@ class InicioViewModel @Inject constructor(
             .filter { it.estado == Estado.PREVISTO && it.pagoMensualId != null && !it.fecha.isAfter(hoy.plusDays(3)) }
             .sortedBy { it.fecha }
             .map { PagoPendiente(it.id, it.concepto, it.importe, it.fecha) }
+
+        // Ingresos fijos previstos: desde 3 días antes de su fecha.
+        val cobros = anio.ingresos
+            .filter { it.estado == Estado.PREVISTO && it.ingresoFijoId != null && !it.fecha.isAfter(hoy.plusDays(3)) }
+            .sortedBy { it.fecha }
+            .map { CobroPendiente(it.id, it.concepto, it.importe, it.fecha) }
 
         val deben = teDeben(conDev.map { it.aMov() }, conDev.flatMap { it.reembolsosMov() }) { id ->
             conDev.firstOrNull { it.gasto.id == id }?.gasto?.personaId
@@ -137,6 +147,7 @@ class InicioViewModel @Inject constructor(
             sueldosPendientes = sueldos,
             sueldoPrevistoMes = actual.ingresos.filter { it.tipo == TipoIngreso.SUELDO && it.estado == Estado.PREVISTO }.sumOf { it.importe },
             pagosPendientes = pagos,
+            cobrosPendientes = cobros,
             teDeben = deben,
             top = top,
             ahorradoAnio = ahorrado,
@@ -161,10 +172,13 @@ class InicioViewModel @Inject constructor(
     fun irAMes(ym: YearMonth) { mes.value = ym }
     fun hoy(): YearMonth = YearMonth.from(reloj.hoy())
 
+    fun mostrarImportes() = viewModelScope.launch { ajustesRepo.mostrarImportesTemporal() }
     fun alternarDiscreto() = viewModelScope.launch { ajustesRepo.modoDiscreto(!estado.value.discreto) }
 
     fun confirmarPago(id: String, importe: Long) = viewModelScope.launch { repo.confirmarPago(id, importe) }
     fun omitirPago(id: String) = viewModelScope.launch { repo.omitirPago(id) }
+    fun confirmarCobro(id: String, importe: Long) = viewModelScope.launch { repo.confirmarIngresoFijo(id, importe) }
+    fun omitirCobro(id: String) = viewModelScope.launch { repo.omitirIngreso(id) }
 
     fun confirmarSueldo(id: String, fecha: LocalDate, importe: Long) = viewModelScope.launch {
         repo.confirmarIngreso(id, fecha, importe)

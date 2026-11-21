@@ -16,6 +16,11 @@ App Android de finanzas personales. Diseño completo en `docs/superpowers/specs/
    - Estados vacío, de carga y de error cuidados.
    - Accesibilidad (AA, escalado de texto, TalkBack).
 
+5. **Intuitiva:** cada pantalla se entiende sin explicaciones; lo frecuente, a 1–2 toques; nada tapa el contenido.
+6. **Optimizar siempre, en cada versión:**
+   - Medir el tamaño del APK y no dejar que crezca sin motivo (sin bibliotecas grandes; preferir lo que trae Android).
+   - Revisar los tiempos de carga y que las animaciones vayan fluidas.
+
 Además: **segura, exacta y sin fallos.**
 
 ## Reglas

@@ -68,6 +68,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.alexcorrea2001lemon.nummia.BuildConfig
+import io.github.alexcorrea2001lemon.nummia.data.actualizar.esMasNueva
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
@@ -93,7 +94,7 @@ import java.util.Locale
 fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Unit) {
     val a by vm.ajustes.collectAsStateWithLifecycle()
     PantallaAjustes("Ajustes", alVolver) {
-        a.versionDisponible?.let { v ->
+        a.versionDisponible?.takeIf { esMasNueva(it, BuildConfig.VERSION_NAME) }?.let { v ->
             Tarjeta(fondo = MaterialTheme.colorScheme.primaryContainer) {
                 Text("Nummia $v está disponible", fontWeight = FontWeight.SemiBold)
                 Button(onClick = { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.ACERCA) }) { Text("Ver la actualización") }
@@ -192,7 +193,7 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
             }
             Text("Color del icono (independiente del de la app): ${a.iconoColor.nombre}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
             SelectorColores(seleccionado = a.iconoColor, alElegir = { vm.icono(a.iconoLogo, it) })
-            Text("Al cambiar el icono, tu móvil puede tardar unos segundos en mostrarlo.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+            Text("El icono cambiará en tu pantalla de inicio al salir de Nummia. En algunos móviles puede tardar unos segundos.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
         }
 
         Text("Tamaño del texto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

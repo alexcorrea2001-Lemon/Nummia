@@ -10,7 +10,6 @@ import io.github.alexcorrea2001lemon.nummia.data.ajustes.AjustesRepo
 import io.github.alexcorrea2001lemon.nummia.data.copia.CopiaInvalida
 import io.github.alexcorrea2001lemon.nummia.data.copia.CopiaLocal
 import io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity
-import io.github.alexcorrea2001lemon.nummia.data.icono.IconoApp
 import io.github.alexcorrea2001lemon.nummia.data.repo.MovimientosRepo
 import io.github.alexcorrea2001lemon.nummia.domain.reloj.Reloj
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Acento
@@ -47,10 +46,8 @@ class AjustesViewModel @Inject constructor(
     fun soloWifi(v: Boolean) = viewModelScope.launch { ajustesRepo.actualizacionesSoloWifi(v) }
     fun buscarActualizaciones(v: Boolean) = viewModelScope.launch { ajustesRepo.buscarActualizaciones(v) }
 
-    fun icono(logo: Logo, color: Acento) = viewModelScope.launch {
-        ajustesRepo.icono(logo, color)
-        withContext(Dispatchers.IO) { IconoApp.aplicar(context, logo, color) }
-    }
+    /** Solo se guarda: el cambio real del icono lo hace NummiaApp al pasar la app a segundo plano. */
+    fun icono(logo: Logo, color: Acento) = viewModelScope.launch { ajustesRepo.icono(logo, color) }
 
     fun sueldo(c: Long?) = viewModelScope.launch {
         ajustesRepo.sueldoHabitual(c)

@@ -15,6 +15,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import io.github.alexcorrea2001lemon.nummia.data.actualizar.esMasNueva
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -35,6 +37,9 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             repo.prepararDatos()
             actualizador.limpiar()
+            // Si ya está instalada la versión que se anunciaba (o una posterior), se quita el aviso.
+            val anunciada = ajustesRepo.ajustes.first().versionDisponible
+            if (anunciada != null && !esMasNueva(anunciada, BuildConfig.VERSION_NAME)) ajustesRepo.versionDisponible(null)
         }
         viewModelScope.launch {
             ajustesRepo.ajustes.map { it.sueldoHabitual }.distinctUntilChanged().collect { repo.asegurarSueldoPrevisto(reloj.hoy(), it) }

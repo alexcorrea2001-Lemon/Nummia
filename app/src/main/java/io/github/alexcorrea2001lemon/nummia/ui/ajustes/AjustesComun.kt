@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Espacio
 import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
@@ -61,9 +62,9 @@ fun OpcionAjuste(icono: ImageVector, titulo: String, subtitulo: String? = null, 
     Row(
         Modifier.fillMaxWidth().let { if (alPulsar != null) it.clickable(onClick = alPulsar) else it }.padding(horizontal = Espacio.l, vertical = Espacio.m),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+        horizontalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
-        Avatar("", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, icono)
+        Icon(icono, null, tint = LocalColoresNummia.current.textoSuave, modifier = Modifier.size(24.dp))
         Column(Modifier.weight(1f)) {
             Text(titulo, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
             if (subtitulo != null) Text(subtitulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)

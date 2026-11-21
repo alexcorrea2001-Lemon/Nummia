@@ -2,6 +2,13 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.0.3] - 2026-11-21
+
+### Arreglado
+- El aviso «Nummia vX está disponible» desaparece al instalar esa versión.
+- **Icono de la app**: el cambio se aplica al salir de Nummia, para que la pantalla de inicio del móvil lo muestre.
+- **Ajustes** más sencillos: iconos sueltos, sin círculos de color, y dibujos más limpios.
+
 ## [1.0.2] - 2026-11-21
 
 ### Nuevo

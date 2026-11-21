@@ -15,6 +15,25 @@ object IconoApp {
 
     fun alias(logo: Logo, color: Acento) = "$PAQUETE_CODIGO.Icono_${logo.name}_${color.name.lowercase()}"
 
+    private val POR_DEFECTO = alias(Logo.A, Acento.VIOLETA)
+
+    private fun activo(pm: PackageManager, context: Context, nombre: String): Boolean =
+        when (pm.getComponentEnabledSetting(ComponentName(context.packageName, nombre))) {
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+            PackageManager.COMPONENT_ENABLED_STATE_DEFAULT -> nombre == POR_DEFECTO
+            else -> false
+        }
+
+    /** Cambia el icono solo si el que está activo no es el elegido. Devuelve si hubo cambio. */
+    fun aplicarSiCambia(context: Context, logo: Logo, color: Acento): Boolean {
+        val pm = context.packageManager
+        val elegido = alias(logo, color)
+        val otrosActivos = Logo.entries.flatMap { l -> Acento.entries.map { alias(l, it) } }.filter { it != elegido && activo(pm, context, it) }
+        if (activo(pm, context, elegido) && otrosActivos.isEmpty()) return false
+        aplicar(context, logo, color)
+        return true
+    }
+
     fun aplicar(context: Context, logo: Logo, color: Acento) {
         val pm = context.packageManager
         val elegido = alias(logo, color)

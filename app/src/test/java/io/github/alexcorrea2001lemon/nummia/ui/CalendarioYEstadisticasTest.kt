@@ -70,7 +70,8 @@ class CalendarioYEstadisticasTest {
     @Test fun importeCompacto() {
         assertEquals("12", compacto(1240))
         assertEquals("13", compacto(-1260))
-        assertEquals("1.520", compacto(152075))
+        assertEquals("1.520", compacto(152045))
+        assertEquals("1.521", compacto(152075))
         assertEquals("24k", compacto(2457319))
     }
 

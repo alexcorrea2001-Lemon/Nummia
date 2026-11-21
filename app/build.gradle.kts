@@ -10,7 +10,7 @@ plugins {
 // Versión: MAYOR.MENOR.CORRECCIÓN → versionCode = MAYOR*10000 + MENOR*100 + CORRECCIÓN
 val versionMayor = 1
 val versionMenor = 0
-val versionCorreccion = 0
+val versionCorreccion = 1
 
 android {
     namespace = "io.github.alexcorrea2001lemon.nummia"

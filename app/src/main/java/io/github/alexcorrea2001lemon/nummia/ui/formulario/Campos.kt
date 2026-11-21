@@ -1,6 +1,7 @@
 package io.github.alexcorrea2001lemon.nummia.ui.formulario
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -65,8 +66,12 @@ fun CampoImporteGrande(valor: String, alCambiar: (String) -> Unit, error: String
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                 decorationBox = { campo ->
-                    if (valor.isEmpty()) Text("0,00", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = c.textoSuave.copy(alpha = 0.5f))
-                    campo()
+                    Box(contentAlignment = Alignment.CenterEnd) {
+                        if (valor.isEmpty()) {
+                            Text("0,00", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = c.textoSuave.copy(alpha = 0.5f), style = TextStyle(fontFeatureSettings = "tnum"))
+                        }
+                        campo()
+                    }
                 },
                 modifier = Modifier.width(240.dp).focusRequester(foco).semantics { contentDescription = etiqueta },
             )

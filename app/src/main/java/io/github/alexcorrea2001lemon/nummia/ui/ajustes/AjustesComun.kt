@@ -53,7 +53,11 @@ fun PantallaAjustes(titulo: String, alVolver: () -> Unit, contenido: @Composable
 }
 
 @Composable
-fun OpcionAjuste(icono: ImageVector, titulo: String, subtitulo: String? = null, alPulsar: (() -> Unit)? = null, final: @Composable (() -> Unit)? = null) {
+/**
+ * Fila de ajustes. La acción al pulsar es el ÚLTIMO parámetro, para que `OpcionAjuste(...) { accion }`
+ * nunca se ejecute al dibujar (antes el bloque final era contenido componible y se lanzaba solo).
+ */
+fun OpcionAjuste(icono: ImageVector, titulo: String, subtitulo: String? = null, final: (@Composable () -> Unit)? = null, alPulsar: (() -> Unit)? = null) {
     Row(
         Modifier.fillMaxWidth().let { if (alPulsar != null) it.clickable(onClick = alPulsar) else it }.padding(horizontal = Espacio.l, vertical = Espacio.m),
         verticalAlignment = Alignment.CenterVertically,
@@ -73,7 +77,7 @@ fun OpcionAjuste(icono: ImageVector, titulo: String, subtitulo: String? = null, 
 
 @Composable
 fun OpcionInterruptor(icono: ImageVector, titulo: String, subtitulo: String?, valor: Boolean, alCambiar: (Boolean) -> Unit) {
-    OpcionAjuste(icono, titulo, subtitulo, alPulsar = { alCambiar(!valor) }) { Switch(checked = valor, onCheckedChange = alCambiar) }
+    OpcionAjuste(icono, titulo, subtitulo, final = { Switch(checked = valor, onCheckedChange = alCambiar) }) { alCambiar(!valor) }
 }
 
 val SinRelleno = PaddingValues()

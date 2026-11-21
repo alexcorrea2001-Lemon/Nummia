@@ -110,15 +110,9 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
                     pestanas.forEach { p ->
                         NavigationBarItem(
                             selected = ruta == p.ruta,
-                            onClick = {
-                                if (ruta != p.ruta) nav.navigate(p.ruta) {
-                                    popUpTo(Rutas.INICIO) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { if (ruta != p.ruta) irAPestana(nav, p.ruta) },
                             icon = { Icon(p.icono, null) },
-                            label = { Text(p.nombre, maxLines = 1) },
+                            label = { TextoAjustado(p.nombre) },
                         )
                     }
                 }
@@ -164,8 +158,8 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.INICIO) {
         InicioScreen(
             hiltViewModel(), ::abrirGasto, ::abrirIngreso,
-            alVerTodos = { nav.navigate(Rutas.MOVIMIENTOS) { launchSingleTop = true } },
-            alBuscar = { nav.navigate(Rutas.MOVIMIENTOS) { launchSingleTop = true } },
+            alVerTodos = { irAPestana(nav, Rutas.MOVIMIENTOS) },
+            alBuscar = { irAPestana(nav, Rutas.MOVIMIENTOS) },
             alAjustes = { nav.navigate(Rutas.AJUSTES) },
             alAnadirGasto = { nav.navigate(Rutas.gasto()) },
             relleno = relleno,
@@ -206,6 +200,36 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.DATOS) { DatosScreen(ajustesVm(nav), snackbar) { nav.popBackStack() } }
     pantalla(Rutas.ACERCA) { AcercaScreen(ajustesVm(nav), hiltViewModel(), { nav.popBackStack() }) }
+}
+
+/**
+ * Cambia de pestaña como la barra inferior: Inicio siempre queda debajo, así «Atrás» y el botón Inicio
+ * funcionan desde cualquier pestaña, se llegue como se llegue.
+ */
+private fun irAPestana(nav: NavHostController, ruta: String) {
+    if (ruta == Rutas.INICIO) {
+        if (!nav.popBackStack(Rutas.INICIO, inclusive = false)) nav.navigate(Rutas.INICIO) { launchSingleTop = true }
+        return
+    }
+    nav.navigate(ruta) {
+        popUpTo(Rutas.INICIO) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+/** Etiqueta que se encoge un poco si no cabe (textos grandes o pantallas estrechas), en vez de cortarse. */
+@Composable
+private fun TextoAjustado(texto: String) {
+    val base = MaterialTheme.typography.labelSmall
+    var escala by remember(texto) { mutableStateOf(1f) }
+    Text(
+        texto,
+        style = base.copy(fontSize = base.fontSize * escala, letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified),
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { if (it.didOverflowWidth && escala > 0.6f) escala *= 0.92f },
+    )
 }
 
 /** Las subpantallas de Ajustes comparten el mismo ViewModel. */

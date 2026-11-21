@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.0.1] - 2026-11-21
+
+### Arreglado
+- **Ajustes**: las opciones ya no se abren solas. Antes se abrían todas a la vez, lo que provocaba un ciclo al pulsar «Atrás», abría GitHub sin pedírselo y lanzaba el selector de archivos de la copia de seguridad.
+- **Acerca de Nummia**: la privacidad y la licencia se leen dentro de la app; ya no se abre el navegador.
+- **Logo** dibujado con trazos continuos y esquinas redondeadas, igual que el icono del móvil.
+- **Nuevo gasto**: el «0,00» queda pegado al «€».
+- **Barra inferior**: los nombres de las pestañas ya no se cortan; se ajustan al espacio.
+- **Buscar y «Ver todos»** desde Inicio: ahora se puede volver a Inicio con la barra inferior o con «Atrás».
+
 ## [1.0.0] - 2026-11-20
 
 Primera versión de Nummia.

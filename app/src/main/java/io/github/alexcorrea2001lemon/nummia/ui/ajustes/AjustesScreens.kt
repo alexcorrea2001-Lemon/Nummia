@@ -1,6 +1,5 @@
 package io.github.alexcorrea2001lemon.nummia.ui.ajustes
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -53,7 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -220,34 +221,44 @@ private fun SelectorColores(seleccionado: Acento?, alElegir: (Acento) -> Unit) {
     }
 }
 
-/** El mismo dibujo que los iconos del lanzador (lienzo 108). */
+/** El mismo dibujo que los iconos del lanzador (lienzo 108), con trazos continuos y esquinas redondeadas. */
 @Composable
 fun DibujoLogo(logo: Logo, color: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier.clip(CircleShape).background(Color(0xFF15111F))) {
+    Canvas(modifier.clip(RoundedCornerShape(26)).background(Color(0xFF15111F))) {
         val k = size.width / 108f
-        fun p(x: Float, y: Float) = Offset(x * k, y * k)
+        fun trazo(grosor: Float) = Stroke(width = grosor * k, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+        fun camino(bloque: Path.() -> Unit) = Path().apply(bloque)
+        fun Path.m(x: Float, y: Float) = moveTo(x * k, y * k)
+        fun Path.l(x: Float, y: Float) = lineTo(x * k, y * k)
         when (logo) {
             Logo.A -> {
-                linea(color, listOf(p(33f, 76f), p(33f, 38f), p(71f, 72f), p(71f, 32f)), 9 * k)
-                linea(color, listOf(p(61f, 42f), p(71f, 32f), p(81f, 42f)), 9 * k)
+                drawPath(camino { m(33f, 76f); l(33f, 38f); l(71f, 72f); l(71f, 32f) }, color, style = trazo(9f))
+                drawPath(camino { m(61f, 42f); l(71f, 32f); l(81f, 42f) }, color, style = trazo(9f))
             }
             Logo.B -> {
-                drawCircle(color, radius = 31 * k, center = p(54f, 54f), style = Stroke(7 * k))
-                linea(color, listOf(p(44f, 68f), p(44f, 45f)), 7 * k)
-                drawArc(color, 180f, 180f, false, topLeft = p(44f, 45f), size = androidx.compose.ui.geometry.Size(20 * k, 20 * k), style = Stroke(7 * k, cap = StrokeCap.Round))
-                linea(color, listOf(p(64f, 55f), p(64f, 68f)), 7 * k)
+                drawCircle(color, radius = 31 * k, center = Offset(54 * k, 54 * k), style = Stroke(7 * k))
+                drawPath(
+                    camino {
+                        m(44f, 68f); l(44f, 45f)
+                        m(44f, 55f)
+                        cubicTo(44 * k, 48.5f * k, 48.5f * k, 44.5f * k, 54 * k, 44.5f * k)
+                        cubicTo(59.5f * k, 44.5f * k, 64 * k, 48.5f * k, 64 * k, 55 * k)
+                        l(64f, 68f)
+                    },
+                    color, style = trazo(7f),
+                )
             }
             Logo.C -> {
                 listOf(Triple(29f, 60f, 0.55f), Triple(47.5f, 46f, 0.8f), Triple(66f, 30f, 1f)).forEach { (x, y, al) ->
-                    drawRoundRect(color.copy(alpha = al), topLeft = p(x, y), size = androidx.compose.ui.geometry.Size(13 * k, (80 - y) * k), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.5f * k))
+                    drawRoundRect(
+                        color.copy(alpha = al), topLeft = Offset(x * k, y * k),
+                        size = androidx.compose.ui.geometry.Size(13 * k, (80 - y) * k),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.5f * k),
+                    )
                 }
             }
         }
     }
-}
-
-private fun DrawScope.linea(color: Color, puntos: List<Offset>, grosor: Float) {
-    puntos.zipWithNext { a, b -> drawLine(color, a, b, strokeWidth = grosor, cap = StrokeCap.Round) }
 }
 
 @Composable
@@ -314,9 +325,10 @@ fun PersonasScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
         Tarjeta(relleno = false) {
             if (personas.isEmpty()) Text("Aún no has añadido a nadie.", modifier = Modifier.padding(Espacio.l), color = LocalColoresNummia.current.textoSuave)
             personas.forEach { p ->
-                OpcionAjuste(Iconos.Persona, p.nombre, alPulsar = { editando = p }) {
-                    IconButton(onClick = { vm.borrarPersona(p) }) { Icon(Iconos.Papelera, "Quitar a ${p.nombre}", tint = LocalColoresNummia.current.textoSuave) }
-                }
+                OpcionAjuste(
+                    Iconos.Persona, p.nombre,
+                    final = { IconButton(onClick = { vm.borrarPersona(p) }) { Icon(Iconos.Papelera, "Quitar a ${p.nombre}", tint = LocalColoresNummia.current.textoSuave) } },
+                ) { editando = p }
             }
         }
         Button(onClick = { creando = true }) { Text("Añadir persona") }
@@ -381,8 +393,7 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, alVolver: () 
 fun AcercaScreen(vm: AjustesViewModel, act: ActualizarViewModel, alVolver: () -> Unit) {
     val a by vm.ajustes.collectAsStateWithLifecycle()
     val e by act.estado.collectAsStateWithLifecycle()
-    val ctx = LocalContext.current
-    fun abrir(url: String) = runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    var leyendo by remember { mutableStateOf<Pair<String, String>?>(null) }
     PantallaAjustes("Acerca de Nummia", alVolver) {
         Column(Modifier.fillMaxWidth().padding(vertical = Espacio.l), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
             DibujoLogo(a.iconoLogo, a.iconoColor.color, Modifier.size(88.dp))
@@ -426,11 +437,37 @@ fun AcercaScreen(vm: AjustesViewModel, act: ActualizarViewModel, alVolver: () ->
             OpcionInterruptor(Iconos.Descargar, "Descargar solo con Wi-Fi", "Para no gastar datos móviles", a.actualizacionesSoloWifi, vm::soloWifi)
         }
         Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Codigo, "Código fuente", "github.com/alexcorrea2001-Lemon/Nummia") { abrir("https://github.com/alexcorrea2001-Lemon/Nummia") }
+            OpcionAjuste(Iconos.Escudo, "Privacidad", "Sin servidores, sin anuncios, sin rastreo") { leyendo = TEXTO_PRIVACIDAD }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Escudo, "Privacidad", "Sin servidores, sin anuncios, sin rastreo") { abrir("https://github.com/alexcorrea2001-Lemon/Nummia/blob/main/docs/privacidad.md") }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Info, "Licencia", "MIT") { abrir("https://github.com/alexcorrea2001-Lemon/Nummia/blob/main/LICENSE") }
+            OpcionAjuste(Iconos.Codigo, "Licencia", "Código abierto · MIT") { leyendo = TEXTO_LICENCIA }
         }
     }
+
+    leyendo?.let { (titulo, texto) ->
+        AlertDialog(
+            onDismissRequest = { leyendo = null },
+            title = { Text(titulo) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(texto, style = MaterialTheme.typography.bodyMedium) } },
+            confirmButton = { TextButton(onClick = { leyendo = null }) { Text("Cerrar") } },
+        )
+    }
 }
+
+private val TEXTO_PRIVACIDAD = "Privacidad" to """Nummia guarda solo lo que tú escribes: gastos, ingresos, reembolsos, personas y ajustes.
+
+• Tus datos están en tu móvil, en una base de datos cifrada.
+• No hay servidores propios: tus datos nunca pasan por el desarrollador.
+• Sin anuncios, sin analítica, sin rastreo y sin ubicación.
+• Las copias automáticas de Android están desactivadas para los datos de la app.
+• Internet solo se usa para comprobar si hay una versión nueva (no se envía ningún dato personal).
+• A partir de la versión 1.2.0, si conectas tu Google Drive, Nummia solo podrá ver los archivos que ella misma cree.
+
+Para borrar todo lo que hay en el móvil, desinstala la app."""
+
+private val TEXTO_LICENCIA = "Licencia" to """Nummia es software libre con licencia MIT.
+
+Copyright (c) 2026 alexcorrea2001-Lemon
+
+Se concede permiso, de forma gratuita, a cualquier persona que obtenga una copia de este software y de los archivos de documentación asociados, para utilizarlo sin restricción, incluyendo sin limitación los derechos a usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar y/o vender copias del software, con la condición de incluir el aviso de copyright anterior y este aviso de permiso en todas las copias o partes sustanciales del software.
+
+EL SOFTWARE SE PROPORCIONA «TAL CUAL», SIN GARANTÍA DE NINGÚN TIPO. (Traducción orientativa; el texto legal válido es el original en inglés incluido con el código.)"""

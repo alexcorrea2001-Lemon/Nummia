@@ -67,7 +67,9 @@ import io.github.alexcorrea2001lemon.nummia.ui.ajustes.AparienciaScreen
 import io.github.alexcorrea2001lemon.nummia.ui.ajustes.DatosScreen
 import io.github.alexcorrea2001lemon.nummia.ui.ajustes.PersonasScreen
 import io.github.alexcorrea2001lemon.nummia.ui.ajustes.SueldoScreen
+import io.github.alexcorrea2001lemon.nummia.ui.calendario.CalendarioScreen
 import io.github.alexcorrea2001lemon.nummia.ui.comun.EstadoVacio
+import io.github.alexcorrea2001lemon.nummia.ui.estadisticas.EstadisticasScreen
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica
 import io.github.alexcorrea2001lemon.nummia.ui.detalle.DetalleScreen
@@ -168,8 +170,14 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.MOVIMIENTOS) {
         MovimientosScreen(hiltViewModel(), snackbar, ::abrirGasto, ::abrirIngreso, { nav.navigate(Rutas.AJUSTES) }, { nav.navigate(Rutas.gasto()) }, relleno)
     }
-    pantalla(Rutas.CALENDARIO) { Proximamente(Iconos.Calendario, "Calendario", relleno) }
-    pantalla(Rutas.ESTADISTICAS) { Proximamente(Iconos.Estadisticas, "Estadísticas", relleno) }
+    pantalla(Rutas.CALENDARIO) {
+        CalendarioScreen(
+            hiltViewModel(), ::abrirGasto, ::abrirIngreso,
+            alAnadirEn = { nav.navigate(Rutas.gasto(fecha = it)) },
+            alAjustes = { nav.navigate(Rutas.AJUSTES) }, relleno = relleno,
+        )
+    }
+    pantalla(Rutas.ESTADISTICAS) { EstadisticasScreen(hiltViewModel(), ::abrirGasto, { nav.navigate(Rutas.AJUSTES) }, relleno) }
     pantalla(Rutas.INFORMES) { Proximamente(Iconos.Informes, "Informes", relleno, version = "1.3.0") }
 
     pantalla(Rutas.DETALLE, listOf(navArgument("id") { type = NavType.StringType })) {
@@ -185,6 +193,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
         listOf(
             navArgument("id") { type = NavType.StringType; defaultValue = "" },
             navArgument("paraOtro") { type = NavType.BoolType; defaultValue = false },
+            navArgument("fecha") { type = NavType.StringType; defaultValue = "" },
         ),
     ) { FormularioGastoScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
     pantalla(Rutas.INGRESO, listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" })) {

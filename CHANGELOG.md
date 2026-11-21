@@ -2,6 +2,18 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.1.0] - 2026-11-21
+
+### Nuevo
+- **Estadísticas**, con cuatro pestañas:
+  - **Mes**: resumen (sueldo, otros ingresos, pagado, reembolsos, gasto real, balance y % ahorrado), gráfico del gasto acumulado frente al mes anterior, reparto por tienda o por categoría y el día de más gasto.
+  - **Año**: los 12 indicadores del año (medias, mes de más y de menos gasto…), barras de ingresos y gasto real de cada mes, ahorro acumulado y tabla de los 12 meses. Toca un mes para verlo en detalle.
+  - **Comparar**: dos años lado a lado, con frases claras («En 2027 has gastado… más que en 2026») y sus gráficos.
+  - **Dónde gasto**: ranking de tiendas de este mes, este año o desde siempre, con veces y media por visita. Toca una tienda para ver todos sus gastos.
+- **Calendario**: cada día muestra lo gastado y lo ingresado, con un círculo en los días con algo previsto. Desliza para cambiar de mes, cambia a la vista de semana y toca un día para ver sus movimientos o **añadir un gasto en ese día**.
+- Gráficos animados propios, que no aumentan el tamaño de la app.
+- Aviso «Actualizado: reembolso recibido el…» cuando un reembolso llega en un mes posterior al del gasto.
+
 ## [1.0.6] - 2026-11-21
 
 ### Arreglado

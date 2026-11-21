@@ -64,7 +64,9 @@ class FormularioGastoViewModel @Inject constructor(
     private val idEdicion: String? = estadoGuardado.get<String>("id")?.takeIf { it.isNotBlank() }
     private val paraOtro: Boolean = estadoGuardado.get<Boolean>("paraOtro") ?: false
 
-    private val _form = MutableStateFlow(FormGasto(fecha = reloj.hoy(), meLoDevuelven = paraOtro))
+    private val fechaInicial: LocalDate = estadoGuardado.get<String>("fecha")?.takeIf { it.isNotBlank() }?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: reloj.hoy()
+
+    private val _form = MutableStateFlow(FormGasto(fecha = fechaInicial, meLoDevuelven = paraOtro))
     val form: StateFlow<FormGasto> = _form.asStateFlow()
 
     val personas: StateFlow<List<PersonaEntity>> = repo.personas().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

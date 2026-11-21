@@ -2,6 +2,13 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.3.1] - 2026-11-21
+
+### Arreglado
+- **Importar Excel**: el archivo salía en gris y no se podía elegir. Ahora se puede elegir cualquier archivo y la app comprueba que es un Excel.
+- Si eliges una hoja de cálculo de Google Drive, se descarga como Excel automáticamente.
+- Si el archivo es un Excel antiguo (.xls) o de LibreOffice (.ods), se explica cómo guardarlo como .xlsx.
+
 ## [1.3.0] - 2026-11-21
 
 ### Nuevo

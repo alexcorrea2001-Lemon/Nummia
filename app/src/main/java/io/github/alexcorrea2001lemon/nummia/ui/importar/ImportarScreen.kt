@@ -54,7 +54,9 @@ fun ImportarScreen(vm: ImportarViewModel, alVolver: () -> Unit, alTerminar: () -
     val e by vm.estado.collectAsStateWithLifecycle()
     val personas by vm.personas.collectAsStateWithLifecycle()
     val abrir = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) vm.elegir(uri) }
-    val elegir = { abrir.launch(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/octet-stream")) }
+    // Se deja elegir cualquier archivo: según la app de archivos (o Drive), el Excel puede aparecer con otro tipo y quedar gris.
+    // Después se comprueba que de verdad es un Excel.
+    val elegir = { abrir.launch(arrayOf("*/*")) }
 
     PantallaAjustes("Importar Excel", alVolver) {
         AnimatedContent(e, transitionSpec = { fadeIn() togetherWith fadeOut() }, contentKey = { it::class }, label = "importar") { s ->

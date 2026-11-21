@@ -65,12 +65,18 @@ class ImportarViewModel @Inject constructor(
         _estado.value = try {
             val nombre = nombreDe(uri)
             celdas = withContext(Dispatchers.IO) {
-                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: throw ExcelNoValido("No se pudo abrir el archivo.")
-                LectorXlsx.leer(bytes)
+                LectorXlsx.leer(leerArchivo(uri))
             }
             vista(nombre, ExcelAnual.anioDelNombre(nombre) ?: reloj.hoy().year)
         } catch (e: ExcelNoValido) {
-            EstadoImportar.Error(e.message ?: "No se pudo leer el archivo.")
+            val nombre = runCatching { nombreDe(uri) }.getOrDefault("")
+            EstadoImportar.Error(
+                when {
+                    nombre.endsWith(".xls", true) -> "Es un Excel antiguo (.xls). Ábrelo en Excel o en Google Sheets y guárdalo como .xlsx."
+                    nombre.endsWith(".ods", true) -> "Es un archivo de LibreOffice (.ods). Guárdalo como .xlsx y vuelve a probar."
+                    else -> e.message ?: "No se pudo leer el archivo."
+                },
+            )
         } catch (e: Exception) {
             EstadoImportar.Error("No se pudo leer el archivo. ¿Es un .xlsx?")
         }
@@ -112,6 +118,29 @@ class ImportarViewModel @Inject constructor(
     }
 
     fun reiniciar() { _estado.value = EstadoImportar.Inicial }
+
+    /**
+     * Lee el archivo. Si es una hoja de cálculo de Google (no es un archivo de verdad), se pide a Drive como .xlsx.
+     * Máximo 20 MB.
+     */
+    private fun leerArchivo(uri: Uri): ByteArray {
+        val r = context.contentResolver
+        val xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        val flujo = runCatching { r.openInputStream(uri) }.getOrNull()
+            ?: runCatching { r.openTypedAssetFileDescriptor(uri, xlsx, null)?.createInputStream() }.getOrNull()
+            ?: throw ExcelNoValido("No se pudo abrir el archivo. Si está en Google Drive, descárgalo primero al móvil.")
+        return flujo.use { entrada ->
+            val salida = java.io.ByteArrayOutputStream()
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val n = entrada.read(buf)
+                if (n < 0) break
+                salida.write(buf, 0, n)
+                if (salida.size() > 20 * 1024 * 1024) throw ExcelNoValido("El archivo es demasiado grande para ser tu Excel de cuentas.")
+            }
+            salida.toByteArray()
+        }
+    }
 
     private fun nombreDe(uri: Uri): String = runCatching {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->

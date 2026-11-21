@@ -42,7 +42,7 @@ class ImportadorExcelTest {
         assertEquals(ResultadoImportacion(5, 1, 3), r)
         val enero = repo.resumenMes(YearMonth.of(2030, 1)).first()
         assertEquals(4755L, enero.gastoReal)
-        assertEquals(150000L, enero.ingresos)
+        assertEquals(150000L + 5000L, enero.ingresos) // sueldo + la ganancia sin fecha (1 de enero)
         assertEquals(listOf("G-0001", "G-0002", "G-0003", "G-0004", "G-0005"), db.gastos().volcar().map { it.codigo }.sorted())
         assertEquals(2, db.ingresos().volcar().count { it.tipo == TipoIngreso.SUELDO })
         assertEquals(1, avisos)

@@ -52,10 +52,12 @@ object DriveModule {
         val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         return AvisoCambios {
             alcance.launch {
+                val a = ajustes.ajustes.first()
+                if (a.notificaciones) io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.pronto(context)
                 val sinc = s.get()
                 if (sinc.correo() == null) return@launch
                 sinc.marcarCambio()
-                TrabajoSync.pronto(context, ajustes.ajustes.first().driveSoloWifi)
+                TrabajoSync.pronto(context, a.driveSoloWifi)
             }
         }
     }

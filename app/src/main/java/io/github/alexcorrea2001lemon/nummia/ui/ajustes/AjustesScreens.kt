@@ -107,7 +107,9 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
         Tarjeta(relleno = false) {
             OpcionAjuste(Iconos.Paleta, "Apariencia", "Tema, color de la app, icono y tamaño del texto") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.APARIENCIA) }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionInterruptor(Iconos.OjoTachado, "Modo discreto", "Oculta los importes con ••••", a.modoDiscreto, vm::discreto)
+            OpcionAjuste(Iconos.Escudo, "Seguridad", if (a.bloqueo) "Bloqueo activado · modo discreto" else "Bloqueo con huella o PIN · modo discreto") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.SEGURIDAD) }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Info, "Notificaciones", if (a.notificaciones) "Activadas" else "Sueldo, pagos del día y presupuestos") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.NOTIFICACIONES) }
         }
         Tarjeta(relleno = false) {
             OpcionAjuste(Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.SUELDO) }

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Acento
@@ -15,6 +16,7 @@ import io.github.alexcorrea2001lemon.nummia.ui.theme.ModoAcento
 import io.github.alexcorrea2001lemon.nummia.ui.theme.TamanoTexto
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Tema
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,6 +36,11 @@ data class Ajustes(
     val bienvenidaVista: Boolean = false,
     val versionDisponible: String? = null,
     val driveSoloWifi: Boolean = false,
+    val notificaciones: Boolean = false,
+    val avisoSueldo: Boolean = true,
+    val avisoPagos: Boolean = true,
+    val avisoPresupuestos: Boolean = true,
+    val bloqueo: Boolean = false,
 )
 
 private val Context.almacen: DataStore<Preferences> by preferencesDataStore(name = "ajustes")
@@ -57,6 +64,12 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
         val bienvenida = booleanPreferencesKey("bienvenida_vista")
         val versionDisponible = stringPreferencesKey("version_disponible")
         val driveSoloWifi = booleanPreferencesKey("drive_solo_wifi")
+        val notificaciones = booleanPreferencesKey("notificaciones")
+        val avisoSueldo = booleanPreferencesKey("aviso_sueldo")
+        val avisoPagos = booleanPreferencesKey("aviso_pagos")
+        val avisoPresupuestos = booleanPreferencesKey("aviso_presupuestos")
+        val avisosHechos = stringSetPreferencesKey("avisos_hechos")
+        val bloqueo = booleanPreferencesKey("bloqueo")
     }
 
     val ajustes: Flow<Ajustes> = store.data.map { p ->
@@ -76,6 +89,11 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
             bienvenidaVista = p[K.bienvenida] ?: d.bienvenidaVista,
             versionDisponible = p[K.versionDisponible],
             driveSoloWifi = p[K.driveSoloWifi] ?: d.driveSoloWifi,
+            notificaciones = p[K.notificaciones] ?: d.notificaciones,
+            avisoSueldo = p[K.avisoSueldo] ?: d.avisoSueldo,
+            avisoPagos = p[K.avisoPagos] ?: d.avisoPagos,
+            avisoPresupuestos = p[K.avisoPresupuestos] ?: d.avisoPresupuestos,
+            bloqueo = p[K.bloqueo] ?: d.bloqueo,
         )
     }
 
@@ -90,6 +108,19 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
     suspend fun actualizacionesSoloWifi(v: Boolean) = store.edit { it[K.soloWifi] = v }
     suspend fun buscarActualizaciones(v: Boolean) = store.edit { it[K.buscar] = v }
     suspend fun driveSoloWifi(v: Boolean) = store.edit { it[K.driveSoloWifi] = v }
+    suspend fun notificaciones(v: Boolean) = store.edit { it[K.notificaciones] = v }
+    suspend fun avisoSueldo(v: Boolean) = store.edit { it[K.avisoSueldo] = v }
+    suspend fun avisoPagos(v: Boolean) = store.edit { it[K.avisoPagos] = v }
+    suspend fun avisoPresupuestos(v: Boolean) = store.edit { it[K.avisoPresupuestos] = v }
+    suspend fun bloqueo(v: Boolean) = store.edit { it[K.bloqueo] = v }
+
+    suspend fun avisosHechos(): Set<String> = store.data.first()[K.avisosHechos].orEmpty()
+
+    /** Guarda los avisos ya mostrados (los 300 últimos, para no crecer sin fin). */
+    suspend fun anotarAvisos(claves: Collection<String>) = store.edit { p ->
+        p[K.avisosHechos] = (p[K.avisosHechos].orEmpty().toList() + claves).distinct().takeLast(300).toSet()
+    }
+
     suspend fun bienvenidaVista() = store.edit { it[K.bienvenida] = true }
     suspend fun versionDisponible(v: String?) = store.edit { if (v == null) it.remove(K.versionDisponible) else it[K.versionDisponible] = v }
 

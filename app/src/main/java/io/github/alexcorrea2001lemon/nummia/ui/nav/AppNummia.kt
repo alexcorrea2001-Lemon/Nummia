@@ -210,6 +210,8 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.SUELDO) { SueldoScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.DATOS) { DatosScreen(ajustesVm(nav), snackbar, { nav.navigate(it) }) { nav.popBackStack() } }
+    pantalla(Rutas.NOTIFICACIONES) { io.github.alexcorrea2001lemon.nummia.ui.ajustes.NotificacionesScreen(ajustesVm(nav)) { nav.popBackStack() } }
+    pantalla(Rutas.SEGURIDAD) { io.github.alexcorrea2001lemon.nummia.ui.ajustes.SeguridadScreen(ajustesVm(nav)) { nav.popBackStack() } }
     pantalla(Rutas.TIENDAS) { io.github.alexcorrea2001lemon.nummia.ui.tiendas.TiendasScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
     pantalla(Rutas.CATEGORIAS) { io.github.alexcorrea2001lemon.nummia.ui.tiendas.CategoriasScreen(hiltViewModel()) { nav.popBackStack() } }
     pantalla(Rutas.PRESUPUESTOS) { io.github.alexcorrea2001lemon.nummia.ui.presupuestos.PresupuestosScreen(hiltViewModel()) { nav.popBackStack() } }

@@ -46,6 +46,11 @@ class AjustesViewModel @Inject constructor(
     fun discreto(v: Boolean) = viewModelScope.launch { ajustesRepo.modoDiscreto(v) }
     fun soloWifi(v: Boolean) = viewModelScope.launch { ajustesRepo.actualizacionesSoloWifi(v) }
     fun buscarActualizaciones(v: Boolean) = viewModelScope.launch { ajustesRepo.buscarActualizaciones(v) }
+    fun notificaciones(v: Boolean) = viewModelScope.launch { ajustesRepo.notificaciones(v) }
+    fun avisoSueldo(v: Boolean) = viewModelScope.launch { ajustesRepo.avisoSueldo(v) }
+    fun avisoPagos(v: Boolean) = viewModelScope.launch { ajustesRepo.avisoPagos(v) }
+    fun avisoPresupuestos(v: Boolean) = viewModelScope.launch { ajustesRepo.avisoPresupuestos(v) }
+    fun bloqueo(v: Boolean) = viewModelScope.launch { ajustesRepo.bloqueo(v) }
 
     /** Solo se guarda: el cambio real del icono lo hace NummiaApp al pasar la app a segundo plano. */
     fun icono(logo: Logo, color: Acento) = viewModelScope.launch { ajustesRepo.icono(logo, color) }

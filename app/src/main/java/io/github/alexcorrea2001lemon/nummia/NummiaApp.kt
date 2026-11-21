@@ -31,7 +31,10 @@ class NummiaApp : Application(), Configuration.Provider {
         // El icono elegido se aplica cuando la app pasa a segundo plano: así el lanzador lo recoge
         // en cuanto vuelves a la pantalla de inicio y la app no se cierra en mitad de un ajuste.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) = io.github.alexcorrea2001lemon.nummia.ui.bloqueo.Cerrojo.alVolver()
+
             override fun onStop(owner: LifecycleOwner) {
+                io.github.alexcorrea2001lemon.nummia.ui.bloqueo.Cerrojo.alSalir()
                 alcance.launch {
                     val a = ajustes.ajustes.first()
                     runCatching { IconoApp.aplicarSiCambia(this@NummiaApp, a.iconoLogo, a.iconoColor) }

@@ -56,6 +56,12 @@ class MainViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            ajustesRepo.ajustes.map { it.notificaciones }.distinctUntilChanged().collect {
+                io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.programar(context, it)
+                if (it) io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.pronto(context)
+            }
+        }
+        viewModelScope.launch {
             ajustesRepo.ajustes.map { it.buscarActualizaciones }.distinctUntilChanged().collect {
                 TrabajoActualizaciones.programar(context, it && !BuildConfig.DEBUG)
             }

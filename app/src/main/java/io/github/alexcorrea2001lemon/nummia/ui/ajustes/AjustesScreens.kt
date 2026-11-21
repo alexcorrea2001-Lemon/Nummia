@@ -331,12 +331,19 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
 
     val guardar = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri: Uri? ->
         if (uri != null) alcance.launch {
-            val ok = runCatching { val datos = vm.exportar(); ctx.contentResolver.openOutputStream(uri)!!.use { it.write(datos) } }.isSuccess
+            val ok = runCatching {
+                val datos = vm.exportar()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { ctx.contentResolver.openOutputStream(uri)!!.use { it.write(datos) } }
+            }.isSuccess
             snackbar.showSnackbar(if (ok) "Copia guardada" else "No se pudo guardar la copia")
         }
     }
     val abrir = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        if (uri != null) pendiente = runCatching { ctx.contentResolver.openInputStream(uri)!!.use { it.readBytes() } }.getOrNull()
+        if (uri != null) alcance.launch {
+            pendiente = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { ctx.contentResolver.openInputStream(uri)!!.use { it.readBytes() } }.getOrNull()
+            }
+        }
     }
 
     PantallaAjustes("Datos", alVolver) {

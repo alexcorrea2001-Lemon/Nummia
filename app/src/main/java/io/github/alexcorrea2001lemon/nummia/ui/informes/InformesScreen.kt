@@ -86,13 +86,13 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
     var persona by rememberSaveable { mutableStateOf<String?>(null) }
     var eligiendoFechas by remember { mutableStateOf(false) }
 
-    val guardar = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+    // Un selector por formato: así el móvil sabe qué tipo de archivo se guarda.
+    val alGuardar: (android.net.Uri?) -> Unit = { uri ->
         val a = e.ultimo
-        if (uri != null && a != null) {
-            val ok = runCatching { ctx.contentResolver.openOutputStream(uri)!!.use { it.write(vm.bytes(a)) } }.isSuccess
-            vm.mensaje(if (ok) "Informe guardado" else "No se pudo guardar")
-        }
+        if (uri != null && a != null) vm.guardarEn(uri, a)
     }
+    val guardarPdf = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(Formato.PDF.mime), alGuardar)
+    val guardarExcel = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(Formato.EXCEL.mime), alGuardar)
     LaunchedEffect(e.mensaje) { e.mensaje?.let { vm.mensajeVisto(); snackbar.showSnackbar(it) } }
 
     fun rango(): Pair<LocalDate, LocalDate> = when (periodo) {
@@ -196,7 +196,7 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
                     if (a.formato == Formato.EXCEL) Text("Hoja de Excel lista. Se abre en Excel, Google Sheets o LibreOffice.", color = c.textoSuave)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
                         Button(onClick = { ctx.startActivity(vm.intentCompartir(a)) }) { Text("Compartir") }
-                        OutlinedButton(onClick = { guardar.launch(a.nombre) }) { Text("Guardar en el móvil") }
+                        OutlinedButton(onClick = { (if (a.formato == Formato.PDF) guardarPdf else guardarExcel).launch(a.nombre) }) { Text("Guardar en el móvil") }
                         if (e.driveConectado) OutlinedButton(onClick = { vm.guardarEnDrive(a) }) { Text("Guardar en Drive") }
                     }
                 }

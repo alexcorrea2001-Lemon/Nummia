@@ -20,10 +20,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos
 import io.github.alexcorrea2001lemon.nummia.ui.bloqueo.Bloqueo
+import io.github.alexcorrea2001lemon.nummia.ui.bloqueo.actividad
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Tarjeta
 import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
@@ -75,7 +75,7 @@ fun NotificacionesScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
 fun SeguridadScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
     val a by vm.ajustes.collectAsStateWithLifecycle()
     val ctx = LocalContext.current
-    val actividad = ctx as? FragmentActivity
+    val actividad = ctx.actividad()
     val disponible = remember { BiometricManager.from(ctx).canAuthenticate(Bloqueo.AUTENTICADORES) == BiometricManager.BIOMETRIC_SUCCESS }
     var error by remember { mutableStateOf<String?>(null) }
 

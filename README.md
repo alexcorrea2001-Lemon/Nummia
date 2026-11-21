@@ -10,7 +10,6 @@
 - Base de datos **cifrada**. Sin servidores, sin anuncios, sin rastreo.
 - Se actualiza sola desde GitHub.
 
-> Próximamente (v1.5.0): informes en PDF y Excel, con «Lo que me deben».
 
 ## Instalar
 

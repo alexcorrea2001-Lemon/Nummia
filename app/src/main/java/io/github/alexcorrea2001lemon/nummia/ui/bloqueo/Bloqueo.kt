@@ -35,6 +35,13 @@ import io.github.alexcorrea2001lemon.nummia.ui.theme.Logo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+/** La actividad que hay detrás de un contexto de Compose (puede venir envuelto). */
+tailrec fun android.content.Context.actividad(): FragmentActivity? = when (this) {
+    is FragmentActivity -> this
+    is android.content.ContextWrapper -> baseContext.actividad()
+    else -> null
+}
+
 /** Huella, cara o el PIN/patrón del propio móvil. */
 object Bloqueo {
     const val AUTENTICADORES = BIOMETRIC_WEAK or DEVICE_CREDENTIAL
@@ -74,7 +81,7 @@ object Cerrojo {
 
 @Composable
 fun PantallaBloqueo(logo: Logo, color: Acento) {
-    val actividad = LocalContext.current as? FragmentActivity
+    val actividad = LocalContext.current.actividad()
     var error by remember { mutableStateOf("") }
     fun pedir() = actividad?.let { Bloqueo.pedir(it, "Desbloquear Nummia", alConseguir = { Cerrojo.desbloquear() }, alFallar = { m -> error = m }) }
     LaunchedEffect(Unit) { pedir() }

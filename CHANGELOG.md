@@ -2,6 +2,22 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.5.0] - 2026-11-21
+
+### Nuevo
+- **Informes** (pestaña Informes), en **PDF** o en **Excel**:
+  - Rápidos: este mes, el año y **Lo que me deben** (por persona, con lo esperado, lo devuelto y lo que falta).
+  - Personalizado: elige el periodo (este mes, el anterior, este año, el anterior o las fechas que quieras) y qué incluir: resumen, mes a mes, movimientos, por tienda, por categoría y lo que me deben.
+  - Vista previa de la primera página del PDF antes de compartir.
+  - Compartir, guardar en el móvil o guardar en tu Drive (`Nummia_Datos/Informes`).
+  - Lista de los últimos 20 informes creados.
+  - El Excel lleva euros y fechas con su formato y se abre en Excel, Google Sheets y LibreOffice.
+
+### Mejorado
+- **La app pesa casi la mitad**: de 9 MB a unos 5 MB. Menos datos al descargar cada actualización.
+- **Más fluida**: las cuentas de Inicio, Movimientos, Calendario, Estadísticas y el detalle se hacen fuera del hilo de la pantalla, y Android prepara el código de Nummia al instalarla para que arranque más rápido.
+- Guardar y abrir copias ya no puede congelar la pantalla un instante.
+
 ## [1.4.0] - 2026-11-21
 
 ### Nuevo

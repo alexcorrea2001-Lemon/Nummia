@@ -146,7 +146,12 @@ class InformesViewModel @Inject constructor(
         )
     }
 
-    fun bytes(a: ArchivoInforme): ByteArray = a.archivo.readBytes()
+    fun guardarEn(uri: android.net.Uri, a: ArchivoInforme) = viewModelScope.launch {
+        val ok = runCatching {
+            withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri)!!.use { it.write(a.archivo.readBytes()) } }
+        }.isSuccess
+        mensaje(if (ok) "Informe guardado" else "No se pudo guardar")
+    }
 
     fun guardarEnDrive(a: ArchivoInforme) = viewModelScope.launch {
         val ok = runCatching { withContext(Dispatchers.IO) { sinc.subirInforme(a.nombre, a.archivo.readBytes(), a.formato.mime) } }

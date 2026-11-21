@@ -395,7 +395,7 @@ Siempre con `NetworkType.CONNECTED` (o `UNMETERED` si está activado «solo con 
 | v1.2.0 | Google Drive (configuración de Cloud junto al propietario), sincronización en los dos sentidos, conflictos y copias de seguridad en Drive |
 | v1.3.0 | Importar Excel, pagos mensuales, papelera de 30 días y buscador también por fecha |
 | v1.4.0 | Presupuestos, tiendas (unir duplicados), categorías, notificaciones y bloqueo con huella o PIN |
-| v1.5.0 | Informes PDF y .xlsx con «Lo que me deben» |
+| v1.5.0 | Informes PDF y .xlsx con «Lo que me deben»; APK más ligero (bibliotecas nativas comprimidas, solo recursos en español) y perfil de arranque |
 
 La v1.3.0 prevista al principio se repartió en tres versiones para poder probar cada parte antes (decidido el 21/11/2026).
 

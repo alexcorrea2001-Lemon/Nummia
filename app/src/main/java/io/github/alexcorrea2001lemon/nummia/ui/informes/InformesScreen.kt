@@ -72,7 +72,7 @@ private enum class Periodo(val nombre: String) { MES("Este mes"), MES_ANTERIOR("
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes: () -> Unit, relleno: PaddingValues) {
+fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes: () -> Unit, relleno: PaddingValues, alVolver: (() -> Unit)? = null) {
     val e by vm.estado.collectAsStateWithLifecycle()
     val personas by vm.personas.collectAsStateWithLifecycle()
     val c = LocalColoresNummia.current
@@ -116,8 +116,9 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
     ) {
         item {
             Row(Modifier.statusBarsPadding().padding(start = Espacio.s, top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
+                if (alVolver != null) IconButton(onClick = alVolver) { Icon(Iconos.Atras, "Volver") }
                 Text("Informes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                IconButton(onClick = alAjustes) { Icon(Iconos.Ajustes, "Ajustes") }
+                if (alVolver == null) IconButton(onClick = alAjustes) { Icon(Iconos.Ajustes, "Ajustes") }
             }
         }
         item {

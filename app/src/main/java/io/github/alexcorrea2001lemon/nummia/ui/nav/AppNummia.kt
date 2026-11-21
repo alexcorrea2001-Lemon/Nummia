@@ -91,7 +91,6 @@ private val pestanas = listOf(
     Pestana(Rutas.MOVIMIENTOS, "Movimientos", Iconos.Movimientos),
     Pestana(Rutas.CALENDARIO, "Calendario", Iconos.Calendario),
     Pestana(Rutas.ESTADISTICAS, "Estadísticas", Iconos.Estadisticas),
-    Pestana(Rutas.INFORMES, "Informes", Iconos.Informes),
 )
 
 @Composable
@@ -209,9 +208,9 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             alAjustes = { nav.navigate(Rutas.AJUSTES) }, relleno = relleno,
         )
     }
-    pantalla(Rutas.ESTADISTICAS) { EstadisticasScreen(hiltViewModel(), ::abrirGasto, { nav.navigate(Rutas.AJUSTES) }, relleno) }
+    pantalla(Rutas.ESTADISTICAS) { EstadisticasScreen(hiltViewModel(), ::abrirGasto, { nav.navigate(Rutas.AJUSTES) }, relleno, alInformes = { nav.navigate(Rutas.INFORMES) }) }
     pantalla(Rutas.INFORMES) {
-        io.github.alexcorrea2001lemon.nummia.ui.informes.InformesScreen(hiltViewModel(), snackbar, { nav.navigate(Rutas.AJUSTES) }, relleno)
+        io.github.alexcorrea2001lemon.nummia.ui.informes.InformesScreen(hiltViewModel(), snackbar, { nav.navigate(Rutas.AJUSTES) }, relleno, alVolver = { nav.popBackStack() })
     }
 
     pantalla(Rutas.DETALLE, listOf(navArgument("id") { type = NavType.StringType })) {

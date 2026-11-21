@@ -5,6 +5,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -97,6 +99,11 @@ fun MovimientosScreen(
     val haptica = rememberHaptica()
     var verFiltros by rememberSaveable { mutableStateOf(false) }
     var eligiendoMes by rememberSaveable { mutableStateOf(false) }
+    val seleccion by vm.seleccion.collectAsStateWithLifecycle()
+    val seleccionando = seleccion.isNotEmpty()
+    var eligiendoCategoria by remember { mutableStateOf(false) }
+    var eligiendoTienda by remember { mutableStateOf(false) }
+    androidx.activity.compose.BackHandler(seleccionando) { vm.limpiarSeleccion() }
     val c = LocalColoresNummia.current
     LaunchedEffect(Unit) {
         io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.movimientos.collect { p ->
@@ -112,9 +119,31 @@ fun MovimientosScreen(
         ) {
             item {
                 Column(Modifier.statusBarsPadding().padding(horizontal = Espacio.l, vertical = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Movimientos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        IconButton(onClick = alAjustes) { Icon(Iconos.Ajustes, "Ajustes") }
+                    if (seleccionando) {
+                        // Barra de selección: mantén pulsado un movimiento para elegir varios
+                        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(28.dp)) {
+                            Row(Modifier.fillMaxWidth().padding(horizontal = Espacio.xs), verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = vm::limpiarSeleccion) { Icon(Iconos.Cerrar, "Dejar de seleccionar") }
+                                Text(if (seleccion.size == 1) "1 elegido" else "${seleccion.size} elegidos", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                val hayGastos = seleccion.any { it.startsWith("g:") }
+                                IconButton(onClick = { eligiendoCategoria = true }, enabled = hayGastos) { Icon(Iconos.Paleta, "Cambiar la categoría") }
+                                IconButton(onClick = { eligiendoTienda = true }, enabled = hayGastos) { Icon(Iconos.Bolsa, "Cambiar la tienda") }
+                                IconButton(onClick = {
+                                    haptica()
+                                    val n = seleccion.size
+                                    val (g, i) = vm.borrarSeleccion()
+                                    alcance.launch {
+                                        val r = snackbar.showSnackbar("$n borrados", actionLabel = "Deshacer", duration = SnackbarDuration.Long)
+                                        if (r == SnackbarResult.ActionPerformed) vm.deshacerVarios(g, i)
+                                    }
+                                }) { Icon(Iconos.Papelera, "Borrar los elegidos") }
+                            }
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Movimientos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                            IconButton(onClick = alAjustes) { Icon(Iconos.Ajustes, "Ajustes") }
+                        }
                     }
                     // 1) Qué mes miras (como en Inicio). Al buscar, se busca en todos.
                     if (e.buscandoEnTodo) {
@@ -200,10 +229,13 @@ fun MovimientosScreen(
                         topStart = if (i == 0) grande else chica, topEnd = if (i == 0) grande else chica,
                         bottomStart = if (i == g.filas.lastIndex) grande else chica, bottomEnd = if (i == g.filas.lastIndex) grande else chica,
                     )
+                    val clave = (if (f.esGasto) "g:" else "i:") + f.id
                     FilaDeslizable(
                         f, e.discreto, forma,
                         modifier = Modifier.animateItem().padding(horizontal = Espacio.l),
-                        alPulsar = { if (f.esGasto) alAbrirGasto(f.id) else alAbrirIngreso(f.id) },
+                        seleccionando = seleccionando, seleccionado = clave in seleccion,
+                        alMantener = { haptica(); vm.alternar(f) },
+                        alPulsar = { if (seleccionando) vm.alternar(f) else if (f.esGasto) alAbrirGasto(f.id) else alAbrirIngreso(f.id) },
                         alBorrar = {
                             haptica()
                             vm.borrar(f.id, f.esGasto)
@@ -227,6 +259,33 @@ fun MovimientosScreen(
 
     }
 
+    if (eligiendoCategoria) {
+        val categorias by vm.categorias.collectAsStateWithLifecycle()
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { eligiendoCategoria = false },
+            title = { Text("Categoría para los elegidos") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Ninguna", Modifier.fillMaxWidth().clickable { vm.categoriaSeleccion(null); eligiendoCategoria = false }.padding(vertical = Espacio.m))
+                    categorias.forEach { cat ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { vm.categoriaSeleccion(cat.id); eligiendoCategoria = false }.padding(vertical = Espacio.s),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+                        ) {
+                            io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar(cat.nombre, Color(cat.color).copy(alpha = 0.2f), Color(cat.color), io.github.alexcorrea2001lemon.nummia.ui.comun.IconosCategoria.de(cat.icono))
+                            Text(cat.nombre)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { eligiendoCategoria = false }) { Text("Cancelar") } },
+        )
+    }
+    if (eligiendoTienda) {
+        io.github.alexcorrea2001lemon.nummia.ui.formulario.DialogoNombre("Tienda para los elegidos", alCerrar = { eligiendoTienda = false }) {
+            vm.tiendaSeleccion(it); eligiendoTienda = false
+        }
+    }
     if (eligiendoMes) {
         io.github.alexcorrea2001lemon.nummia.ui.comun.SelectorMes(e.mes, vm.hoyMes(), alCerrar = { eligiendoMes = false }) { vm.irAMes(it); eligiendoMes = false }
     }
@@ -244,6 +303,9 @@ private fun FilaDeslizable(
     discreto: Boolean,
     forma: androidx.compose.ui.graphics.Shape,
     modifier: Modifier,
+    seleccionando: Boolean,
+    seleccionado: Boolean,
+    alMantener: () -> Unit,
     alPulsar: () -> Unit,
     alBorrar: () -> Unit,
     alRepetir: () -> Unit,
@@ -261,6 +323,7 @@ private fun FilaDeslizable(
     SwipeToDismissBox(
         state = estado,
         enableDismissFromStartToEnd = f.esGasto,
+        gesturesEnabled = !seleccionando,
         modifier = modifier.clip(forma),
         backgroundContent = {
             val direccion = estado.dismissDirection
@@ -288,7 +351,7 @@ private fun FilaDeslizable(
         },
     ) {
         Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = if (f.esGasto) Modifier.compartido("gasto-${f.id}") else Modifier) {
-            FilaMovimiento(f, discreto, alPulsar)
+            FilaMovimiento(f, discreto, alPulsar, alMantener = alMantener, seleccionado = seleccionado)
         }
     }
 }

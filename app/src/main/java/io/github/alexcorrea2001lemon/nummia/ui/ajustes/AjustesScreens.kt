@@ -91,43 +91,65 @@ import java.util.Locale
 
 // ------------------------------------------------------------------ Menú
 
+private data class EntradaAjuste(
+    val seccion: String, val icono: androidx.compose.ui.graphics.vector.ImageVector, val titulo: String, val subtitulo: String,
+    val ruta: String, val palabras: String = "",
+)
+
 @Composable
 fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Unit) {
     val a by vm.ajustes.collectAsStateWithLifecycle()
+    var buscar by rememberSaveable { mutableStateOf("") }
+    val R = io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas
+    val entradas = listOf(
+        EntradaAjuste("Tus datos", Iconos.Nube, "Tu Drive", "Sincroniza con Google Drive y guarda copias de seguridad", R.DRIVE, "google sincronizar copia nube hoja excel"),
+        EntradaAjuste("Tus datos", Iconos.Descargar, "Datos", "Importar Excel, papelera y copia en archivo", R.DATOS, "importar exportar excel papelera borrado restaurar copia archivo"),
+        EntradaAjuste("Dinero", Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar", R.SUELDO, "nomina salario ingreso"),
+        EntradaAjuste("Dinero", Iconos.Repetir, "Pagos mensuales", "Gimnasio, móvil, suscripciones…", R.PAGOS, "suscripcion recibo cada mes fijo"),
+        EntradaAjuste("Dinero", Iconos.Estadisticas, "Presupuestos", "Límites de gasto al mes", R.PRESUPUESTOS, "limite tope ahorro"),
+        EntradaAjuste("Dinero", Iconos.Persona, "Personas", "Quién te devuelve el dinero", R.PERSONAS, "deben deuda devolver amigos familia"),
+        EntradaAjuste("Dinero", Iconos.Bolsa, "Tiendas", "Unir nombres repetidos o cambiarlos", R.TIENDAS, "comercio lugar duplicados unir"),
+        EntradaAjuste("Dinero", Iconos.Filtro, "Categorías", "Crear, renombrar, iconos y colores", R.CATEGORIAS, "tipo grupo icono color"),
+        EntradaAjuste("Aspecto", Iconos.Paleta, "Apariencia", "Tema, color de la app, icono y tamaño del texto", R.APARIENCIA, "oscuro claro amoled color icono letra tamaño tema"),
+        EntradaAjuste("Seguridad y avisos", Iconos.Escudo, "Seguridad", if (a.bloqueo) "Bloqueo activado · modo discreto" else "Bloqueo con huella o PIN · modo discreto", R.SEGURIDAD, "huella pin bloqueo discreto ocultar privacidad"),
+        EntradaAjuste("Seguridad y avisos", Iconos.Info, "Notificaciones", if (a.notificaciones) "Activadas" else "Sueldo, pagos del día y presupuestos", R.NOTIFICACIONES, "avisos alertas recordatorio"),
+        EntradaAjuste("Nummia", Iconos.Info, "Acerca de Nummia", "Versión ${BuildConfig.VERSION_NAME} · actualizaciones", R.ACERCA, "version actualizar actualizacion privacidad licencia codigo"),
+    )
     PantallaAjustes("Ajustes", alVolver) {
         a.versionDisponible?.takeIf { esMasNueva(it, BuildConfig.VERSION_NAME) }?.let { v ->
             Tarjeta(fondo = MaterialTheme.colorScheme.primaryContainer) {
                 Text("Nummia $v está disponible", fontWeight = FontWeight.SemiBold)
-                Button(onClick = { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.ACERCA) }) { Text("Ver la actualización") }
+                Button(onClick = { ir(R.ACERCA) }) { Text("Ver la actualización") }
             }
         }
-        Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Nube, "Tu Drive", "Sincroniza con tu Google Drive y guarda copias de seguridad") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.DRIVE) }
+        // Buscador: escribe «drive», «huella», «presupuesto»…
+        androidx.compose.material3.TextField(
+            value = buscar, onValueChange = { buscar = it }, singleLine = true,
+            placeholder = { Text("Buscar en Ajustes") },
+            leadingIcon = { Icon(Iconos.Buscar, null) },
+            trailingIcon = { if (buscar.isNotEmpty()) IconButton(onClick = { buscar = "" }) { Icon(Iconos.Cerrar, "Borrar búsqueda") } },
+            shape = RoundedCornerShape(28.dp),
+            colors = androidx.compose.material3.TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh, unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        val q = io.github.alexcorrea2001lemon.nummia.domain.calculo.claveTexto(buscar)
+        val visibles = if (q.isBlank()) entradas else entradas.filter { en ->
+            q.split(" ").filter { it.isNotBlank() }.all { p -> io.github.alexcorrea2001lemon.nummia.domain.calculo.claveTexto("${en.titulo} ${en.subtitulo} ${en.palabras}").contains(p) }
         }
-        Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Paleta, "Apariencia", "Tema, color de la app, icono y tamaño del texto") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.APARIENCIA) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Escudo, "Seguridad", if (a.bloqueo) "Bloqueo activado · modo discreto" else "Bloqueo con huella o PIN · modo discreto") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.SEGURIDAD) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Info, "Notificaciones", if (a.notificaciones) "Activadas" else "Sueldo, pagos del día y presupuestos") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.NOTIFICACIONES) }
+        if (visibles.isEmpty()) {
+            Text("No hay ningún ajuste con «$buscar».", color = LocalColoresNummia.current.textoSuave, modifier = Modifier.padding(Espacio.l))
         }
-        Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.SUELDO) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Repetir, "Pagos mensuales", "Gimnasio, móvil, suscripciones…") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PAGOS) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Estadisticas, "Presupuestos", "Límites de gasto al mes") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PRESUPUESTOS) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Persona, "Personas", "Quién te devuelve el dinero") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PERSONAS) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Bolsa, "Tiendas", "Unir nombres repetidos o cambiarlos") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.TIENDAS) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Filtro, "Categorías", "Crear, renombrar y cambiar colores") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.CATEGORIAS) }
-        }
-        Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Descargar, "Datos", "Importar Excel, papelera y copia en archivo") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.DATOS) }
-            HorizontalDivider(color = LocalColoresNummia.current.borde)
-            OpcionAjuste(Iconos.Info, "Acerca de Nummia", "Versión ${BuildConfig.VERSION_NAME} · actualizaciones") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.ACERCA) }
+        visibles.groupBy { it.seccion }.forEach { (seccion, lista) ->
+            Text(seccion, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = Espacio.s, top = Espacio.xs))
+            Tarjeta(relleno = false) {
+                lista.forEachIndexed { n, en ->
+                    if (n > 0) HorizontalDivider(color = LocalColoresNummia.current.borde)
+                    OpcionAjuste(en.icono, en.titulo, en.subtitulo) { ir(en.ruta) }
+                }
+            }
         }
     }
 }

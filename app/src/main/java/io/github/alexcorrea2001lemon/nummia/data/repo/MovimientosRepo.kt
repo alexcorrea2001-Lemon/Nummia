@@ -238,6 +238,40 @@ class MovimientosRepo @Inject constructor(
     /** Si el gasto viene de un pago mensual que sigue activo. */
     suspend fun esPagoMensual(g: GastoEntity): Boolean = g.pagoMensualId?.let { db.pagos().obtener(it) }?.let { it.deletedAt == null } == true
 
+    // ---------- Varios a la vez (selección múltiple) ----------
+
+    suspend fun borrarVarios(gastos: Collection<String>, ingresos: Collection<String>) = db.withTransaction {
+        gastos.forEach { borrarGasto(it) }
+        ingresos.forEach { borrarIngreso(it) }
+    }
+
+    suspend fun deshacerVarios(gastos: Collection<String>, ingresos: Collection<String>) = db.withTransaction {
+        gastos.forEach { deshacerBorradoGasto(it) }
+        ingresos.forEach { deshacerBorradoIngreso(it) }
+    }
+
+    /** Pone la misma categoría (o ninguna) a varios gastos. */
+    suspend fun cambiarCategoria(gastos: Collection<String>, categoria: String?) = db.withTransaction {
+        val ahora = reloj.ahoraMs()
+        gastos.mapNotNull { db.gastos().obtener(it) }.forEach { g ->
+            val nuevo = g.copy(categoriaId = categoria, updatedAt = ahora)
+            db.gastos().guardar(nuevo)
+            anotarCambios(g, nuevo)
+        }
+    }
+
+    /** Pone la misma tienda a varios gastos. */
+    suspend fun cambiarTienda(gastos: Collection<String>, tienda: String) = db.withTransaction {
+        val t = tienda.trim()
+        require(t.isNotEmpty())
+        val ahora = reloj.ahoraMs()
+        gastos.mapNotNull { db.gastos().obtener(it) }.forEach { g ->
+            val nuevo = g.copy(tienda = t, updatedAt = ahora)
+            db.gastos().guardar(nuevo)
+            anotarCambios(g, nuevo)
+        }
+    }
+
     /** «Deshacer» tras editar: el gasto vuelve a como estaba. */
     suspend fun restaurarGasto(antes: GastoEntity) = db.withTransaction {
         db.gastos().guardar(antes.copy(updatedAt = reloj.ahoraMs()))

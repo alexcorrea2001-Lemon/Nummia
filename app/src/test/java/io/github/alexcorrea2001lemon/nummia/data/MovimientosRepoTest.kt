@@ -181,4 +181,17 @@ class MovimientosRepoTest {
         assertNull(db.gastos().obtener(a))
         assertEquals(500L, db.gastos().obtener(b)!!.importe)
     }
+
+    @Test fun variosALaVez() = runTest {
+        val a = repo.guardarGasto(gasto(100, concepto = "Uno"))
+        val b = repo.guardarGasto(gasto(200, concepto = "Dos"))
+        repo.cambiarCategoria(listOf(a, b), "ocio")
+        assertEquals(setOf("ocio"), listOf(a, b).map { db.gastos().obtener(it)!!.categoriaId }.toSet())
+        repo.cambiarTienda(listOf(a, b), "Cine")
+        assertEquals(setOf("Cine"), listOf(a, b).map { db.gastos().obtener(it)!!.tienda }.toSet())
+        repo.borrarVarios(listOf(a, b), emptyList())
+        assertEquals(0L, repo.resumenMes(marzo).first().pagado)
+        repo.deshacerVarios(listOf(a, b), emptyList())
+        assertEquals(300L, repo.resumenMes(marzo).first().pagado)
+    }
 }

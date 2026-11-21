@@ -82,7 +82,7 @@ private val INICIALES = listOf("E", "F", "M", "A", "M", "J", "J", "A", "S", "O",
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EstadisticasScreen(vm: EstadisticasViewModel, alAbrirGasto: (String) -> Unit, alAjustes: () -> Unit, relleno: PaddingValues) {
+fun EstadisticasScreen(vm: EstadisticasViewModel, alAbrirGasto: (String) -> Unit, alAjustes: () -> Unit, relleno: PaddingValues, alInformes: () -> Unit = {}) {
     androidx.compose.runtime.LaunchedEffect(Unit) {
         io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.estadisticas.collect { salto ->
             if (salto != null) { vm.ir(salto.first, salto.second); io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.estadisticas.value = null }
@@ -92,6 +92,11 @@ fun EstadisticasScreen(vm: EstadisticasViewModel, alAbrirGasto: (String) -> Unit
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.statusBarsPadding().padding(start = Espacio.xl, end = Espacio.s, top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
             Text("Estadísticas", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            // Los informes (PDF y Excel) viven aquí: es donde se miran los números.
+            androidx.compose.material3.FilledTonalButton(onClick = alInformes, contentPadding = PaddingValues(horizontal = Espacio.m)) {
+                Icon(Iconos.Informes, null, Modifier.size(18.dp))
+                Text(" Informes")
+            }
             IconButton(onClick = alAjustes) { Icon(Iconos.Ajustes, "Ajustes") }
         }
         PrimaryScrollableTabRow(selectedTabIndex = e.sel.pestana.ordinal, edgePadding = Espacio.l, containerColor = MaterialTheme.colorScheme.background) {

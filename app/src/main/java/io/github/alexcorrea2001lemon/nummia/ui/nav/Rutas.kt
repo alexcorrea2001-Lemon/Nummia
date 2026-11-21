@@ -32,5 +32,5 @@ object Rutas {
     fun ingreso(id: String? = null) = "ingreso?id=${id.orEmpty()}"
     fun reembolso(gastoId: String? = null) = "reembolso?gastoId=${gastoId.orEmpty()}"
 
-    val PRINCIPALES = listOf(INICIO, MOVIMIENTOS, CALENDARIO, ESTADISTICAS, INFORMES)
+    val PRINCIPALES = listOf(INICIO, MOVIMIENTOS, CALENDARIO, ESTADISTICAS)
 }

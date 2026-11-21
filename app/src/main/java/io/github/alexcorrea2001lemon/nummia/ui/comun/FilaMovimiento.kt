@@ -1,6 +1,8 @@
 package io.github.alexcorrea2001lemon.nummia.ui.comun
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -95,15 +97,22 @@ fun EtiquetaDe(e: EtiquetaMov) {
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun FilaMovimiento(f: FilaMov, discreto: Boolean, alPulsar: () -> Unit, modifier: Modifier = Modifier) {
+fun FilaMovimiento(
+    f: FilaMov, discreto: Boolean, alPulsar: () -> Unit, modifier: Modifier = Modifier,
+    alMantener: (() -> Unit)? = null, seleccionado: Boolean = false,
+) {
     val c = LocalColoresNummia.current
     Row(
-        modifier.fillMaxWidth().clickable(onClick = alPulsar).padding(horizontal = Espacio.l, vertical = Espacio.m),
+        modifier.fillMaxWidth()
+            .then(if (seleccionado) Modifier.background(MaterialTheme.colorScheme.primaryContainer) else Modifier)
+            .combinedClickable(onClick = alPulsar, onLongClick = alMantener, onLongClickLabel = if (alMantener != null) "Seleccionar varios" else null)
+            .padding(horizontal = Espacio.l, vertical = Espacio.m),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Espacio.m),
     ) {
-        AvatarMov(f)
+        if (seleccionado) Avatar("", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, Iconos.Check) else AvatarMov(f)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(f.titulo, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(f.subtitulo, style = MaterialTheme.typography.bodySmall, color = c.textoSuave, maxLines = 1, overflow = TextOverflow.Ellipsis)

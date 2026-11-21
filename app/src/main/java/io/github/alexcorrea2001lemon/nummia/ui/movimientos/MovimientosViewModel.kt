@@ -89,4 +89,44 @@ class MovimientosViewModel @Inject constructor(
     }
 
     fun repetirHoy(id: String) = viewModelScope.launch { repo.repetirHoy(id) }
+
+    // ---------- Selección múltiple (mantener pulsado) ----------
+
+    private val _seleccion = MutableStateFlow<Set<String>>(emptySet())
+    /** Claves «g:id» (gastos) e «i:id» (ingresos). */
+    val seleccion: StateFlow<Set<String>> = _seleccion
+
+    fun alternar(f: io.github.alexcorrea2001lemon.nummia.ui.comun.FilaMov) {
+        val k = (if (f.esGasto) "g:" else "i:") + f.id
+        _seleccion.update { if (k in it) it - k else it + k }
+    }
+
+    fun limpiarSeleccion() { _seleccion.value = emptySet() }
+
+    private fun gastosSel() = _seleccion.value.filter { it.startsWith("g:") }.map { it.drop(2) }
+    private fun ingresosSel() = _seleccion.value.filter { it.startsWith("i:") }.map { it.drop(2) }
+    val categorias = repo.categorias().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Borra lo elegido y devuelve con qué deshacerlo. */
+    fun borrarSeleccion(): Pair<List<String>, List<String>> {
+        val g = gastosSel(); val i = ingresosSel()
+        viewModelScope.launch { repo.borrarVarios(g, i) }
+        limpiarSeleccion()
+        return g to i
+    }
+
+    fun deshacerVarios(g: List<String>, i: List<String>) = viewModelScope.launch { repo.deshacerVarios(g, i) }
+
+    fun categoriaSeleccion(categoria: String?) {
+        val g = gastosSel()
+        viewModelScope.launch { repo.cambiarCategoria(g, categoria) }
+        limpiarSeleccion()
+    }
+
+    fun tiendaSeleccion(tienda: String) {
+        val g = gastosSel()
+        if (tienda.isBlank()) return
+        viewModelScope.launch { repo.cambiarTienda(g, tienda) }
+        limpiarSeleccion()
+    }
 }

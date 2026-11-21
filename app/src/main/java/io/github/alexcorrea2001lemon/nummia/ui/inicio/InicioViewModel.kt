@@ -1,6 +1,8 @@
 package io.github.alexcorrea2001lemon.nummia.ui.inicio
 
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -81,7 +83,7 @@ class InicioViewModel @Inject constructor(
     ) { (t, anio), conDev, personas, categorias, ajustes ->
         val (ym, actual, anterior) = t
         calcular(ym, actual, anterior, anio, conDev, personas.associate { it.id to it.nombre }, categorias.associate { it.id to it.nombre }, ajustes.modoDiscreto)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InicioEstado(mes.value))
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InicioEstado(mes.value))
 
     private fun calcular(
         ym: YearMonth,
@@ -148,7 +150,7 @@ class InicioViewModel @Inject constructor(
         combine(mes.flatMapLatest { repo.estadoPresupuestos(it) }, repo.categorias()) { ps, cats ->
             val nombres = cats.associate { it.id to it.nombre }
             ps.map { io.github.alexcorrea2001lemon.nummia.ui.presupuestos.nombrePresupuesto(it, nombres) to it }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun mesAnterior() = mes.update { it.minusMonths(1) }
     fun mesSiguiente() = mes.update { it.plusMonths(1) }

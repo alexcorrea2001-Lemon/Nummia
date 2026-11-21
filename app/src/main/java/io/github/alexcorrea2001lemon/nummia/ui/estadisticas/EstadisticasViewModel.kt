@@ -95,7 +95,7 @@ class EstadisticasViewModel @Inject constructor(
     ) { s, datos, personas, categorias, ajustes ->
         calcular(s, datos, personas.associate { it.id to it.nombre }, categorias.associate { it.id to it.nombre }).copy(discreto = ajustes.modoDiscreto)
     }.flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoEst(sel.value))
+        .flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoEst(sel.value))
 
     private fun calcular(s: Seleccion, d: DatosPeriodo, personas: Map<String, String>, categorias: Map<String, String>): EstadoEst {
         val gastos = d.movGastos

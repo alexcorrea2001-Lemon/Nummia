@@ -1,6 +1,8 @@
 package io.github.alexcorrea2001lemon.nummia.ui.movimientos
 
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -65,7 +67,7 @@ class MovimientosViewModel @Inject constructor(
             hoy = reloj.hoy(), cargando = false,
         )
     }.combine(ajustesRepo.ajustes) { e, a -> e.copy(discreto = a.modoDiscreto) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MovimientosEstado(mes.value, hoy = reloj.hoy()))
+        .flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MovimientosEstado(mes.value, hoy = reloj.hoy()))
 
     fun mesAnterior() = mes.update { it.minusMonths(1) }
     fun mesSiguiente() = mes.update { it.plusMonths(1) }

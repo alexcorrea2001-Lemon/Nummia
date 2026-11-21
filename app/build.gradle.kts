@@ -17,6 +17,8 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        // La app está en español: se quitan las traducciones de las bibliotecas (el APK pesa menos).
+        resourceConfigurations += listOf("es")
         applicationId = "io.github.alexcorrea2001lemon.nummia"
         minSdk = 26
         targetSdk = 35
@@ -67,7 +69,13 @@ android {
     }
 
     packaging {
-        resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/LICENSE*", "DebugProbesKt.bin")
+        resources.excludes += setOf(
+            "/META-INF/{AL2.0,LGPL2.1}", "/META-INF/LICENSE*", "DebugProbesKt.bin",
+            // Metadatos que solo usa kotlin-reflect (no lo usamos) y números de versión de bibliotecas.
+            "kotlin/**", "META-INF/*.kotlin_module", "META-INF/*.version", "META-INF/com/**", "**/*.kotlin_builtins",
+        )
+        // La biblioteca de cifrado va comprimida dentro del APK: la descarga pesa unos 3 MB menos.
+        jniLibs.useLegacyPackaging = true
     }
 
     lint {
@@ -118,6 +126,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.biometric)
+    implementation(libs.profileinstaller)
     implementation(libs.play.services.auth)
     implementation(libs.kotlinx.coroutines.play.services)
 

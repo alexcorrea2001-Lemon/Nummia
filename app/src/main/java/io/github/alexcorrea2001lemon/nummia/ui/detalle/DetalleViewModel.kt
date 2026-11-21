@@ -1,6 +1,8 @@
 package io.github.alexcorrea2001lemon.nummia.ui.detalle
 
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -48,7 +50,7 @@ class DetalleViewModel @Inject constructor(
         repo.gasto(id), repo.historial(id), repo.personas(), repo.categorias(), ajustesRepo.ajustes,
     ) { g, h, p, c, a ->
         DetalleEstado(g, h, p.associate { it.id to it.nombre }, c.associate { it.id to it.nombre }, a.modoDiscreto, false)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetalleEstado())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetalleEstado())
 
     fun devueltoEntero() = viewModelScope.launch { repo.devueltoEntero(id) }
     fun borrarReembolso(rid: String) = viewModelScope.launch { repo.borrarReembolso(rid) }

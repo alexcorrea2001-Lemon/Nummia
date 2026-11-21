@@ -1,6 +1,8 @@
 package io.github.alexcorrea2001lemon.nummia.ui.calendario
 
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -93,7 +95,7 @@ class CalendarioViewModel @Inject constructor(
                 .sortedByDescending { it.creado },
             totalDia = dias[sel], gastoMes = r.gastoReal, ingresoMes = r.ingresos, discreto = ajustes.modoDiscreto,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoCalendario(mes.value, elegido.value))
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoCalendario(mes.value, elegido.value))
 
     fun elegir(f: LocalDate) {
         elegido.value = f

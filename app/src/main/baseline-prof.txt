@@ -1,0 +1,4 @@
+# Perfil de arranque: Android compila de antemano el código de Nummia al instalar la app
+# (también desde un APK de GitHub, gracias a profileinstaller). Arranque más rápido y menos tirones.
+HSPLio/github/alexcorrea2001lemon/nummia/**->**(**)**
+Lio/github/alexcorrea2001lemon/nummia/**;

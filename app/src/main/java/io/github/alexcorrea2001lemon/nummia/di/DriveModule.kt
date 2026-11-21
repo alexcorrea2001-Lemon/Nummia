@@ -52,6 +52,7 @@ object DriveModule {
         val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         return AvisoCambios {
             alcance.launch {
+                io.github.alexcorrea2001lemon.nummia.ui.widget.WidgetBalance.actualizar(context)
                 val a = ajustes.ajustes.first()
                 if (a.notificaciones) io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.pronto(context)
                 val sinc = s.get()

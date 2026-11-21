@@ -1,5 +1,6 @@
 package io.github.alexcorrea2001lemon.nummia
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,11 +23,31 @@ import io.github.alexcorrea2001lemon.nummia.ui.theme.NummiaTheme
 class MainActivity : FragmentActivity() {
     private val vm: MainViewModel by viewModels()
 
+    /** Accesos directos del icono y botón del widget. */
+    private fun atender(i: Intent?) {
+        vm.destino.value = when (i?.action) {
+            ACCION_GASTO -> io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.gasto()
+            ACCION_INGRESO -> io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.ingreso()
+            else -> return
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        atender(intent)
+    }
+
+    companion object {
+        const val ACCION_GASTO = "io.github.alexcorrea2001lemon.nummia.NUEVO_GASTO"
+        const val ACCION_INGRESO = "io.github.alexcorrea2001lemon.nummia.NUEVO_INGRESO"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         splash.setKeepOnScreenCondition { vm.ajustes.value == null }
+        if (savedInstanceState == null) atender(intent)
         setContent {
             val ajustes by vm.ajustes.collectAsStateWithLifecycle()
             val a = ajustes ?: return@setContent

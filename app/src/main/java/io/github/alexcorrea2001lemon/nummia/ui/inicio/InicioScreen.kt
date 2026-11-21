@@ -87,6 +87,7 @@ fun InicioScreen(
     val presupuestos by vm.presupuestos.collectAsStateWithLifecycle()
     var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
     var cambiandoPago by remember { mutableStateOf<PagoPendiente?>(null) }
+    var eligiendoMes by rememberSaveable { mutableStateOf(false) }
 
     val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
     val umbral = with(androidx.compose.ui.platform.LocalDensity.current) { 96.dp.toPx() }
@@ -105,7 +106,7 @@ fun InicioScreen(
         verticalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
         item {
-            Cabecera(e, vm::mesAnterior, vm::mesSiguiente, vm::irAHoy, alBuscar, alAjustes) {
+            Cabecera(e, vm::mesAnterior, vm::mesSiguiente, { eligiendoMes = true }, alBuscar, alAjustes) {
                 io.github.alexcorrea2001lemon.nummia.ui.drive.IconoEstadoDrive(alDrive)
             }
         }
@@ -217,6 +218,9 @@ fun InicioScreen(
         }
     }
 
+    if (eligiendoMes) {
+        io.github.alexcorrea2001lemon.nummia.ui.comun.SelectorMes(e.mes, vm.hoy(), alCerrar = { eligiendoMes = false }) { vm.irAMes(it); eligiendoMes = false }
+    }
     cambiandoPago?.let { p ->
         DialogoImporte("${p.concepto}: ¿cuánto has pagado este mes?", p.importe, alCerrar = { cambiandoPago = null }) { vm.confirmarPago(p.id, it); cambiandoPago = null }
     }
@@ -229,7 +233,7 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
         // El mes ocupa el espacio que sobra: los iconos de la derecha siempre tienen el mismo tamaño.
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = anterior, modifier = Modifier.size(40.dp)) { Icon(Iconos.ChevronIzq, "Mes anterior") }
-            TextButton(onClick = hoy, enabled = !e.esMesActual, modifier = Modifier.weight(1f, fill = false), contentPadding = PaddingValues(horizontal = Espacio.xs)) {
+            TextButton(onClick = hoy, modifier = Modifier.weight(1f, fill = false), contentPadding = PaddingValues(horizontal = Espacio.xs)) {
                 io.github.alexcorrea2001lemon.nummia.ui.comun.TextoMes(
                     e.mes, MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), MaterialTheme.colorScheme.onSurface,
                 )

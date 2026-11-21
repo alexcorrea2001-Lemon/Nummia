@@ -12,6 +12,7 @@ import io.github.alexcorrea2001lemon.nummia.data.repo.MovimientosRepo
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.ImporteInvalido
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
+import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporteOperacion
 import io.github.alexcorrea2001lemon.nummia.domain.reloj.Reloj
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +49,8 @@ data class FormGasto(
 }
 
 sealed interface EventoForm {
-    data class Guardado(val id: String, val otro: Boolean) : EventoForm
+    /** [antes] = cómo estaba el gasto antes de editarlo (para «Deshacer»); null si es nuevo. */
+    data class Guardado(val id: String, val otro: Boolean, val antes: io.github.alexcorrea2001lemon.nummia.data.db.GastoEntity? = null) : EventoForm
 }
 
 /** Texto «1.520,75» sin «€», para rellenar un campo. */
@@ -117,7 +119,7 @@ class FormularioGastoViewModel @Inject constructor(
     fun guardar(otro: Boolean) {
         val f = _form.value
         if (f.guardando) return
-        val importe = leerImporte(f.importe)
+        val importe = leerImporteOperacion(f.importe)
         val esperado = if (f.meLoDevuelven && f.esperado.isNotBlank()) leerImporte(f.esperado) else null
         val errConcepto = if (f.concepto.isBlank()) "Escribe qué has pagado" else null
         _form.update {
@@ -130,6 +132,7 @@ class FormularioGastoViewModel @Inject constructor(
         if (importe.isFailure || errConcepto != null || esperado?.isFailure == true) return
         _form.update { it.copy(guardando = true) }
         viewModelScope.launch {
+            val antes = f.id?.let { repo.gastoUnaVez(it)?.gasto }
             val id = repo.guardarGasto(
                 GastoInput(
                     id = f.id, fecha = f.fecha, concepto = f.concepto, tienda = f.tienda, categoriaId = f.categoriaId,
@@ -138,7 +141,7 @@ class FormularioGastoViewModel @Inject constructor(
                 ),
             )
             _form.value = if (otro) FormGasto(fecha = f.fecha) else f.copy(guardando = false)
-            _eventos.send(EventoForm.Guardado(id, otro))
+            _eventos.send(EventoForm.Guardado(id, otro, antes))
         }
     }
 }

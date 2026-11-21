@@ -74,6 +74,7 @@ fun CalendarioScreen(
     alAjustes: () -> Unit,
     relleno: PaddingValues,
 ) {
+    var eligiendoMes by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     val e by vm.estado.collectAsStateWithLifecycle()
     val c = LocalColoresNummia.current
     LazyColumn(
@@ -90,7 +91,11 @@ fun CalendarioScreen(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = vm::anterior) { Icon(Iconos.ChevronIzq, if (e.semana) "Semana anterior" else "Mes anterior") }
-                TextButton(onClick = vm::irAHoy) { Text(nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface) }
+                // Tocar el mes abre «Ir a…» para saltar a cualquier mes y año.
+                TextButton(onClick = { eligiendoMes = true }) {
+                    Text(nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp))
+                }
                 IconButton(onClick = vm::siguiente) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
                 Spacer(Modifier.weight(1f))
                 FilterChip(selected = e.semana, onClick = vm::alternarVista, label = { Text("Semana") })
@@ -158,6 +163,9 @@ fun CalendarioScreen(
                 }
             }
         }
+    }
+    if (eligiendoMes) {
+        io.github.alexcorrea2001lemon.nummia.ui.comun.SelectorMes(e.mes, vm.hoy(), alCerrar = { eligiendoMes = false }) { vm.irAMes(it); eligiendoMes = false }
     }
 }
 

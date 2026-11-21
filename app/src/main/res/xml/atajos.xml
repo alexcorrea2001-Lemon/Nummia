@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mantén pulsado el icono de Nummia: «Nuevo gasto» y «Nuevo ingreso». -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="nuevo_gasto" android:enabled="true" android:icon="@drawable/atajo_gasto"
+        android:shortcutShortLabel="@string/atajo_gasto" android:shortcutLongLabel="@string/atajo_gasto">
+        <intent android:action="io.github.alexcorrea2001lemon.nummia.NUEVO_GASTO" android:targetPackage="io.github.alexcorrea2001lemon.nummia" android:targetClass="io.github.alexcorrea2001lemon.nummia.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="nuevo_ingreso" android:enabled="true" android:icon="@drawable/atajo_ingreso"
+        android:shortcutShortLabel="@string/atajo_ingreso" android:shortcutLongLabel="@string/atajo_ingreso">
+        <intent android:action="io.github.alexcorrea2001lemon.nummia.NUEVO_INGRESO" android:targetPackage="io.github.alexcorrea2001lemon.nummia" android:targetClass="io.github.alexcorrea2001lemon.nummia.MainActivity" />
+    </shortcut>
+</shortcuts>

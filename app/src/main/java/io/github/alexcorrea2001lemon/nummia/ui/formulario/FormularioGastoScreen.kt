@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,11 +56,15 @@ import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostState, alCerrar: () -> Unit) {
+fun FormularioGastoScreen(
+    vm: FormularioGastoViewModel, snackbar: SnackbarHostState,
+    alEditado: (io.github.alexcorrea2001lemon.nummia.data.db.GastoEntity) -> Unit = {}, alCerrar: () -> Unit,
+) {
     val f by vm.form.collectAsStateWithLifecycle()
     val personas by vm.personas.collectAsStateWithLifecycle()
     val categorias by vm.categorias.collectAsStateWithLifecycle()
     val foco = remember { FocusRequester() }
+    val focoConcepto = remember { FocusRequester() }
     val haptica = rememberHaptica()
     var nuevaPersona by rememberSaveable { mutableStateOf(false) }
     val c = LocalColoresNummia.current
@@ -69,7 +75,7 @@ fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostSt
         vm.eventos.collect { ev ->
             if (ev is EventoForm.Guardado) {
                 haptica()
-                if (ev.otro) { snackbar.showSnackbar("Gasto guardado"); runCatching { foco.requestFocus() } } else alCerrar()
+                if (ev.otro) { snackbar.showSnackbar("Gasto guardado"); runCatching { foco.requestFocus() } } else { ev.antes?.let(alEditado); alCerrar() }
             }
         }
     }
@@ -97,13 +103,13 @@ fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostSt
             Modifier.fillMaxSize().padding(p).verticalScroll(rememberScrollState()).padding(horizontal = Espacio.l, vertical = Espacio.s),
             verticalArrangement = Arrangement.spacedBy(Espacio.l),
         ) {
-            CampoImporteGrande(f.importe, vm::importe, f.errorImporte, foco)
+            CampoImporteGrande(f.importe, vm::importe, f.errorImporte, foco) { runCatching { focoConcepto.requestFocus() } }
 
             OutlinedTextField(
                 f.concepto, vm::concepto, label = { Text("Concepto") }, placeholder = { Text("Comida, ropa, regalo…") },
                 singleLine = true, isError = f.errorConcepto != null, supportingText = f.errorConcepto?.let { { Text(it) } },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().focusRequester(focoConcepto),
             )
             OutlinedTextField(
                 f.tienda, vm::tienda, label = { Text("Tienda o lugar") }, placeholder = { Text("Supermercado, cafetería…") },
@@ -117,7 +123,17 @@ fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostSt
                 Text("Categoría (opcional)", style = MaterialTheme.typography.bodySmall, color = c.textoSuave, modifier = Modifier.padding(start = Espacio.xs))
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
                     FilterChip(selected = f.categoriaId == null, onClick = { vm.categoria(null) }, label = { Text("Ninguna") })
-                    categorias.forEach { cat -> FilterChip(selected = f.categoriaId == cat.id, onClick = { vm.categoria(cat.id) }, label = { Text(cat.nombre) }) }
+                    categorias.forEach { cat ->
+                        FilterChip(
+                            selected = f.categoriaId == cat.id, onClick = { haptica(); vm.categoria(cat.id) }, label = { Text(cat.nombre) },
+                            leadingIcon = {
+                                Icon(
+                                    io.github.alexcorrea2001lemon.nummia.ui.comun.IconosCategoria.de(cat.icono), null,
+                                    tint = androidx.compose.ui.graphics.Color(cat.color), modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
+                    }
                 }
             }
 
@@ -146,7 +162,7 @@ fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostSt
                                 singleLine = true, isError = f.errorEsperado != null, supportingText = f.errorEsperado?.let { { Text(it) } },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
                             )
-                            val pagado = leerImporte(f.importe).getOrNull()
+                            val pagado = io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporteOperacion(f.importe).getOrNull()
                             val esperado = leerImporte(f.esperado).getOrNull()
                             if (pagado != null && esperado != null && esperado > pagado) {
                                 Text("+${formatearEuros(esperado - pagado)} a tu favor cuando te paguen", color = c.ingreso, style = MaterialTheme.typography.bodySmall)

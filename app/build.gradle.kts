@@ -9,7 +9,7 @@ plugins {
 
 // Versión: MAYOR.MENOR.CORRECCIÓN → versionCode = MAYOR*10000 + MENOR*100 + CORRECCIÓN
 val versionMayor = 1
-val versionMenor = 6
+val versionMenor = 7
 val versionCorreccion = 0
 
 android {

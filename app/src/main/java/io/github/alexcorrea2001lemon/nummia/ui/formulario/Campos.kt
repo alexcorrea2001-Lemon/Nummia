@@ -39,6 +39,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.ui.unit.sp
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.comun.fechaCorta
@@ -48,36 +54,105 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-/** Importe grande, centrado, con teclado numérico. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+/**
+ * Importe grande, centrado, con el teclado propio de Nummia: números, coma, sumas y restas
+ * («12+3,50»). Se abre solo al empezar y al tocar el importe; «Listo» lo cierra.
+ */
 @Composable
-fun CampoImporteGrande(valor: String, alCambiar: (String) -> Unit, error: String?, foco: FocusRequester, etiqueta: String = "Importe") {
+fun CampoImporteGrande(
+    valor: String, alCambiar: (String) -> Unit, error: String?, foco: FocusRequester, etiqueta: String = "Importe",
+    alListo: () -> Unit = {},
+) {
     val c = LocalColoresNummia.current
-    Column(Modifier.fillMaxWidth().padding(vertical = Espacio.m), horizontalAlignment = Alignment.CenterHorizontally) {
+    var abierto by rememberSaveable { mutableStateOf(valor.isEmpty()) }
+    val gestor = androidx.compose.ui.platform.LocalFocusManager.current
+    LaunchedEffect(valor.isEmpty()) { if (valor.isEmpty()) abierto = true } // tras «Guardar y otro»
+    // Si se abre el teclado del móvil (al escribir el concepto), el nuestro se cierra: nunca los dos a la vez.
+    val tecladoMovil = androidx.compose.foundation.layout.WindowInsets.isImeVisible
+    LaunchedEffect(tecladoMovil) { if (tecladoMovil) abierto = false }
+    val total = remember(valor) {
+        if (io.github.alexcorrea2001lemon.nummia.domain.dinero.esOperacion(valor)) {
+            io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporteOperacion(valor).getOrNull()
+        } else null
+    }
+    Column(Modifier.fillMaxWidth().padding(vertical = Espacio.s), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(etiqueta, style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            BasicTextField(
-                value = valor,
-                onValueChange = { nuevo -> alCambiar(nuevo.filter { it.isDigit() || it == ',' || it == '.' }.take(13)) },
-                singleLine = true,
-                textStyle = TextStyle(
-                    fontSize = 48.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End,
-                    color = MaterialTheme.colorScheme.onSurface, fontFeatureSettings = "tnum",
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
-                decorationBox = { campo ->
-                    Box(contentAlignment = Alignment.CenterEnd) {
-                        if (valor.isEmpty()) {
-                            Text("0,00", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = c.textoSuave.copy(alpha = 0.5f), style = TextStyle(fontFeatureSettings = "tnum"))
-                        }
-                        campo()
-                    }
-                },
-                modifier = Modifier.width(240.dp).focusRequester(foco).semantics { contentDescription = etiqueta },
+        Row(
+            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium)
+                .clickable { gestor.clearFocus(); abierto = true }
+                .focusRequester(foco).focusable()
+                .semantics { contentDescription = "$etiqueta: ${valor.ifEmpty { "vacío" }}. Toca para escribir" }
+                .padding(vertical = Espacio.s),
+            horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                valor.ifEmpty { "0,00" }, fontSize = if (valor.length > 9) 36.sp else 48.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                color = if (valor.isEmpty()) c.textoSuave.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                style = TextStyle(fontFeatureSettings = "tnum"),
             )
             Text(" €", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = c.textoSuave)
         }
+        if (total != null) {
+            Text("= ${io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros(total)}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+        }
         if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        androidx.compose.animation.AnimatedVisibility(abierto) {
+            TecladoImporte(valor, alCambiar) { abierto = false; alListo() }
+        }
+    }
+}
+
+/** Teclado numérico grande con + y −. */
+@Composable
+fun TecladoImporte(valor: String, alCambiar: (String) -> Unit, alListo: () -> Unit) {
+    val haptica = androidx.compose.ui.platform.LocalHapticFeedback.current
+    fun pulsar(k: String) {
+        haptica.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+        val ultimo = valor.substringAfterLast('+').substringAfterLast('−')
+        val nuevo = when (k) {
+            "⌫" -> valor.dropLast(1)
+            "+", "−" -> when {
+                valor.isEmpty() -> valor
+                valor.last() == '+' || valor.last() == '−' -> valor.dropLast(1) + k
+                valor.last() == ',' -> valor.dropLast(1) + k
+                else -> valor + k
+            }
+            "," -> if (',' in ultimo) valor else valor + (if (ultimo.isEmpty()) "0," else ",")
+            else -> if (',' in ultimo && ultimo.substringAfter(',').length >= 2) valor else valor + k
+        }
+        if (nuevo.length <= 24) alCambiar(nuevo)
+    }
+    val filas = listOf(listOf("7", "8", "9", "⌫"), listOf("4", "5", "6", "+"), listOf("1", "2", "3", "−"), listOf(",", "0", "00", "Listo"))
+    Column(Modifier.fillMaxWidth().padding(top = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+        filas.forEach { fila ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                fila.forEach { k ->
+                    val esListo = k == "Listo"
+                    val esOp = k == "+" || k == "−" || k == "⌫"
+                    Box(
+                        Modifier.weight(1f).height(52.dp).clip(MaterialTheme.shapes.small)
+                            .background(
+                                when {
+                                    esListo -> MaterialTheme.colorScheme.primary
+                                    esOp -> MaterialTheme.colorScheme.secondaryContainer
+                                    else -> MaterialTheme.colorScheme.surfaceContainerHigh
+                                },
+                            )
+                            .clickable { if (esListo) alListo() else if (k == "00") { pulsar("0"); pulsar("0") } else pulsar(k) }
+                            .semantics {
+                                contentDescription = when (k) { "⌫" -> "Borrar"; "+" -> "Sumar"; "−" -> "Restar"; "," -> "Coma"; else -> k }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            k, fontSize = if (esListo) 16.sp else 22.sp, fontWeight = if (esListo) FontWeight.Bold else FontWeight.Medium,
+                            color = if (esListo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

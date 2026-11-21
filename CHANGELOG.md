@@ -2,6 +2,20 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.7.0] - 2026-11-21
+
+### Nuevo
+- **Ir a cualquier mes al momento**: toca el nombre del mes (en el Calendario, Inicio o Movimientos) y elige año y mes. Sin deslizar mes a mes.
+- **Teclado propio para el importe**, grande y con sumas y restas: escribe «12+3,50» y se apunta 15,50 €. Se ve el total mientras escribes.
+- **Accesos directos**: mantén pulsado el icono de Nummia y elige «Nuevo gasto» o «Nuevo ingreso».
+- **Widget** para la pantalla de inicio: el balance del mes y un botón «+ Gasto». Se actualiza solo cuando cambias algo (no gasta batería) y respeta el modo discreto.
+- **Botones en las notificaciones**: confirma un pago mensual o el sueldo con «Confirmar» sin abrir la app, o pulsa «Otro importe».
+- **Deshacer al editar**: después de cambiar un gasto aparece «Gasto actualizado · Deshacer».
+
+### Cambiado
+- **Informes más bonitos**: formato elegido con dos tarjetas (PDF para leer o imprimir, Excel para hacer cuentas), atajos con icono y lo que incluyen, «A tu medida» y una lista de tus informes con su tipo y un botón para compartir.
+- **Categorías con su icono y color** al elegirlas en el formulario de gasto.
+
 ## [1.6.0] - 2026-11-21
 
 ### Nuevo

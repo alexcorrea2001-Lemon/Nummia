@@ -23,7 +23,24 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize" />
+
+        <receiver
+            android:name=".data.avisos.ReceptorAvisos"
+            android:exported="false" />
+
+        <receiver
+            android:name=".ui.widget.WidgetBalance"
+            android:exported="false"
+            android:label="@string/widget_nombre">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_balance_info" />
+        </receiver>
 
         <receiver
             android:name=".data.actualizar.ReceptorInstalacion"
@@ -62,6 +79,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_turquesa"
@@ -75,6 +93,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_cian"
@@ -88,6 +107,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_azul"
@@ -101,6 +121,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_indigo"
@@ -114,6 +135,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_violeta"
@@ -127,6 +149,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_rosa"
@@ -140,6 +163,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_coral"
@@ -153,6 +177,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_naranja"
@@ -166,6 +191,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_ambar"
@@ -179,6 +205,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_lima"
@@ -192,6 +219,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_A_pizarra"
@@ -205,6 +233,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_verde_menta"
@@ -218,6 +247,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_turquesa"
@@ -231,6 +261,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_cian"
@@ -244,6 +275,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_azul"
@@ -257,6 +289,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_indigo"
@@ -270,6 +303,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_violeta"
@@ -283,6 +317,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_rosa"
@@ -296,6 +331,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_coral"
@@ -309,6 +345,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_naranja"
@@ -322,6 +359,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_ambar"
@@ -335,6 +373,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_lima"
@@ -348,6 +387,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_B_pizarra"
@@ -361,6 +401,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_verde_menta"
@@ -374,6 +415,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_turquesa"
@@ -387,6 +429,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_cian"
@@ -400,6 +443,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_azul"
@@ -413,6 +457,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_indigo"
@@ -426,6 +471,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_violeta"
@@ -439,6 +485,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_rosa"
@@ -452,6 +499,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_coral"
@@ -465,6 +513,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_naranja"
@@ -478,6 +527,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_ambar"
@@ -491,6 +541,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_lima"
@@ -504,6 +555,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
         <activity-alias
             android:name=".Lanzador_C_pizarra"
@@ -517,6 +569,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/atajos" />
         </activity-alias>
     </application>
 </manifest>

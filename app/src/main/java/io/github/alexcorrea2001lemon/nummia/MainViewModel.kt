@@ -49,6 +49,7 @@ class MainViewModel @Inject constructor(
                 runCatching { repo.completarCategorias() }
                 runCatching { repo.asegurarPagosPrevistos(reloj.hoy()) }
                 ajustesRepo.ultimoMantenimiento(hoy)
+                io.github.alexcorrea2001lemon.nummia.ui.widget.WidgetBalance.actualizar(context) // cambio de día / de mes
             }
             actualizador.limpiar()
             // Si ya está instalada la versión que se anunciaba (o una posterior), se quita el aviso.
@@ -67,6 +68,12 @@ class MainViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            // El widget oculta o muestra los importes según el modo discreto.
+            ajustesRepo.ajustes.map { it.modoDiscreto }.distinctUntilChanged().collect {
+                io.github.alexcorrea2001lemon.nummia.ui.widget.WidgetBalance.actualizar(context)
+            }
+        }
+        viewModelScope.launch {
             ajustesRepo.ajustes.map { it.notificaciones }.distinctUntilChanged().collect {
                 io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.programar(context, it)
                 if (it) io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.pronto(context)
@@ -78,6 +85,15 @@ class MainViewModel @Inject constructor(
             }
         }
     }
+
+    /** Tras editar un gasto: aviso con «Deshacer» (vive aquí para seguir aunque se cierre el formulario). */
+    fun ofrecerDeshacer(snackbar: androidx.compose.material3.SnackbarHostState, antes: io.github.alexcorrea2001lemon.nummia.data.db.GastoEntity) = viewModelScope.launch {
+        val r = snackbar.showSnackbar("Gasto actualizado", actionLabel = "Deshacer", duration = androidx.compose.material3.SnackbarDuration.Long)
+        if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) repo.restaurarGasto(antes)
+    }
+
+    /** Destino pedido desde un acceso directo o el widget («Nuevo gasto», «Nuevo ingreso»). */
+    val destino = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
 
     fun terminarBienvenida(sueldo: Long?) = viewModelScope.launch {
         if (sueldo != null) ajustesRepo.sueldoHabitual(sueldo)

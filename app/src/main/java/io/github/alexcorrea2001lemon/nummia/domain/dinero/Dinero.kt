@@ -83,3 +83,38 @@ fun leerImporte(texto: String): Result<Long> {
 }
 
 private fun fallo(motivo: String): Result<Long> = Result.failure(ImporteInvalido(motivo))
+
+/** ¿Es una operación («12+3,50», «20−4»)? */
+fun esOperacion(texto: String): Boolean = texto.drop(1).any { it == '+' || it == '-' || it == MENOS }
+
+/**
+ * Lee un importe que puede ser una suma o resta: «12+3,50» → 15,50 €; «20−4,75» → 15,25 €.
+ * Cada número se lee como [leerImporte]; el total tiene que ser mayor que 0.
+ */
+fun leerImporteOperacion(texto: String): Result<Long> {
+    val limpio = texto.replace(" ", "").replace(NBSP.toString(), "").replace("€", "").trimEnd('+', '-', MENOS)
+    if (!esOperacion(limpio)) return leerImporte(limpio)
+    var total = 0L
+    var signo = 1
+    val actual = StringBuilder()
+    fun cerrar(): String? {
+        if (actual.isEmpty()) return "Falta un número"
+        val n = leerImporte(actual.toString()).getOrElse { return (it as? ImporteInvalido)?.motivo ?: "Importe no válido" }
+        total += signo * n
+        actual.setLength(0)
+        return null
+    }
+    for (ch in limpio) {
+        when (ch) {
+            '+', '-', MENOS -> {
+                cerrar()?.let { return fallo(it) }
+                signo = if (ch == '+') 1 else -1
+            }
+            else -> actual.append(ch)
+        }
+    }
+    cerrar()?.let { return fallo(it) }
+    if (total <= 0) return fallo("El total tiene que ser mayor que 0")
+    if (total > MAXIMO_CENTIMOS) return fallo("El importe es demasiado grande")
+    return Result.success(total)
+}

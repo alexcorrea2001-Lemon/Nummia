@@ -50,6 +50,7 @@ import io.github.alexcorrea2001lemon.nummia.domain.calculo.Estado
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.TipoIngreso
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.ImporteInvalido
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
+import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporteOperacion
 import io.github.alexcorrea2001lemon.nummia.domain.reloj.Reloj
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.comun.nombreTipo
@@ -110,7 +111,7 @@ class FormularioIngresoViewModel @Inject constructor(
 
     fun guardar() {
         val f = _form.value
-        val r = leerImporte(f.importe)
+        val r = leerImporteOperacion(f.importe)
         if (r.isFailure) { _form.update { it.copy(errorImporte = (r.exceptionOrNull() as? ImporteInvalido)?.motivo) }; return }
         _form.update { it.copy(guardando = true) }
         viewModelScope.launch {

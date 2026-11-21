@@ -96,6 +96,7 @@ fun MovimientosScreen(
     val alcance = rememberCoroutineScope()
     val haptica = rememberHaptica()
     var verFiltros by rememberSaveable { mutableStateOf(false) }
+    var eligiendoMes by rememberSaveable { mutableStateOf(false) }
     val c = LocalColoresNummia.current
     LaunchedEffect(Unit) {
         io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.movimientos.collect { p ->
@@ -124,7 +125,9 @@ fun MovimientosScreen(
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = vm::mesAnterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
-                            io.github.alexcorrea2001lemon.nummia.ui.comun.TextoMes(e.mes, MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            TextButton(onClick = { eligiendoMes = true }) {
+                                io.github.alexcorrea2001lemon.nummia.ui.comun.TextoMes(e.mes, MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), MaterialTheme.colorScheme.onSurface)
+                            }
                             IconButton(onClick = vm::mesSiguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
                         }
                     }
@@ -224,6 +227,9 @@ fun MovimientosScreen(
 
     }
 
+    if (eligiendoMes) {
+        io.github.alexcorrea2001lemon.nummia.ui.comun.SelectorMes(e.mes, vm.hoyMes(), alCerrar = { eligiendoMes = false }) { vm.irAMes(it); eligiendoMes = false }
+    }
     if (verFiltros) {
         ModalBottomSheet(onDismissRequest = { verFiltros = false }) {
             HojaFiltros(e.filtros, vm::orden, alAplicar = { cr, mi, ma -> vm.avanzados(cr, mi, ma); verFiltros = false }, alLimpiar = { vm.limpiarAvanzados(); verFiltros = false })

@@ -7,7 +7,12 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 /** Una notificación. [clave] sirve para no repetirla nunca. */
-data class Aviso(val clave: String, val titulo: String, val texto: String)
+data class Aviso(val clave: String, val titulo: String, val texto: String, val accion: AccionAviso? = null)
+
+/** Lo que hace el botón «Confirmar» de la notificación. */
+data class AccionAviso(val tipo: Tipo, val id: String, val importe: Long) {
+    enum class Tipo { PAGO, SUELDO }
+}
 
 data class PagoDelDia(val id: String, val concepto: String, val importe: Long, val fecha: LocalDate)
 
@@ -28,15 +33,23 @@ fun avisosPendientes(
     presupuestos: List<Pair<String, EstadoPresupuesto>>,
     hechos: Set<String>,
     pref: PreferenciasAvisos,
+    sueldoId: String? = null,
+    sueldoImporte: Long = 0,
 ): List<Aviso> {
     val ym = YearMonth.from(hoy)
     val res = ArrayList<Aviso>()
     if (pref.sueldo && sueldoPrevisto && hoy.dayOfMonth >= 27) {
-        res += Aviso("sueldo-$ym", "¿Ya has cobrado?", "Confirma tu sueldo de ${MESES[ym.monthValue - 1]} con el día y el importe reales.")
+        res += Aviso(
+            "sueldo-$ym", "¿Ya has cobrado?", "Confirma tu sueldo de ${MESES[ym.monthValue - 1]} con el día y el importe reales.",
+            sueldoId?.let { AccionAviso(AccionAviso.Tipo.SUELDO, it, sueldoImporte) },
+        )
     }
     if (pref.pagos) {
         pagos.filter { !it.fecha.isAfter(hoy) }.forEach { p ->
-            res += Aviso("pago-${p.id}", "Hoy se paga ${p.concepto}", "${formatearEuros(p.importe)}. Confírmalo o cambia el importe en Inicio.")
+            res += Aviso(
+                "pago-${p.id}", "Hoy se paga ${p.concepto}", "${formatearEuros(p.importe)}. Confírmalo aquí o cambia el importe en Inicio.",
+                AccionAviso(AccionAviso.Tipo.PAGO, p.id, p.importe),
+            )
         }
     }
     if (pref.presupuestos) {

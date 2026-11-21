@@ -55,15 +55,16 @@ class TrabajoAvisos @AssistedInject constructor(
         if (!a.notificaciones || !puedeNotificar(context)) return Result.success()
         val hoy = reloj.hoy()
         val ym = YearMonth.from(hoy)
-        val sueldo = db.ingresos().volcar().any {
+        val previsto = db.ingresos().volcar().firstOrNull {
             it.deletedAt == null && it.tipo == TipoIngreso.SUELDO && it.estado == Estado.PREVISTO && YearMonth.from(it.fecha) == ym
         }
+        val sueldo = previsto != null
         val pagos = db.gastos().volcar()
             .filter { it.deletedAt == null && it.estado == Estado.PREVISTO && it.pagoMensualId != null && YearMonth.from(it.fecha) == ym }
             .map { PagoDelDia(it.id, it.concepto, it.importe, it.fecha) }
         val categorias = db.categorias().volcar().associate { it.id to it.nombre }
         val presupuestos = repo.estadoPresupuestosAhora(ym).map { nombrePresupuesto(it, categorias) to it }
-        val nuevos = avisosPendientes(hoy, sueldo, pagos, presupuestos, ajustes.avisosHechos(), PreferenciasAvisos(a.avisoSueldo, a.avisoPagos, a.avisoPresupuestos))
+        val nuevos = avisosPendientes(hoy, sueldo, pagos, presupuestos, ajustes.avisosHechos(), PreferenciasAvisos(a.avisoSueldo, a.avisoPagos, a.avisoPresupuestos), previsto?.id, previsto?.importe ?: 0)
         nuevos.forEach { mostrar(context, it) }
         if (nuevos.isNotEmpty()) ajustes.anotarAvisos(nuevos.map { it.clave })
         return Result.success()
@@ -96,14 +97,26 @@ class TrabajoAvisos @AssistedInject constructor(
                 context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
-            val n = NotificationCompat.Builder(context, CANAL)
+            val b = NotificationCompat.Builder(context, CANAL)
                 .setSmallIcon(R.drawable.ic_app_a_mono)
                 .setContentTitle(a.titulo)
                 .setContentText(a.texto)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(a.texto))
                 .setContentIntent(abrir)
                 .setAutoCancel(true)
-                .build()
+            // Botones: confirmar sin abrir la app, o abrirla para poner otro importe.
+            a.accion?.let { ac ->
+                val confirmar = PendingIntent.getBroadcast(
+                    context, a.clave.hashCode(),
+                    Intent(context, ReceptorAvisos::class.java).setAction(ReceptorAvisos.CONFIRMAR)
+                        .putExtra(ReceptorAvisos.TIPO, ac.tipo.name).putExtra(ReceptorAvisos.ID, ac.id)
+                        .putExtra(ReceptorAvisos.IMPORTE, ac.importe).putExtra(ReceptorAvisos.NOTIFICACION, a.clave.hashCode()),
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                )
+                b.addAction(0, "Confirmar", confirmar)
+                b.addAction(0, "Otro importe", abrir)
+            }
+            val n = b.build()
             try {
                 NotificationManagerCompat.from(context).notify(a.clave.hashCode(), n)
             } catch (_: SecurityException) {

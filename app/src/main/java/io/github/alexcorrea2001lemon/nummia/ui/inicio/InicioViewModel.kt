@@ -158,6 +158,8 @@ class InicioViewModel @Inject constructor(
     fun mesAnterior() = mes.update { it.minusMonths(1) }
     fun mesSiguiente() = mes.update { it.plusMonths(1) }
     fun irAHoy() { mes.value = YearMonth.from(reloj.hoy()) }
+    fun irAMes(ym: YearMonth) { mes.value = ym }
+    fun hoy(): YearMonth = YearMonth.from(reloj.hoy())
 
     fun alternarDiscreto() = viewModelScope.launch { ajustesRepo.modoDiscreto(!estado.value.discreto) }
 

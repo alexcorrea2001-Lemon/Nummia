@@ -48,6 +48,7 @@ import io.github.alexcorrea2001lemon.nummia.data.repo.falta
 import io.github.alexcorrea2001lemon.nummia.data.repo.real
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.ImporteInvalido
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
+import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporteOperacion
 import io.github.alexcorrea2001lemon.nummia.domain.reloj.Reloj
 import io.github.alexcorrea2001lemon.nummia.ui.comun.FilaMovimiento
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
@@ -121,7 +122,7 @@ class FormularioReembolsoViewModel @Inject constructor(
     fun guardar() {
         val f = _form.value
         val g = f.gasto ?: return
-        val r = leerImporte(f.importe)
+        val r = leerImporteOperacion(f.importe)
         if (r.isFailure) { _form.update { it.copy(error = (r.exceptionOrNull() as? ImporteInvalido)?.motivo) }; return }
         _form.update { it.copy(guardando = true) }
         viewModelScope.launch {

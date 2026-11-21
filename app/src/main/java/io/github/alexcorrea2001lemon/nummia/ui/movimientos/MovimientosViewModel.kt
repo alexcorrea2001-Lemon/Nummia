@@ -71,6 +71,8 @@ class MovimientosViewModel @Inject constructor(
 
     fun mesAnterior() = mes.update { it.minusMonths(1) }
     fun mesSiguiente() = mes.update { it.plusMonths(1) }
+    fun irAMes(ym: YearMonth) { mes.value = ym }
+    fun hoyMes(): YearMonth = YearMonth.from(reloj.hoy())
     fun pestana(p: Pestana) = filtros.update { it.copy(pestana = p) }
     fun texto(t: String) = filtros.update { it.copy(texto = t) }
     fun orden(o: Orden) = filtros.update { it.copy(orden = o) }

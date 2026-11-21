@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Nummia</string>
+    <string name="atajo_gasto">Nuevo gasto</string>
+    <string name="atajo_ingreso">Nuevo ingreso</string>
+    <string name="widget_nombre">Balance del mes</string>
+    <string name="widget_descripcion">El balance del mes y un botón para apuntar un gasto</string>
 </resources>

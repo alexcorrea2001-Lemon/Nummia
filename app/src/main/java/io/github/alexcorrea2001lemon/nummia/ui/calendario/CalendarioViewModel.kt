@@ -113,5 +113,7 @@ class CalendarioViewModel @Inject constructor(
     }
 
     fun irAHoy() = elegir(reloj.hoy())
+    fun irAMes(ym: YearMonth) = elegir(if (YearMonth.from(reloj.hoy()) == ym) reloj.hoy() else ym.atDay(1))
+    fun hoy(): YearMonth = YearMonth.from(reloj.hoy())
     fun alternarVista() = semana.update { !it }
 }

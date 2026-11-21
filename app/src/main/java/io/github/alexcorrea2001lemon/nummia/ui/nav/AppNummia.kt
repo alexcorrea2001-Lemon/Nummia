@@ -39,6 +39,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.alexcorrea2001lemon.nummia.ui.bloqueo.actividad
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -106,6 +108,15 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
     var menuAbierto by rememberSaveable { mutableStateOf(false) }
     val haptica = rememberHaptica()
     var fabVisible by remember { mutableStateOf(true) }
+    // «Nuevo gasto» / «Nuevo ingreso» desde el icono o el widget
+    val actividadApp = androidx.compose.ui.platform.LocalContext.current.actividad()
+    if (actividadApp != null) {
+        val principal: io.github.alexcorrea2001lemon.nummia.MainViewModel = hiltViewModel(actividadApp)
+        val destino by principal.destino.collectAsStateWithLifecycle()
+        LaunchedEffect(destino) {
+            destino?.let { nav.navigate(it) { launchSingleTop = true }; principal.destino.value = null }
+        }
+    }
     LaunchedEffect(ruta) { fabVisible = true }
     val ocultarAlBajar = remember {
         object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
@@ -218,7 +229,11 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             navArgument("paraOtro") { type = NavType.BoolType; defaultValue = false },
             navArgument("fecha") { type = NavType.StringType; defaultValue = "" },
         ),
-    ) { FormularioGastoScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
+    ) {
+        val actividad = requireNotNull(androidx.compose.ui.platform.LocalContext.current.actividad())
+        val principal: io.github.alexcorrea2001lemon.nummia.MainViewModel = hiltViewModel(actividad)
+        FormularioGastoScreen(hiltViewModel(), snackbar, alEditado = { principal.ofrecerDeshacer(snackbar, it) }) { nav.popBackStack() }
+    }
     pantalla(Rutas.INGRESO, listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" })) {
         FormularioIngresoScreen(hiltViewModel()) { nav.popBackStack() }
     }

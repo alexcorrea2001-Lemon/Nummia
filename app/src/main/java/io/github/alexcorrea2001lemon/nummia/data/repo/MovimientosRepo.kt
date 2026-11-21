@@ -238,6 +238,12 @@ class MovimientosRepo @Inject constructor(
     /** Si el gasto viene de un pago mensual que sigue activo. */
     suspend fun esPagoMensual(g: GastoEntity): Boolean = g.pagoMensualId?.let { db.pagos().obtener(it) }?.let { it.deletedAt == null } == true
 
+    /** «Deshacer» tras editar: el gasto vuelve a como estaba. */
+    suspend fun restaurarGasto(antes: GastoEntity) = db.withTransaction {
+        db.gastos().guardar(antes.copy(updatedAt = reloj.ahoraMs()))
+        anotar("gasto", antes.id, "cambios deshechos", null, null)
+    }
+
     suspend fun borrarGasto(id: String) = db.withTransaction {
         db.gastos().marcarBorrado(id, reloj.ahoraMs())
         anotar("gasto", id, "borrado", null, null)

@@ -115,33 +115,65 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
             }
         }
         item {
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                Formato.entries.forEachIndexed { i, f ->
-                    SegmentedButton(
-                        selected = e.formato == f, onClick = { vm.formato(f) },
-                        shape = SegmentedButtonDefaults.itemShape(i, Formato.entries.size),
-                    ) { Text(if (f == Formato.PDF) "PDF" else "Excel") }
+            Text(
+                "Crea un resumen bonito para guardarlo, imprimirlo o enviarlo.",
+                style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.padding(horizontal = Espacio.xs),
+            )
+        }
+        // Formato: dos tarjetas grandes en vez de un interruptor pequeño
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                Formato.entries.forEach { f ->
+                    val sel = e.formato == f
+                    val color = if (f == Formato.PDF) androidx.compose.ui.graphics.Color(0xFFF87171) else androidx.compose.ui.graphics.Color(0xFF4ADE80)
+                    androidx.compose.material3.Surface(
+                        onClick = { vm.formato(f) }, selected = sel,
+                        shape = MaterialTheme.shapes.medium,
+                        color = if (sel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+                        border = androidx.compose.foundation.BorderStroke(if (sel) 2.dp else 1.dp, if (sel) MaterialTheme.colorScheme.primary else c.borde),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Row(Modifier.padding(Espacio.m), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                            io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar("", color.copy(alpha = 0.18f), color, if (f == Formato.PDF) Iconos.Informes else Iconos.Estadisticas)
+                            Column {
+                                Text(if (f == Formato.PDF) "PDF" else "Excel", fontWeight = FontWeight.SemiBold)
+                                Text(if (f == Formato.PDF) "Para leer o imprimir" else "Para hacer cuentas", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                            }
+                        }
+                    }
                 }
             }
         }
+        // Atajos: tarjetas con icono, título y lo que incluyen
         item {
-            EncabezadoSeccion("Rápidos")
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                val ym = YearMonth.from(hoy)
-                OutlinedButton(enabled = !e.generando, onClick = {
-                    vm.generar("Informe", ym.atDay(1), ym.atEndOfMonth(), setOf(Contenido.RESUMEN, Contenido.CATEGORIAS, Contenido.TIENDAS, Contenido.MOVIMIENTOS))
-                }) { Text("Este mes") }
-                OutlinedButton(enabled = !e.generando, onClick = {
-                    vm.generar("Informe", LocalDate.of(hoy.year, 1, 1), LocalDate.of(hoy.year, 12, 31), setOf(Contenido.RESUMEN, Contenido.MESES, Contenido.CATEGORIAS, Contenido.TIENDAS))
-                }) { Text("Año ${hoy.year}") }
-                OutlinedButton(enabled = !e.generando, onClick = {
-                    vm.generar("Lo que me deben", LocalDate.of(2000, 1, 1), hoy, setOf(Contenido.DEBEN))
-                }) { Text("Lo que me deben") }
+            val ym = YearMonth.from(hoy)
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                EncabezadoSeccion("En un toque")
+                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                    AtajoInforme(
+                        Iconos.Calendario, io.github.alexcorrea2001lemon.nummia.ui.comun.nombreMes(ym), "Resumen, categorías, tiendas y movimientos",
+                        !e.generando, Modifier.weight(1f),
+                    ) { vm.generar("Informe", ym.atDay(1), ym.atEndOfMonth(), setOf(Contenido.RESUMEN, Contenido.CATEGORIAS, Contenido.TIENDAS, Contenido.MOVIMIENTOS)) }
+                    AtajoInforme(
+                        Iconos.Estadisticas, "Año ${hoy.year}", "Resumen, mes a mes, categorías y tiendas",
+                        !e.generando, Modifier.weight(1f),
+                    ) { vm.generar("Informe", LocalDate.of(hoy.year, 1, 1), LocalDate.of(hoy.year, 12, 31), setOf(Contenido.RESUMEN, Contenido.MESES, Contenido.CATEGORIAS, Contenido.TIENDAS)) }
+                }
+                AtajoInforme(
+                    Iconos.Persona, "Lo que me deben", "Quién te debe, cuánto y desde cuándo",
+                    !e.generando, Modifier.fillMaxWidth(),
+                ) { vm.generar("Lo que me deben", LocalDate.of(2000, 1, 1), hoy, setOf(Contenido.DEBEN)) }
             }
         }
         item {
             Tarjeta(modifier = Modifier.animateContentSize()) {
-                Text("Personalizado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                    io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar("", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, Iconos.Filtro)
+                    Column {
+                        Text("A tu medida", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("Elige el periodo y qué incluir", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                    }
+                }
                 Text("Periodo", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
                     Periodo.entries.forEach { p ->
@@ -219,7 +251,7 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
             }
         }
         if (e.historial.isNotEmpty()) {
-            item { EncabezadoSeccion("Creados") }
+            item { EncabezadoSeccion("Tus informes") }
             item {
                 Tarjeta(relleno = false) {
                     e.historial.forEachIndexed { n, a ->
@@ -228,14 +260,19 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
                             Modifier.fillMaxWidth().clickable { vm.abrir(a) }.padding(start = Espacio.l, top = Espacio.s, bottom = Espacio.s),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            val pdf = a.formato == Formato.PDF
+                            val colorTipo = if (pdf) androidx.compose.ui.graphics.Color(0xFFF87171) else androidx.compose.ui.graphics.Color(0xFF4ADE80)
+                            io.github.alexcorrea2001lemon.nummia.ui.comun.Etiqueta(if (pdf) "PDF" else "XLSX", colorTipo.copy(alpha = 0.18f), colorTipo)
+                            androidx.compose.foundation.layout.Spacer(Modifier.size(Espacio.m))
                             Column(Modifier.weight(1f)) {
-                                Text(a.nombre, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                                Text(a.nombre.substringBeforeLast('_').replace('_', ' '), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                 Text(
                                     "${if (a.formato == Formato.PDF) "PDF" else "Excel"} · ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.ROOT).format(Date(a.archivo.lastModified()))} · ${(a.archivo.length() + 1023) / 1024} KB",
                                     style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
                                 )
                             }
-                            IconButton(onClick = { vm.borrar(a) }) { Icon(Iconos.Papelera, "Borrar ${a.nombre}") }
+                            IconButton(onClick = { ctx.startActivity(vm.intentCompartir(a)) }) { Icon(Iconos.Subir, "Compartir ${a.nombre}") }
+                            IconButton(onClick = { vm.borrar(a) }) { Icon(Iconos.Papelera, "Borrar ${a.nombre}", tint = c.textoSuave) }
                         }
                     }
                 }
@@ -260,6 +297,25 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
             dismissButton = { TextButton(onClick = { eligiendoFechas = false }) { Text("Cancelar") } },
         ) {
             DateRangePicker(estado, Modifier.heightIn(max = 520.dp), title = { Text("Elige las fechas", Modifier.padding(start = 24.dp, top = 16.dp)) })
+        }
+    }
+}
+
+@Composable
+private fun AtajoInforme(
+    icono: androidx.compose.ui.graphics.vector.ImageVector, titulo: String, texto: String, activo: Boolean,
+    modifier: Modifier, alPulsar: () -> Unit,
+) {
+    androidx.compose.material3.Surface(
+        onClick = alPulsar, enabled = activo, shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = androidx.compose.foundation.BorderStroke(1.dp, LocalColoresNummia.current.borde),
+        modifier = modifier,
+    ) {
+        Column(Modifier.padding(Espacio.l), verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+            io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar("", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, icono)
+            Text(titulo, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(texto, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave, maxLines = 2)
         }
     }
 }

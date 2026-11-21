@@ -10,7 +10,7 @@
 - Base de datos **cifrada**. Sin servidores, sin anuncios, sin rastreo.
 - Se actualiza sola desde GitHub.
 
-> Próximamente: estadísticas y calendario (v1.1.0), sincronización con tu Google Drive (v1.2.0), importar Excel, informes PDF/Excel y más (v1.3.0).
+> Próximamente (v1.3.0): importar Excel, pagos mensuales, presupuestos, informes PDF/Excel y más.
 
 ## Instalar
 
@@ -22,7 +22,7 @@ Las siguientes versiones se instalan desde la propia app: **Ajustes → Acerca d
 
 ## Privacidad
 
-Lee la [política de privacidad](docs/privacidad.md). Resumen: tus datos solo están en tu móvil (y en tu Drive cuando lo conectes).
+Lee la [política de privacidad](docs/privacidad.md). Resumen: tus datos solo están en tu móvil y, si lo conectas, en tu propio Google Drive.
 
 ## Compilar tu propia copia
 

@@ -1,6 +1,6 @@
 # Política de privacidad de Nummia
 
-_Última actualización: 20 de noviembre de 2026_
+_Última actualización: 21 de noviembre de 2026_
 
 Nummia es una aplicación de código abierto para llevar tus cuentas personales. Esta política explica qué hace con tus datos.
 
@@ -9,7 +9,7 @@ Solo los que tú escribes: gastos, ingresos, reembolsos, personas y ajustes.
 
 ## Dónde se guardan
 - **En tu móvil**, en una base de datos **cifrada**. La clave está protegida por el almacén de claves seguro de Android.
-- **En tu Google Drive**, solo si conectas tu cuenta (a partir de la versión 1.2.0). Nummia únicamente puede ver y modificar los archivos que ella misma crea en tu Drive (permiso `drive.file`); no puede ver el resto de tu Drive.
+- **En tu Google Drive**, solo si conectas tu cuenta. Nummia únicamente puede ver y modificar los archivos que ella misma crea en tu Drive (permiso `drive.file`); no puede ver el resto de tu Drive.
 - **En los archivos de copia** (`.nummia`) que tú decidas guardar.
 
 ## Qué NO hace
@@ -21,7 +21,7 @@ Solo los que tú escribes: gastos, ingresos, reembolsos, personas y ajustes.
 
 ## Conexiones a internet
 - **GitHub** (`api.github.com`, `github.com`): una vez al día como máximo, para comprobar si hay una versión nueva, y al descargarla. No se envía ningún dato personal.
-- **Google** (a partir de la versión 1.2.0, solo si conectas tu Drive): para guardar y leer tu hoja de cálculo.
+- **Google** (solo si conectas tu Drive): para guardar y leer tus hojas de cálculo y tus copias de seguridad.
 
 ## Borrar tus datos
 Desinstala la app para borrar todo lo que hay en el móvil. Los archivos de tu Drive y tus copias puedes borrarlos tú cuando quieras.

@@ -2,6 +2,24 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.2.0] - 2026-11-21
+
+### Nuevo
+- **Tu Drive** (Ajustes → Tu Drive): conecta tu cuenta de Google y Nummia guarda tus datos en la carpeta **Nummia_Datos** de tu Drive.
+  - **Una hoja de cálculo por año** (`Nummia_2026`, `Nummia_2027`…) con las pestañas Resumen, Gastos, Ingresos y Reembolsos, con formato de euros y fechas.
+  - **Puedes editarla desde el ordenador**: los cambios llegan al móvil y los del móvil a la hoja. Las filas nuevas que escribas en el ordenador se crean en el móvil con su código.
+  - Si cambias lo mismo en los dos sitios, Nummia **no elige por ti**: te enseña las dos versiones y tú decides.
+  - Las filas de la hoja que no se puedan leer (sin fecha, importe mal escrito…) se avisan y no se tocan.
+  - Solo se sube lo confirmado; lo previsto se queda en el móvil.
+- **Copias de seguridad en tu Drive** (carpeta `Copias_de_seguridad`): una al día si has cambiado algo, y siempre antes de recuperar una copia, importar un archivo o instalar una actualización. Se conservan las de los últimos 7 días, 4 semanas y 12 meses. Puedes recuperar cualquiera desde la app.
+- **Móvil nuevo**: al conectar Drive en un móvil vacío, Nummia te ofrece recuperar la última copia.
+- Icono de estado en Inicio: sincronizando, todo al día o algo que mirar.
+- Opción **«Solo con Wi-Fi»** para la sincronización.
+
+### Cuida tu batería y tus datos
+- Sincroniza al abrir la app, unos segundos después de cada cambio (los cambios seguidos se agrupan) y cada 12 horas, solo con conexión y batería suficiente.
+- Antes de leer la hoja comprueba si ha cambiado: si nada ha cambiado en ningún sitio, no descarga nada.
+
 ## [1.1.0] - 2026-11-21
 
 ### Nuevo

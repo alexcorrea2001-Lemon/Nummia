@@ -89,11 +89,13 @@ fun DriveScreen(vm: DriveViewModel, snackbar: SnackbarHostState, alVolver: () ->
     val evento by vm.evento.collectAsStateWithLifecycle()
     val copias by vm.copias.collectAsStateWithLifecycle()
     val trabajando by vm.trabajando.collectAsStateWithLifecycle()
+    val errorConexion by vm.errorConexion.collectAsStateWithLifecycle()
+    val conectando by vm.conectando.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
     var restaurando by remember { mutableStateOf<ArchivoDrive?>(null) }
     var desconectando by remember { mutableStateOf(false) }
 
-    val permiso = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { vm.resultadoPermiso(it.data) }
+    val permiso = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { vm.resultadoPermiso(it.resultCode, it.data) }
 
     LaunchedEffect(evento) {
         when (val ev = evento) {
@@ -110,8 +112,15 @@ fun DriveScreen(vm: DriveViewModel, snackbar: SnackbarHostState, alVolver: () ->
                 EstadoVacio(
                     Iconos.Nube, "Guarda tus datos en tu Drive",
                     "Nummia crea en tu Google Drive la carpeta «Nummia_Datos» con una hoja de cálculo por año que también puedes editar desde el ordenador, y guarda copias de seguridad cada día. Solo puede ver los archivos que ella misma crea.",
-                    accion = "Conectar con Google", alPulsar = vm::conectar,
+                    accion = if (conectando) null else "Conectar con Google", alPulsar = vm::conectar,
                 )
+                if (conectando) LinearProgressIndicator(Modifier.fillMaxWidth())
+            }
+            errorConexion?.let { m ->
+                Tarjeta(fondo = LocalColoresNummia.current.avisoFondo) {
+                    Text("No se ha podido conectar", fontWeight = FontWeight.SemiBold)
+                    Text(m, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         } else {
 

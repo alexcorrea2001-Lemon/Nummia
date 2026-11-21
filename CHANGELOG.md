@@ -2,6 +2,12 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.2.1] - 2026-11-21
+
+### Arreglado
+- **Conectar con Google**: si la conexión falla, ahora se ve en pantalla un aviso que no desaparece, con el motivo y el código de Google, en lugar de no pasar nada.
+- Mientras se conecta se muestra una barra de progreso.
+
 ## [1.2.0] - 2026-11-21
 
 ### Nuevo

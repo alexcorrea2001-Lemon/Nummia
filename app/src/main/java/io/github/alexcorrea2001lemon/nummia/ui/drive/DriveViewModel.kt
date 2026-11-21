@@ -75,15 +75,36 @@ class DriveViewModel @Inject constructor(
     private val _trabajando = MutableStateFlow(false)
     val trabajando: StateFlow<Boolean> = _trabajando.asStateFlow()
 
-    fun conectar() = viewModelScope.launch { tratar(cuenta.conectar(null)) }
+    /** Último error al conectar: se queda en pantalla (no solo en un aviso que desaparece). */
+    private val _errorConexion = MutableStateFlow<String?>(null)
+    val errorConexion: StateFlow<String?> = _errorConexion.asStateFlow()
+    private val _conectando = MutableStateFlow(false)
+    val conectando: StateFlow<Boolean> = _conectando.asStateFlow()
 
-    fun resultadoPermiso(datos: Intent?) = viewModelScope.launch { tratar(cuenta.resultado(datos)) }
+    fun conectar() = viewModelScope.launch {
+        _errorConexion.value = null
+        _conectando.value = true
+        tratar(cuenta.conectar(null))
+    }
+
+    fun resultadoPermiso(codigo: Int, datos: Intent?) = viewModelScope.launch {
+        if (datos == null) {
+            _conectando.value = false
+            _errorConexion.value = if (codigo == android.app.Activity.RESULT_CANCELED) {
+                "Google ha cerrado la ventana sin dar acceso (código de resultado $codigo). Si no has cancelado tú, revisa en Google Cloud el cliente Android (paquete y huella SHA-1)."
+            } else "Google no ha devuelto respuesta (código de resultado $codigo)."
+            return@launch
+        }
+        tratar(cuenta.resultado(datos))
+    }
 
     private suspend fun tratar(r: ResultadoConexion) {
         when (r) {
             is ResultadoConexion.PideConsentimiento -> _evento.value = EventoDrive.PedirPermiso(r.pendiente)
-            is ResultadoConexion.Error -> _evento.value = EventoDrive.Mensaje(r.mensaje)
+            is ResultadoConexion.Error -> { _conectando.value = false; _errorConexion.value = r.mensaje }
             is ResultadoConexion.Conectado -> {
+                _conectando.value = false
+                _errorConexion.value = null
                 val nueva = sinc.correo() == null
                 sinc.conectar(r.correo ?: "Google")
                 TrabajoSync.programar(context, true, ajustes.ajustes.first().driveSoloWifi)

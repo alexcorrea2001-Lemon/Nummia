@@ -73,12 +73,14 @@ class CuentaGoogle @Inject constructor(@ApplicationContext private val context: 
     fun olvidar() { ultimoToken = null }
 
     private fun mensajeDe(e: Exception): String {
+        val codigo = (e as? com.google.android.gms.common.api.ApiException)?.statusCode
         val t = e.message.orEmpty()
-        return when {
-            "10:" in t || "DEVELOPER_ERROR" in t -> "Google no reconoce la app todavía. Revisa en Google Cloud el cliente Android (paquete y huella SHA-1) o espera unos minutos."
-            "7:" in t || "NETWORK" in t -> "No hay conexión."
-            "16:" in t || "CANCELED" in t -> "Has cancelado la conexión."
-            else -> "No se pudo conectar con Google${if (t.isNotBlank()) ": $t" else "."}"
+        val texto = when {
+            codigo == 10 || "DEVELOPER_ERROR" in t -> "Google no reconoce la app. Revisa en Google Cloud el cliente Android (paquete y huella SHA-1) o espera unos minutos."
+            codigo == 7 || "NETWORK" in t -> "No hay conexión."
+            codigo == 16 || "CANCELED" in t -> "Google ha cerrado la ventana sin dar acceso."
+            else -> "No se pudo conectar con Google."
         }
+        return "$texto (código ${codigo ?: "?"}${if (t.isNotBlank()) ": $t" else ""})"
     }
 }

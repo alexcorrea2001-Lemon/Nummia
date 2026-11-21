@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.7.1] - 2026-11-21
+
+### Cambiado
+- **Estadísticas → Año, más fácil de entender**: arriba el balance del año en grande con una frase («Has ahorrado el … de lo que has ingresado») y solo tres cifras: ingresos, gasto real y gasto al mes. Después el gráfico mes a mes, «Lo destacado» en frases (el mes que más y el que menos gastaste, lo que te han devuelto) y la lista de meses con una barra.
+- **Estadísticas → Comparar, más visual**: el año que comparas destacado, y para gasto, ingresos y ahorro dos barras (una por año) con la diferencia en verde si es buena y en rojo si es mala.
+- **Informes → En un toque**: se quita «Lo que me deben» (sigue en «A tu medida»).
+
+### Arreglado
+- **Informes**: al pulsar un atajo o «Crear informe» la pantalla sube sola hasta el informe, se ve «Creando el informe…» y avisa con «Informe listo».
+
 ## [1.7.0] - 2026-11-21
 
 ### Nuevo

@@ -111,7 +111,7 @@ class InformesViewModel @Inject constructor(
                 Triple(ArchivoInforme(f, formato), if (formato == Formato.PDF) vistaPrevia(f) else null, if (formato == Formato.EXCEL) runCatching { vistaExcel(f) }.getOrNull() else null)
             }
         }.onSuccess { (a, img, tabla) ->
-            _e.update { it.copy(generando = false, ultimo = a, vistaPrevia = img, vistaExcel = tabla) }
+            _e.update { it.copy(generando = false, ultimo = a, vistaPrevia = img, vistaExcel = tabla, mensaje = "Informe listo. Ya puedes compartirlo o guardarlo.") }
             cargarHistorial()
         }.onFailure {
             _e.update { it.copy(generando = false, mensaje = "No se pudo crear el informe.") }

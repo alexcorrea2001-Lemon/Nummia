@@ -9,6 +9,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -212,72 +215,98 @@ private fun LazyListScope.pestanaAnio(e: EstadoEst, vm: EstadisticasViewModel) {
         item { EstadoVacio(Iconos.Estadisticas, "Sin datos en ${a.anio}", "Cuando apuntes movimientos de este año verás aquí su resumen.") }
         return
     }
+    val nombre: (Int) -> String = { n -> nombreMes(YearMonth.of(a.anio, n)).substringBefore(' ') }
+    // 1) Lo importante, en grande y con una frase
     item {
         val c = LocalColoresNummia.current
-        val mes: (Int?) -> String = { it?.let { n -> nombreMes(YearMonth.of(a.anio, n)).substringBefore(' ') } ?: "—" }
-        val datos = listOf(
-            "Sueldos" to formatearEuros(a.sueldos, discreto = e.discreto),
-            "Otros ingresos" to formatearEuros(a.otrosIngresos, discreto = e.discreto),
-            "Ingresos" to formatearEuros(a.total.ingresos, discreto = e.discreto),
-            "Pagado" to formatearEuros(a.total.pagado, discreto = e.discreto),
-            "Reembolsos" to formatearEuros(a.total.reembolsos, discreto = e.discreto),
-            "Gasto real" to formatearEuros(a.total.gastoReal, discreto = e.discreto),
-            "Balance" to formatearEuros(a.total.balance, conSigno = true, discreto = e.discreto),
-            "Ahorrado" to formatearPorMil(a.total.ahorroPorMil),
-            "Gasto medio al mes" to formatearEuros(a.mediaGasto, discreto = e.discreto),
-            "Ingreso medio al mes" to formatearEuros(a.mediaIngreso, discreto = e.discreto),
-            "Mes de más gasto" to mes(a.mesMasGasto),
-            "Mes de menos gasto" to mes(a.mesMenosGasto),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            datos.chunked(2).forEach { fila ->
-                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                    fila.forEach { (t, v) ->
-                        Tarjeta(Modifier.weight(1f)) {
-                            Text(t, style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-                            Text(v, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                        }
-                    }
+        Tarjeta(fondo = c.heroe) {
+            Text("Balance de ${a.anio}", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+            ImporteAnimado(
+                a.total.balance, MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                color = if (a.total.balance >= 0) c.ingreso else c.gasto, conSigno = true, discreto = e.discreto,
+            )
+            a.total.ahorroPorMil?.let {
+                Text(
+                    if (it >= 0) "Has ahorrado el ${formatearPorMil(it)} de lo que has ingresado" else "Has gastado más de lo que has ingresado",
+                    style = MaterialTheme.typography.bodyMedium, color = c.textoSuave,
+                )
+            }
+            HorizontalDivider(color = c.borde, modifier = Modifier.padding(vertical = Espacio.s))
+            Row {
+                Column(Modifier.weight(1f)) {
+                    Text("Ingresos", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                    Text(formatearEuros(a.total.ingresos, discreto = e.discreto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = c.ingreso, maxLines = 1)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Gasto real", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                    Text(formatearEuros(a.total.gastoReal, discreto = e.discreto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = c.gasto, maxLines = 1)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Gasto al mes", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                    Text(formatearEuros(a.mediaGasto, discreto = e.discreto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
             }
         }
     }
+    // 2) El año de un vistazo
     item {
         Tarjeta {
-            Text("Ingresos y gasto real por mes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             val c = LocalColoresNummia.current
+            Text("Mes a mes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             GraficoBarras(
                 a.meses.map { listOf(it.ingresos, it.gastoReal) }, listOf(c.ingreso, c.gasto), INICIALES,
                 "Ingresos y gasto real de cada mes de ${a.anio}", alPulsar = { vm.verMes(it + 1) },
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) { Leyenda(c.ingreso, "Ingresos"); Leyenda(c.gasto, "Gasto real") }
-            Text("Toca un mes para verlo en detalle.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
         }
     }
+    // 3) Lo destacado, en frases
     item {
+        val c = LocalColoresNummia.current
         Tarjeta {
-            Text("Ahorro acumulado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            ImporteAnimado(e.ahorroAcumulado.lastOrNull() ?: 0, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), discreto = e.discreto)
-            GraficoLineas(listOf(SerieLinea(e.ahorroAcumulado, MaterialTheme.colorScheme.primary)), listOf("Ene", "Jun", "Dic"), "Ahorro acumulado mes a mes en ${a.anio}")
+            Text("Lo destacado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            a.mesMasGasto?.let { m ->
+                Destacado(Iconos.Estadisticas, c.gasto, "Mes que más gastaste", "${nombre(m)} · ${formatearEuros(a.meses[m - 1].gastoReal, discreto = e.discreto)}") { vm.verMes(m) }
+            }
+            a.mesMenosGasto?.takeIf { it != a.mesMasGasto }?.let { m ->
+                Destacado(Iconos.Check, c.ingreso, "Mes que menos gastaste", "${nombre(m)} · ${formatearEuros(a.meses[m - 1].gastoReal, discreto = e.discreto)}") { vm.verMes(m) }
+            }
+            Destacado(Iconos.Euro, MaterialTheme.colorScheme.primary, "Te han devuelto", formatearEuros(a.total.reembolsos, discreto = e.discreto), null)
         }
     }
+    // 4) Cada mes, en una lista sencilla con su barra
     item {
+        val c = LocalColoresNummia.current
+        val maximo = a.meses.maxOfOrNull { it.gastoReal }?.coerceAtLeast(1) ?: 1
         Tarjeta(relleno = false) {
-            Row(Modifier.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
-                Text("Mes", style = MaterialTheme.typography.labelMedium, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.weight(1.2f))
-                Text("Ingresos", style = MaterialTheme.typography.labelMedium, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                Text("Gasto", style = MaterialTheme.typography.labelMedium, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                Text("Balance", style = MaterialTheme.typography.labelMedium, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-            }
+            Text("Toca un mes para verlo", style = MaterialTheme.typography.bodySmall, color = c.textoSuave, modifier = Modifier.padding(start = Espacio.l, top = Espacio.m))
             a.meses.forEachIndexed { i, r ->
-                HorizontalDivider(color = LocalColoresNummia.current.borde)
-                Row(Modifier.fillMaxWidth().clickable { vm.verMes(i + 1) }.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
-                    Text(nombreMes(YearMonth.of(a.anio, i + 1)).substringBefore(' '), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1.2f))
-                    Cifra(r.ingresos, e.discreto, Modifier.weight(1f))
-                    Cifra(r.gastoReal, e.discreto, Modifier.weight(1f))
-                    Cifra(r.balance, e.discreto, Modifier.weight(1f), if (r.balance >= 0) LocalColoresNummia.current.ingreso else LocalColoresNummia.current.gasto)
+                if (r.ingresos == 0L && r.gastoReal == 0L) return@forEachIndexed
+                Column(Modifier.fillMaxWidth().clickable { vm.verMes(i + 1) }.padding(horizontal = Espacio.l, vertical = Espacio.s)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(nombre(i + 1), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                        Text(formatearEuros(r.balance, conSigno = true, discreto = e.discreto), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = if (r.balance >= 0) c.ingreso else c.gasto)
+                    }
+                    Box(Modifier.fillMaxWidth().padding(top = 4.dp).height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
+                        Box(Modifier.fillMaxWidth((r.gastoReal.toFloat() / maximo).coerceIn(0f, 1f)).fillMaxHeight().background(c.gasto.copy(alpha = 0.7f), RoundedCornerShape(3.dp)))
+                    }
+                    Text("Gastaste ${formatearEuros(r.gastoReal, discreto = e.discreto)}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun Destacado(icono: androidx.compose.ui.graphics.vector.ImageVector, color: Color, titulo: String, valor: String, alPulsar: (() -> Unit)?) {
+    Row(
+        Modifier.fillMaxWidth().let { if (alPulsar != null) it.clickable(onClick = alPulsar) else it }.padding(vertical = Espacio.xs),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+    ) {
+        io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar("", color.copy(alpha = 0.16f), color, icono)
+        Column(Modifier.weight(1f)) {
+            Text(titulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
+            Text(valor, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -287,39 +316,24 @@ private fun LazyListScope.pestanaAnio(e: EstadoEst, vm: EstadisticasViewModel) {
 private fun LazyListScope.pestanaComparar(e: EstadoEst, vm: EstadisticasViewModel) {
     val c = e.comparacion ?: return
     item {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
-            ElegirAnio(e.sel.anioA, e.anios, vm::anioA)
-            Text("frente a", color = LocalColoresNummia.current.textoSuave)
-            ElegirAnio(e.sel.anioB, e.anios, vm::anioB)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            ElegirAnio(e.sel.anioA, e.anios, vm::anioA, principal = false)
+            Text("  frente a  ", color = LocalColoresNummia.current.textoSuave)
+            ElegirAnio(e.sel.anioB, e.anios, vm::anioB, principal = true)
         }
     }
     item {
         val col = LocalColoresNummia.current
-        Tarjeta {
-            Text(frase("gastado", c.diferenciaGasto, c.porMilGasto, c.a.anio, c.b.anio, e.discreto), style = MaterialTheme.typography.bodyLarge)
-            Text(frase("ingresado", c.diferenciaIngreso, c.porMilIngreso, c.a.anio, c.b.anio, e.discreto), style = MaterialTheme.typography.bodyLarge)
-            Text(frase("ahorrado", c.diferenciaBalance, c.porMilBalance, c.a.anio, c.b.anio, e.discreto), style = MaterialTheme.typography.bodyLarge)
-            HorizontalDivider(color = col.borde)
-            Row {
-                Text("", modifier = Modifier.weight(1.2f))
-                listOf("${c.a.anio}", "${c.b.anio}", "Diferencia").forEach {
-                    Text(it, style = MaterialTheme.typography.labelMedium, color = col.textoSuave, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
-                }
-            }
-            FilaComparar("Ingresos", c.a.total.ingresos, c.b.total.ingresos, e.discreto)
-            FilaComparar("Gasto real", c.a.total.gastoReal, c.b.total.gastoReal, e.discreto)
-            FilaComparar("Balance", c.a.total.balance, c.b.total.balance, e.discreto)
-            Row {
-                Text("Ahorrado", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1.2f))
-                Text(formatearPorMil(c.a.total.ahorroPorMil), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
-                Text(formatearPorMil(c.b.total.ahorroPorMil), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
-                Text("", modifier = Modifier.weight(1f))
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+            // Gastar más es malo (rojo); ingresar o ahorrar más es bueno (verde).
+            TarjetaComparar("Has gastado", c.a.anio, c.b.anio, c.a.total.gastoReal, c.b.total.gastoReal, c.porMilGasto, masEsBueno = false, discreto = e.discreto)
+            TarjetaComparar("Has ingresado", c.a.anio, c.b.anio, c.a.total.ingresos, c.b.total.ingresos, c.porMilIngreso, masEsBueno = true, discreto = e.discreto)
+            TarjetaComparar("Has ahorrado", c.a.anio, c.b.anio, c.a.total.balance, c.b.total.balance, c.porMilBalance, masEsBueno = true, discreto = e.discreto)
         }
     }
     item {
         Tarjeta {
-            Text("Gasto real mes a mes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Gasto de cada mes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             val principal = MaterialTheme.colorScheme.primary
             val suave = LocalColoresNummia.current.textoSuave
             GraficoLineas(
@@ -327,35 +341,51 @@ private fun LazyListScope.pestanaComparar(e: EstadoEst, vm: EstadisticasViewMode
                 listOf("Ene", "Jun", "Dic"),
                 "Gasto real de cada mes en ${c.a.anio} y ${c.b.anio}",
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) { Leyenda(principal, "${c.b.anio}"); Leyenda(suave, "${c.a.anio}") }
+            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) { Leyenda(principal, "${c.b.anio}"); Leyenda(suave, "${c.a.anio} (discontinua)") }
         }
     }
 }
 
-private fun frase(verbo: String, diferencia: Long, porMil: Int?, a: Int, b: Int, discreto: Boolean): String {
-    val pct = porMil?.let { " (${formatearPorMil(kotlin.math.abs(it))})" }.orEmpty()
-    return when {
-        diferencia == 0L -> "En $b has $verbo lo mismo que en $a."
-        diferencia > 0 -> "En $b has $verbo ${formatearEuros(diferencia, discreto = discreto)} más que en $a$pct."
-        else -> "En $b has $verbo ${formatearEuros(-diferencia, discreto = discreto)} menos que en $a$pct."
+/** Dos barras, una por año, y una etiqueta con la diferencia en color (bueno o malo). */
+@Composable
+private fun TarjetaComparar(titulo: String, anioA: Int, anioB: Int, a: Long, b: Long, porMil: Int?, masEsBueno: Boolean, discreto: Boolean) {
+    val col = LocalColoresNummia.current
+    val maximo = maxOf(kotlin.math.abs(a), kotlin.math.abs(b)).coerceAtLeast(1)
+    val diferencia = b - a
+    val bueno = if (masEsBueno) diferencia >= 0 else diferencia <= 0
+    val colorDif = if (diferencia == 0L) col.textoSuave else if (bueno) col.ingreso else col.gasto
+    Tarjeta {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            val texto = when {
+                diferencia == 0L -> "Igual"
+                else -> (if (diferencia > 0) "+" else "−") + formatearEuros(kotlin.math.abs(diferencia), discreto = discreto) +
+                    (porMil?.let { " · ${formatearPorMil(kotlin.math.abs(it))}" } ?: "")
+            }
+            io.github.alexcorrea2001lemon.nummia.ui.comun.Etiqueta(texto, colorDif.copy(alpha = 0.16f), colorDif)
+        }
+        listOf(anioA to a, anioB to b).forEachIndexed { i, (anio, v) ->
+            val fraccion by animateFloatAsState((kotlin.math.abs(v).toFloat() / maximo).coerceIn(0.02f, 1f), spring(dampingRatio = 0.8f, stiffness = 200f), label = "comparar")
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                Text("$anio", style = MaterialTheme.typography.bodyMedium, color = if (i == 1) MaterialTheme.colorScheme.onSurface else col.textoSuave, modifier = Modifier.width(44.dp))
+                Box(Modifier.weight(1f).height(10.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(5.dp))) {
+                    Box(Modifier.fillMaxWidth(fraccion).fillMaxHeight().background(if (i == 1) MaterialTheme.colorScheme.primary else col.textoSuave.copy(alpha = 0.5f), RoundedCornerShape(5.dp)))
+                }
+                Text(formatearEuros(v, discreto = discreto), style = MaterialTheme.typography.bodyMedium, fontWeight = if (i == 1) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.widthIn(min = 92.dp), textAlign = TextAlign.End, maxLines = 1)
+            }
+        }
     }
 }
 
 @Composable
-private fun FilaComparar(titulo: String, a: Long, b: Long, discreto: Boolean) {
-    Row {
-        Text(titulo, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1.2f))
-        Cifra(a, discreto, Modifier.weight(1f))
-        Cifra(b, discreto, Modifier.weight(1f))
-        Text(formatearEuros(b - a, conSigno = true, discreto = discreto), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End, modifier = Modifier.weight(1f), maxLines = 1)
-    }
-}
-
-@Composable
-private fun ElegirAnio(actual: Int, anios: List<Int>, alElegir: (Int) -> Unit) {
+private fun ElegirAnio(actual: Int, anios: List<Int>, alElegir: (Int) -> Unit, principal: Boolean = false) {
     var abierto by remember { mutableStateOf(false) }
     Box {
-        OutlinedButton(onClick = { abierto = true }) { Text("$actual"); Icon(Iconos.ChevronDer, null, Modifier.size(16.dp)) }
+        if (principal) {
+            androidx.compose.material3.Button(onClick = { abierto = true }) { Text("$actual", fontWeight = FontWeight.Bold); Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp)) }
+        } else {
+            OutlinedButton(onClick = { abierto = true }) { Text("$actual"); Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp)) }
+        }
         DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
             anios.forEach { a -> DropdownMenuItem(text = { Text("$a") }, onClick = { alElegir(a); abierto = false }) }
         }

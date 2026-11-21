@@ -69,6 +69,7 @@ private fun celdaVista(c: Celda?): CeldaVista {
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 /** Vista previa con pestañas por hoja y la tabla con los mismos colores que el Excel. */
 @Composable
 fun VistaExcel(hojas: List<HojaVista>) {

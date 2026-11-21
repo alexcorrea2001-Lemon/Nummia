@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 780" width="380" height="780">
+<title>Movimientos con filtros (ilustración con datos inventados)</title>
+<rect x="0" y="0" width="380" height="780" rx="44" fill="#05060A"/>
+<g transform="translate(10,10)">
+<rect x="0" y="0" width="360" height="760" rx="36" fill="#0E0F13"/>
+<text x="24" y="30" font-size="12" fill="#B3B8C4" font-weight="600" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">9:41</text>
+<rect x="304" y="20" width="28" height="12" rx="4" fill="#B3B8C4"/>
+<circle cx="180.0" cy="24" r="5" fill="#05060A"/>
+<text x="20" y="70" font-size="22" fill="#ECEDF1" font-weight="700" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Movimientos</text>
+<rect x="16" y="86" width="284" height="44" rx="22" fill="#242731"/>
+<text x="40" y="113" font-size="13" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Buscar concepto o tienda</text>
+<rect x="308" y="86" width="36" height="44" rx="18" fill="#2A2C4A"/>
+<path d="M316 101h20M319 108h14M322 115h8" stroke="#818CF8" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="340" cy="90" r="9" fill="#818CF8"/>
+<text x="340" y="94" font-size="11" fill="#16121F" font-weight="700" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">2</text>
+<rect x="16" y="142" width="112" height="32" rx="16" fill="#2A2C4A" stroke="#818CF8" stroke-width="1"/>
+<text x="30" y="163" font-size="13" fill="#ECEDF1" font-weight="500" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Comida  ✕</text>
+<rect x="136" y="142" width="150" height="32" rx="16" fill="#2A2C4A" stroke="#818CF8" stroke-width="1"/>
+<text x="150" y="163" font-size="13" fill="#ECEDF1" font-weight="500" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Súper Ejemplo  ✕</text>
+<rect x="16" y="186" width="328" height="46" rx="16" fill="#242731"/>
+<text x="32" y="214" font-size="13" fill="#ECEDF1" font-weight="600" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Todos</text>
+<text x="130" y="214" font-size="13" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Gastos</text>
+<text x="220" y="214" font-size="13" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Ingresos</text>
+<text x="20" y="262" font-size="13" fill="#B3B8C4" font-weight="600" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Jueves 19</text>
+<text x="340" y="262" font-size="13" fill="#B3B8C4" font-weight="600" text-anchor="end" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">−48,20 €</text>
+<rect x="16" y="272" width="328" height="64" rx="20" fill="#1A1C23"/>
+<circle cx="44" cy="304" r="18" fill="#4ADE8033"/>
+<text x="44" y="309" font-size="13" fill="#4ADE80" font-weight="700" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">S</text>
+<text x="72" y="300" font-size="14" fill="#ECEDF1" font-weight="500" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Compra semanal</text>
+<text x="72" y="318" font-size="12" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Súper Ejemplo · Comida</text>
+<text x="330" y="309" font-size="14" fill="#ECEDF1" font-weight="600" text-anchor="end" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">−48,20 €</text>
+<text x="20" y="366" font-size="13" fill="#B3B8C4" font-weight="600" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Jueves 12</text>
+<text x="340" y="366" font-size="13" fill="#B3B8C4" font-weight="600" text-anchor="end" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">−71,35 €</text>
+<rect x="16" y="376" width="328" height="128" rx="20" fill="#1A1C23"/>
+<circle cx="44" cy="408" r="18" fill="#4ADE8033"/>
+<text x="44" y="413" font-size="13" fill="#4ADE80" font-weight="700" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">S</text>
+<text x="72" y="404" font-size="14" fill="#ECEDF1" font-weight="500" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Compra semanal</text>
+<text x="72" y="422" font-size="12" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Súper Ejemplo · Comida</text>
+<text x="330" y="413" font-size="14" fill="#ECEDF1" font-weight="600" text-anchor="end" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">−52,85 €</text>
+<circle cx="44" cy="470" r="18" fill="#4ADE8033"/>
+<text x="44" y="475" font-size="13" fill="#4ADE80" font-weight="700" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">S</text>
+<text x="72" y="466" font-size="14" fill="#ECEDF1" font-weight="500" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Fruta</text>
+<text x="72" y="484" font-size="12" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Súper Ejemplo · Comida</text>
+<text x="330" y="475" font-size="14" fill="#ECEDF1" font-weight="600" text-anchor="end" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">−18,50 €</text>
+<text x="20" y="534" font-size="13" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Total filtrado</text>
+<text x="340" y="534" font-size="15" fill="#F87171" font-weight="700" text-anchor="end" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">−119,55 €</text>
+<text x="20" y="560" font-size="12" fill="#B3B8C4" font-weight="400" text-anchor="start" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Desliza a los lados para cambiar de mes</text>
+<rect x="0" y="686" width="360" height="74" rx="0" fill="#14151B"/>
+<rect x="0" y="686" width="360" height="1" fill="#2E323C"/>
+<rect x="36" y="704" width="18" height="18" rx="5" fill="none" stroke="#B3B8C4" stroke-width="1.6"/>
+<text x="45" y="744" font-size="11" fill="#B3B8C4" font-weight="400" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Inicio</text>
+<rect x="107" y="698" width="56" height="30" rx="15" fill="#2A2C4A"/>
+<rect x="126" y="704" width="18" height="18" rx="5" fill="#818CF8"/>
+<text x="135" y="744" font-size="11" fill="#ECEDF1" font-weight="600" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Movimientos</text>
+<rect x="216" y="704" width="18" height="18" rx="5" fill="none" stroke="#B3B8C4" stroke-width="1.6"/>
+<text x="225" y="744" font-size="11" fill="#B3B8C4" font-weight="400" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Calendario</text>
+<rect x="306" y="704" width="18" height="18" rx="5" fill="none" stroke="#B3B8C4" stroke-width="1.6"/>
+<text x="315" y="744" font-size="11" fill="#B3B8C4" font-weight="400" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">Estadísticas</text>
+<rect x="284" y="610" width="56" height="56" rx="18" fill="#818CF8"/>
+<text x="312" y="649" font-size="30" fill="#16121F" font-weight="500" text-anchor="middle" style="font-family:'Inter','Roboto','Segoe UI',system-ui,sans-serif;font-variant-numeric:tabular-nums">+</text>
+</g></svg>

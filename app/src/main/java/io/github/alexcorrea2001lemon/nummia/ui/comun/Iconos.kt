@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 
 /** Iconos de trazo propios (24×24), los mismos de la maqueta. Pocos bytes y coherentes entre sí. */
 object Iconos {
-    private fun trazo(nombre: String, vararg caminos: String, grosor: Float = 1.8f): ImageVector =
+    internal fun trazo(nombre: String, vararg caminos: String, grosor: Float = 1.8f): ImageVector =
         ImageVector.Builder(nombre, 24.dp, 24.dp, 24f, 24f).apply {
             caminos.forEach {
                 addPath(

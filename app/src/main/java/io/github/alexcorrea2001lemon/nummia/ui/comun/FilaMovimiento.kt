@@ -50,6 +50,7 @@ data class FilaMov(
     val tienda: String,
     val etiqueta: EtiquetaMov?,
     val creado: Long,
+    val categoriaId: String? = null,
 )
 
 private val nombresTipo = mapOf(
@@ -73,7 +74,7 @@ fun GastoConReembolsos.aFila(personas: Map<String, String>, categorias: Map<Stri
         g.tienda.takeIf { it.isNotBlank() && !it.equals(g.concepto, ignoreCase = true) },
         g.categoriaId?.let(categorias::get),
     ).joinToString(" · ").ifEmpty { g.codigo }
-    return FilaMov(g.id, true, g.concepto, sub, real, g.importe.takeIf { devuelto > 0 }, g.fecha, g.tienda, etiqueta, g.createdAt)
+    return FilaMov(g.id, true, g.concepto, sub, real, g.importe.takeIf { devuelto > 0 }, g.fecha, g.tienda, etiqueta, g.createdAt, g.categoriaId)
 }
 
 fun IngresoEntity.aFila(): FilaMov = FilaMov(
@@ -102,7 +103,7 @@ fun FilaMovimiento(f: FilaMov, discreto: Boolean, alPulsar: () -> Unit, modifier
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Espacio.m),
     ) {
-        if (f.esGasto) Avatar(f.titulo) else Avatar("€", c.ingresoFondo, c.ingreso, Iconos.Euro)
+        AvatarMov(f)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(f.titulo, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(f.subtitulo, style = MaterialTheme.typography.bodySmall, color = c.textoSuave, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -130,3 +131,18 @@ fun FilaMovimiento(f: FilaMov, discreto: Boolean, alPulsar: () -> Unit, modifier
     }
 }
 
+
+/** Icono del movimiento: el de su categoría con su color; si no tiene, la inicial; los ingresos, «€». */
+@Composable
+fun AvatarMov(f: FilaMov) {
+    val c = LocalColoresNummia.current
+    val cat = f.categoriaId?.let { LocalCategorias.current[it] }
+    when {
+        !f.esGasto -> Avatar("€", c.ingresoFondo, c.ingreso, Iconos.Euro)
+        cat != null -> {
+            val color = androidx.compose.ui.graphics.Color(cat.color)
+            Avatar(cat.nombre, color.copy(alpha = if (c.esOscuro) 0.2f else 0.16f), color, IconosCategoria.de(cat.icono))
+        }
+        else -> Avatar(f.titulo)
+    }
+}

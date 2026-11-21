@@ -70,6 +70,7 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
         val avisoPresupuestos = booleanPreferencesKey("aviso_presupuestos")
         val avisosHechos = stringSetPreferencesKey("avisos_hechos")
         val bloqueo = booleanPreferencesKey("bloqueo")
+        val mantenimiento = longPreferencesKey("ultimo_mantenimiento")
     }
 
     val ajustes: Flow<Ajustes> = store.data.map { p ->
@@ -113,6 +114,9 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
     suspend fun avisoPagos(v: Boolean) = store.edit { it[K.avisoPagos] = v }
     suspend fun avisoPresupuestos(v: Boolean) = store.edit { it[K.avisoPresupuestos] = v }
     suspend fun bloqueo(v: Boolean) = store.edit { it[K.bloqueo] = v }
+
+    suspend fun ultimoMantenimiento(): Long? = store.data.first()[K.mantenimiento]
+    suspend fun ultimoMantenimiento(dia: Long) = store.edit { it[K.mantenimiento] = dia }
 
     suspend fun avisosHechos(): Set<String> = store.data.first()[K.avisosHechos].orEmpty()
 

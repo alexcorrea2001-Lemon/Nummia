@@ -80,6 +80,11 @@ private val INICIALES = listOf("E", "F", "M", "A", "M", "J", "J", "A", "S", "O",
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EstadisticasScreen(vm: EstadisticasViewModel, alAbrirGasto: (String) -> Unit, alAjustes: () -> Unit, relleno: PaddingValues) {
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.estadisticas.collect { salto ->
+            if (salto != null) { vm.ir(salto.first, salto.second); io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.estadisticas.value = null }
+        }
+    }
     val e by vm.estado.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.statusBarsPadding().padding(start = Espacio.xl, end = Espacio.s, top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {

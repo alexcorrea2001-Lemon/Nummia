@@ -3,6 +3,8 @@
 package io.github.alexcorrea2001lemon.nummia.ui.nav
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.animateFloatAsState
@@ -103,6 +105,16 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
     val esPrincipal = ruta in Rutas.PRINCIPALES
     var menuAbierto by rememberSaveable { mutableStateOf(false) }
     val haptica = rememberHaptica()
+    var fabVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(ruta) { fabVisible = true }
+    val ocultarAlBajar = remember {
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                if (available.y < -6f) fabVisible = false else if (available.y > 6f) fabVisible = true
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -121,7 +133,12 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
             }
         },
         floatingActionButton = {
-            if (ruta == Rutas.INICIO || ruta == Rutas.MOVIMIENTOS) {
+            // Al bajar por una lista el botón + se esconde para no tapar nada; al subir vuelve.
+            AnimatedVisibility(
+                (ruta == Rutas.INICIO || ruta == Rutas.MOVIMIENTOS) && (fabVisible || menuAbierto),
+                enter = scaleIn(spring(dampingRatio = 0.7f, stiffness = 500f)) + fadeIn(),
+                exit = scaleOut(tween(150)) + fadeOut(tween(150)),
+            ) {
                 MenuAnadir(menuAbierto, alAlternar = { haptica(); menuAbierto = !menuAbierto }) { destino ->
                     menuAbierto = false
                     nav.navigate(destino)
@@ -134,7 +151,7 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
                 NavHost(
                     navController = nav,
                     startDestination = Rutas.INICIO,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().nestedScroll(ocultarAlBajar),
                     enterTransition = { fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)) },
                     exitTransition = { fadeOut(tween(160)) },
                     popEnterTransition = { fadeIn(tween(220)) },
@@ -166,6 +183,8 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             alAnadirGasto = { nav.navigate(Rutas.gasto()) },
             alDrive = { nav.navigate(Rutas.DRIVE) },
             alPresupuestos = { nav.navigate(Rutas.PRESUPUESTOS) },
+            alEstadisticas = { p, ym -> Saltos.estadisticas.value = p to ym; irAPestana(nav, Rutas.ESTADISTICAS) },
+            alPendientes = { Saltos.movimientos.value = io.github.alexcorrea2001lemon.nummia.ui.movimientos.Pestana.PENDIENTES; irAPestana(nav, Rutas.MOVIMIENTOS) },
             relleno = relleno,
         )
     }

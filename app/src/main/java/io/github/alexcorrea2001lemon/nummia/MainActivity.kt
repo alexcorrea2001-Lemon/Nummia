@@ -31,14 +31,17 @@ class MainActivity : FragmentActivity() {
             val ajustes by vm.ajustes.collectAsStateWithLifecycle()
             val a = ajustes ?: return@setContent
             val bloqueada by Cerrojo.bloqueada.collectAsStateWithLifecycle()
+            val categorias by vm.categorias.collectAsStateWithLifecycle()
             val cerrada = a.bloqueo && bloqueada
             NummiaTheme(a) {
+                androidx.compose.runtime.CompositionLocalProvider(io.github.alexcorrea2001lemon.nummia.ui.comun.LocalCategorias provides categorias) {
                 Box(Modifier.fillMaxSize()) {
                     // Mientras está bloqueada, lo de debajo no se lee con TalkBack.
                     Box(if (cerrada) Modifier.clearAndSetSemantics { } else Modifier) {
                         AppNummia(a, alTerminarBienvenida = vm::terminarBienvenida)
                     }
                     if (cerrada) PantallaBloqueo(a.iconoLogo, a.iconoColor)
+                }
                 }
             }
         }

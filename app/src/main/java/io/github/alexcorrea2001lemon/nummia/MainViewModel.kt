@@ -34,13 +34,22 @@ class MainViewModel @Inject constructor(
     /** `null` mientras se leen los ajustes (la pantalla de inicio de Android sigue visible). */
     val ajustes: StateFlow<Ajustes?> = ajustesRepo.ajustes.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** Categorías por id, para los iconos y colores de las listas. */
+    val categorias: StateFlow<Map<String, io.github.alexcorrea2001lemon.nummia.data.db.CategoriaEntity>> =
+        repo.categorias().map { l -> l.associateBy { it.id } }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             repo.prepararDatos()
-            runCatching { repo.purgarPapelera() }
-            runCatching { repo.unificarTiendasIguales() }
-            runCatching { repo.completarCategorias() }
-            runCatching { repo.asegurarPagosPrevistos(reloj.hoy()) }
+            // Mantenimiento una vez al día (no en cada apertura): el arranque queda libre.
+            val hoy = reloj.hoy().toEpochDay()
+            if (ajustesRepo.ultimoMantenimiento() != hoy) {
+                runCatching { repo.purgarPapelera() }
+                runCatching { repo.unificarTiendasIguales() }
+                runCatching { repo.completarCategorias() }
+                runCatching { repo.asegurarPagosPrevistos(reloj.hoy()) }
+                ajustesRepo.ultimoMantenimiento(hoy)
+            }
             actualizador.limpiar()
             // Si ya está instalada la versión que se anunciaba (o una posterior), se quita el aviso.
             val anunciada = ajustesRepo.ajustes.first().versionDisponible

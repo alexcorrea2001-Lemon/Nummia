@@ -5,6 +5,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,7 +68,7 @@ class TiendasViewModel @Inject constructor(private val repo: MovimientosRepo) : 
     val categorias: StateFlow<List<CategoriaEntity>?> = repo.categorias().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     suspend fun unir(origen: Collection<String>, destino: String): Int = repo.unirTiendas(origen, destino)
-    fun crearCategoria(nombre: String, color: Long) = viewModelScope.launch { repo.crearCategoria(nombre, color) }
+    fun crearCategoria(nombre: String, color: Long, icono: String) = viewModelScope.launch { repo.crearCategoria(nombre, color, icono) }
     fun editarCategoria(c: CategoriaEntity) = viewModelScope.launch { repo.editarCategoria(c) }
     fun borrarCategoria(c: CategoriaEntity) = viewModelScope.launch { repo.borrarCategoria(c) }
 }
@@ -173,7 +174,10 @@ fun CategoriasScreen(vm: TiendasViewModel, alVolver: () -> Unit) {
                     Modifier.fillMaxWidth().clickable { editando = cat }.padding(horizontal = Espacio.l, vertical = Espacio.m),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m),
                 ) {
-                    Box(Modifier.size(14.dp).background(Color(cat.color), CircleShape))
+                    io.github.alexcorrea2001lemon.nummia.ui.comun.Avatar(
+                        cat.nombre, Color(cat.color).copy(alpha = 0.2f), Color(cat.color),
+                        io.github.alexcorrea2001lemon.nummia.ui.comun.IconosCategoria.de(cat.icono),
+                    )
                     Text(cat.nombre, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     if (!cat.predefinida) Text("tuya", style = MaterialTheme.typography.labelSmall, color = c.textoSuave)
                 }
@@ -182,26 +186,46 @@ fun CategoriasScreen(vm: TiendasViewModel, alVolver: () -> Unit) {
         TextButton(onClick = { creando = true }) { Text("+ Nueva categoría") }
     }
 
-    if (creando) DialogoCategoria(null, alCerrar = { creando = false }, alBorrar = {}) { nombre, color -> vm.crearCategoria(nombre, color); creando = false }
+    if (creando) DialogoCategoria(null, alCerrar = { creando = false }, alBorrar = {}) { nombre, color, icono -> vm.crearCategoria(nombre, color, icono); creando = false }
     editando?.let { cat ->
-        DialogoCategoria(cat, alCerrar = { editando = null }, alBorrar = { vm.borrarCategoria(cat); editando = null }) { nombre, color ->
-            vm.editarCategoria(cat.copy(nombre = nombre, color = color)); editando = null
+        DialogoCategoria(cat, alCerrar = { editando = null }, alBorrar = { vm.borrarCategoria(cat); editando = null }) { nombre, color, icono ->
+            vm.editarCategoria(cat.copy(nombre = nombre, color = color, icono = icono)); editando = null
         }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DialogoCategoria(cat: CategoriaEntity?, alCerrar: () -> Unit, alBorrar: () -> Unit, alGuardar: (String, Long) -> Unit) {
+private fun DialogoCategoria(cat: CategoriaEntity?, alCerrar: () -> Unit, alBorrar: () -> Unit, alGuardar: (String, Long, String) -> Unit) {
     var nombre by remember { mutableStateOf(cat?.nombre.orEmpty()) }
     var color by remember { mutableStateOf(cat?.color ?: Acento.POR_DEFECTO.argb) }
+    var icono by remember { mutableStateOf(cat?.icono ?: "more") }
     var confirmarBorrado by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = alCerrar,
         title = { Text(if (cat == null) "Nueva categoría" else "Editar categoría") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+            Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
                 OutlinedTextField(nombre, { nombre = it }, label = { Text("Nombre") }, singleLine = true)
+                Text("Icono", style = MaterialTheme.typography.labelMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.xs), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                    io.github.alexcorrea2001lemon.nummia.ui.comun.IconosCategoria.claves.forEach { k ->
+                        val elegido = icono == k
+                        Box(
+                            Modifier.size(40.dp)
+                                .background(if (elegido) Color(color).copy(alpha = 0.25f) else Color.Transparent, CircleShape)
+                                .clickable { icono = k }
+                                .semantics { contentDescription = "Icono $k"; selected = elegido },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            androidx.compose.material3.Icon(
+                                io.github.alexcorrea2001lemon.nummia.ui.comun.IconosCategoria.de(k), null,
+                                tint = if (elegido) Color(color) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                }
+                Text("Color", style = MaterialTheme.typography.labelMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
                     Acento.entries.forEach { a ->
                         val elegido = color == a.argb
@@ -220,7 +244,7 @@ private fun DialogoCategoria(cat: CategoriaEntity?, alCerrar: () -> Unit, alBorr
                 }
             }
         },
-        confirmButton = { Button(enabled = nombre.isNotBlank(), onClick = { alGuardar(nombre.trim(), color) }) { Text("Guardar") } },
+        confirmButton = { Button(enabled = nombre.isNotBlank(), onClick = { alGuardar(nombre.trim(), color, icono) }) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },
     )
 }

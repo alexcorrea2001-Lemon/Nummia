@@ -152,6 +152,11 @@ class EstadisticasViewModel @Inject constructor(
     }
 
     fun pestana(p: PestanaEst) = sel.update { it.copy(pestana = p) }
+
+    /** Llega desde Inicio: pestaña y mes ya elegidos. */
+    fun ir(p: PestanaEst, ym: YearMonth) = sel.update {
+        it.copy(pestana = p, mes = ym, anio = ym.year, periodo = if (p == PestanaEst.DONDE) Periodo.MES else it.periodo, tiendaAbierta = null)
+    }
     fun mesAnterior() = sel.update { it.copy(mes = it.mes.minusMonths(1)) }
     fun mesSiguiente() = sel.update { it.copy(mes = it.mes.plusMonths(1)) }
     fun anioAnterior() = sel.update { it.copy(anio = it.anio - 1) }

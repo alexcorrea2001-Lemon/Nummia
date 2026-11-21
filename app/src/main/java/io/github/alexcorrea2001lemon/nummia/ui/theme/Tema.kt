@@ -79,8 +79,9 @@ private fun sobre(c: Color) = if (c.luminance() > 0.4f) Color(0xFF16121F) else C
 
 private fun esquemaOscuro(acento: Color, amoled: Boolean): ColorScheme {
     val fondo = if (amoled) Color(0xFF000000) else Color(0xFF0E0F13)
-    val sup = if (amoled) Color(0xFF0B0B0C) else Color(0xFF15171C)
-    val sup2 = if (amoled) Color(0xFF151517) else Color(0xFF1D2027)
+    // Tarjetas algo más claras que el fondo y textos secundarios más legibles (contraste AA).
+    val sup = if (amoled) Color(0xFF121214) else Color(0xFF1A1C23)
+    val sup2 = if (amoled) Color(0xFF1C1C20) else Color(0xFF242731)
     return darkColorScheme(
         primary = acento, onPrimary = sobre(acento),
         primaryContainer = acento.copy(alpha = 0.22f).compositeOver(sup), onPrimaryContainer = Color(0xFFF2EEFF),
@@ -88,10 +89,10 @@ private fun esquemaOscuro(acento: Color, amoled: Boolean): ColorScheme {
         secondaryContainer = acento.copy(alpha = 0.16f).compositeOver(sup), onSecondaryContainer = Color(0xFFEDEBF5),
         background = fondo, onBackground = Color(0xFFECEDF1),
         surface = fondo, onSurface = Color(0xFFECEDF1),
-        surfaceVariant = sup2, onSurfaceVariant = Color(0xFFA3A8B4),
+        surfaceVariant = sup2, onSurfaceVariant = Color(0xFFB3B8C4),
         surfaceContainerLowest = fondo, surfaceContainerLow = sup, surfaceContainer = sup,
         surfaceContainerHigh = sup2, surfaceContainerHighest = sup2,
-        outline = Color(0xFF3A3F4A), outlineVariant = Color(0xFF262A33),
+        outline = Color(0xFF424754), outlineVariant = Color(0xFF2E323C),
         error = Color(0xFFF87171), onError = Color(0xFF2B0A0A),
     )
 }

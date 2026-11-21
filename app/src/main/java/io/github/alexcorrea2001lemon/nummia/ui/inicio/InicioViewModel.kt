@@ -50,6 +50,8 @@ data class InicioEstado(
     /** Variación del gasto real frente al mes anterior, ×10. */
     val variacion: Int? = null,
     val sueldosPendientes: List<SueldoPendiente> = emptyList(),
+    /** Sueldo PREVISTO del mes aún sin confirmar (para el «Con el sueldo previsto…» del balance). */
+    val sueldoPrevistoMes: Long = 0,
     val pagosPendientes: List<PagoPendiente> = emptyList(),
     val teDeben: List<Pair<String, Long>> = emptyList(),
     val top: List<TopTienda> = emptyList(),
@@ -133,6 +135,7 @@ class InicioViewModel @Inject constructor(
             resumen = r,
             variacion = variacionPorMil(r.gastoReal, rAnt.gastoReal),
             sueldosPendientes = sueldos,
+            sueldoPrevistoMes = actual.ingresos.filter { it.tipo == TipoIngreso.SUELDO && it.estado == Estado.PREVISTO }.sumOf { it.importe },
             pagosPendientes = pagos,
             teDeben = deben,
             top = top,

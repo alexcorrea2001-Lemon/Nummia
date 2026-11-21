@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,6 +49,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,11 +97,17 @@ fun MovimientosScreen(
     val haptica = rememberHaptica()
     var verFiltros by rememberSaveable { mutableStateOf(false) }
     val c = LocalColoresNummia.current
+    LaunchedEffect(Unit) {
+        io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.movimientos.collect { p ->
+            if (p != null) { vm.pestana(p); io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.movimientos.value = null }
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
             contentPadding = PaddingValues(bottom = relleno.calculateBottomPadding() + 96.dp),
-            verticalArrangement = Arrangement.spacedBy(Espacio.s),
+            // Separación mínima: los movimientos de un mismo día forman un solo bloque.
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             item {
                 Column(Modifier.statusBarsPadding().padding(horizontal = Espacio.l, vertical = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
@@ -176,15 +184,21 @@ fun MovimientosScreen(
             e.grupos.forEach { g ->
                 if (g.fecha != LocalDate.MIN) {
                     item(key = "d" + g.fecha) {
-                        Row(Modifier.padding(horizontal = Espacio.l + Espacio.s, vertical = Espacio.xs)) {
+                        Row(Modifier.padding(start = Espacio.l + Espacio.s, end = Espacio.l + Espacio.s, top = Espacio.l, bottom = Espacio.xs)) {
                             Text(fechaCabecera(g.fecha, e.hoy), style = MaterialTheme.typography.labelLarge, color = c.textoSuave, modifier = Modifier.weight(1f))
                             Text("Total del día ${formatearEuros(g.total, conSigno = true, discreto = e.discreto)}", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
                         }
                     }
                 }
-                items(g.filas, key = { (if (it.esGasto) "g" else "i") + it.id }) { f ->
+                itemsIndexed(g.filas, key = { _, it -> (if (it.esGasto) "g" else "i") + it.id }) { i, f ->
+                    val grande = 20.dp
+                    val chica = 4.dp
+                    val forma = RoundedCornerShape(
+                        topStart = if (i == 0) grande else chica, topEnd = if (i == 0) grande else chica,
+                        bottomStart = if (i == g.filas.lastIndex) grande else chica, bottomEnd = if (i == g.filas.lastIndex) grande else chica,
+                    )
                     FilaDeslizable(
-                        f, e.discreto,
+                        f, e.discreto, forma,
                         modifier = Modifier.animateItem().padding(horizontal = Espacio.l),
                         alPulsar = { if (f.esGasto) alAbrirGasto(f.id) else alAbrirIngreso(f.id) },
                         alBorrar = {
@@ -222,6 +236,7 @@ fun MovimientosScreen(
 private fun FilaDeslizable(
     f: FilaMov,
     discreto: Boolean,
+    forma: androidx.compose.ui.graphics.Shape,
     modifier: Modifier,
     alPulsar: () -> Unit,
     alBorrar: () -> Unit,
@@ -240,7 +255,7 @@ private fun FilaDeslizable(
     SwipeToDismissBox(
         state = estado,
         enableDismissFromStartToEnd = f.esGasto,
-        modifier = modifier.clip(RoundedCornerShape(20.dp)),
+        modifier = modifier.clip(forma),
         backgroundContent = {
             val direccion = estado.dismissDirection
             val fondo by animateColorAsState(

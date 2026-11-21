@@ -5,6 +5,12 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -74,14 +80,27 @@ fun InicioScreen(
     relleno: PaddingValues,
     alDrive: () -> Unit = {},
     alPresupuestos: () -> Unit = {},
+    alEstadisticas: (io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst, java.time.YearMonth) -> Unit = { _, _ -> },
+    alPendientes: () -> Unit = {},
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
     val presupuestos by vm.presupuestos.collectAsStateWithLifecycle()
     var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
     var cambiandoPago by remember { mutableStateOf<PagoPendiente?>(null) }
 
+    val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
+    val umbral = with(androidx.compose.ui.platform.LocalDensity.current) { 96.dp.toPx() }
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        // Deslizar a los lados cambia de mes (como en el Calendario).
+        modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
+            var total = 0f
+            detectHorizontalDragGestures(
+                onDragStart = { total = 0f },
+                onDragEnd = {
+                    if (total > umbral) { haptica(); vm.mesAnterior() } else if (total < -umbral) { haptica(); vm.mesSiguiente() }
+                },
+            ) { _, d -> total += d }
+        },
         contentPadding = PaddingValues(start = Espacio.l, end = Espacio.l, bottom = relleno.calculateBottomPadding() + 96.dp),
         verticalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
@@ -90,8 +109,8 @@ fun InicioScreen(
                 io.github.alexcorrea2001lemon.nummia.ui.drive.IconoEstadoDrive(alDrive)
             }
         }
-        item { TarjetaBalance(e, vm::alternarDiscreto) }
-        item { Indicadores(e) }
+        item { TarjetaBalance(e, vm::alternarDiscreto) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) } }
+        item { Indicadores(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) } }
 
         if (presupuestos.isNotEmpty()) {
             item("presupuestos") {
@@ -139,7 +158,7 @@ fun InicioScreen(
             }
             if (e.teDeben.isNotEmpty()) {
                 item("deben") {
-                    Tarjeta {
+                    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPendientes)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
                             Avatar("", LocalColoresNummia.current.avisoFondo, LocalColoresNummia.current.aviso, Iconos.Persona)
                             Column(Modifier.weight(1f)) {
@@ -165,10 +184,10 @@ fun InicioScreen(
             }
         }
 
-        if (e.top.isNotEmpty()) item { DondeMas(e) }
+        if (e.top.isNotEmpty()) item { DondeMas(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.DONDE, e.mes) } }
 
         item {
-            Tarjeta {
+            Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.ANIO, e.mes) }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Ahorrado en ${e.mes.year}", style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
@@ -218,15 +237,14 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
             IconButton(onClick = siguiente, modifier = Modifier.size(40.dp)) { Icon(Iconos.ChevronDer, "Mes siguiente") }
         }
         estadoDrive()
-        IconButton(onClick = buscar) { Icon(Iconos.Buscar, "Buscar") }
         IconButton(onClick = ajustes) { Icon(Iconos.Ajustes, "Ajustes") }
     }
 }
 
 @Composable
-private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit) {
+private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alPulsar: () -> Unit) {
     val c = LocalColoresNummia.current
-    Tarjeta(fondo = c.heroe) {
+    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPulsar), fondo = c.heroe) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Balance del mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.weight(1f))
             IconButton(onClick = alternarDiscreto) {
@@ -251,19 +269,31 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit) {
         AnimatedVisibility(texto != null) {
             Text(texto.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
         }
+        // Sin el sueldo confirmado el mes parece en negativo: se enseña cómo quedará.
+        AnimatedVisibility(e.sueldoPrevistoMes > 0) {
+            Text(
+                "Con el sueldo previsto: ${formatearEuros(e.resumen.balance + e.sueldoPrevistoMes, conSigno = true, discreto = e.discreto)}",
+                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                color = if (e.resumen.balance + e.sueldoPrevistoMes >= 0) c.ingreso else c.gasto,
+            )
+        }
     }
 }
 
 @Composable
-private fun Indicadores(e: InicioEstado) {
+private fun Indicadores(e: InicioEstado, alPulsar: () -> Unit) {
     val c = LocalColoresNummia.current
-    Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+    // Las cuatro cifras en una sola tarjeta: menos bordes y se ve antes lo de debajo.
+    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPulsar), relleno = false) {
+        Row(Modifier.height(IntrinsicSize.Min)) {
             Indicador("Ingresos", e.resumen.ingresos, c.ingreso, e.discreto, Modifier.weight(1f))
+            VerticalDivider(color = c.borde)
             Indicador("Pagado", e.resumen.pagado, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+        HorizontalDivider(color = c.borde)
+        Row(Modifier.height(IntrinsicSize.Min)) {
             Indicador("Reembolsos", e.resumen.reembolsos, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
+            VerticalDivider(color = c.borde)
             Indicador("Gasto real", e.resumen.gastoReal, c.gasto, e.discreto, Modifier.weight(1f))
         }
     }
@@ -271,15 +301,15 @@ private fun Indicadores(e: InicioEstado) {
 
 @Composable
 private fun Indicador(titulo: String, valor: Long, color: androidx.compose.ui.graphics.Color, discreto: Boolean, modifier: Modifier) {
-    Tarjeta(modifier) {
+    Column(modifier.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
         Text(titulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
         ImporteAnimado(valor, MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = color, discreto = discreto)
     }
 }
 
 @Composable
-private fun DondeMas(e: InicioEstado) {
-    Tarjeta {
+private fun DondeMas(e: InicioEstado, alPulsar: () -> Unit) {
+    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPulsar)) {
         Text("Dónde más has gastado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         e.top.forEach { t ->
             val ancho by animateFloatAsState(t.fraccion, spring(dampingRatio = 0.8f, stiffness = 200f), label = "barra")

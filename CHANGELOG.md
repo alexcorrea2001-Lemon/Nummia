@@ -2,6 +2,24 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.6.0] - 2026-11-21
+
+### Nuevo
+- **Iconos en las categorías**: 33 iconos para elegir (Ajustes → Categorías). Cada movimiento muestra el icono y el color de su categoría.
+- **Inicio**:
+  - Desliza a los lados para cambiar de mes.
+  - Todo se puede tocar: el balance y las cifras llevan a Estadísticas del mes, «Dónde más has gastado» a «Dónde gasto», «Ahorrado» al año y «Te deben» a los pendientes.
+  - Si el sueldo aún no está confirmado, el balance dice cómo quedará: «Con el sueldo previsto: +…».
+
+### Cambiado
+- **Inicio más limpio**: las cuatro cifras en una sola tarjeta y sin la lupa arriba (buscar está en Movimientos), para que el mes respire.
+- **Movimientos**: los de un mismo día forman un solo bloque.
+- **El botón + ya no tapa nada**: se esconde al bajar por una lista y vuelve al subir.
+- **Tema oscuro con más contraste**: las tarjetas se distinguen mejor del fondo y los textos grises se leen mejor.
+
+### Más rápido
+- Las tareas de mantenimiento (papelera, tiendas, categorías, pagos previstos) se hacen una vez al día y no en cada apertura.
+
 ## [1.5.2] - 2026-11-21
 
 ### Arreglado

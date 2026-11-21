@@ -482,10 +482,10 @@ class MovimientosRepo @Inject constructor(
 
     // ---------- Categorías ----------
 
-    suspend fun crearCategoria(nombre: String, color: Long): String {
+    suspend fun crearCategoria(nombre: String, color: Long, icono: String = "more"): String {
         val todas = db.categorias().volcar()
         todas.firstOrNull { claveTexto(it.nombre) == claveTexto(nombre) }?.let { return it.id }
-        val c = CategoriaEntity(UUID.randomUUID().toString(), nombre.trim(), "more", color, false, (todas.maxOfOrNull { it.orden } ?: 0) + 1)
+        val c = CategoriaEntity(UUID.randomUUID().toString(), nombre.trim(), icono, color, false, (todas.maxOfOrNull { it.orden } ?: 0) + 1)
         db.categorias().guardar(c)
         return c.id
     }

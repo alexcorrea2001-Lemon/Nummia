@@ -26,7 +26,11 @@ jobs:
       - name: Lint, pruebas y APK de depuración
         run: |
           set -o pipefail
-          ./gradlew lintDebug testDebugUnitTest assembleDebug assembleRelease --stacktrace --console=plain 2>&1 | tee build.log
+          # Un reintento si falla: a veces una descarga de GitHub (p. ej. Robolectric) se corta.
+          ./gradlew lintDebug testDebugUnitTest assembleDebug assembleRelease --stacktrace --console=plain 2>&1 | tee build.log || {
+            echo "::warning::Primer intento fallido; se reintenta una vez."
+            ./gradlew lintDebug testDebugUnitTest assembleDebug assembleRelease --stacktrace --console=plain 2>&1 | tee build.log
+          }
 
       - name: Tamaño del APK final
         if: success()

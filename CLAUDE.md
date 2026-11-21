@@ -27,5 +27,5 @@ Además: **segura, exacta y sin fallos.**
 - **Pruebas:** toda regla de cálculo y de sincronización tiene pruebas antes de implementarse (TDD).
 - **Textos:** la interfaz y el `CHANGELOG.md` en español.
 - **Versionado semántico:** `vX.Y.Z`.
-- **Ramas:** trabajar en `desarrollo`. `main` solo recibe versiones publicadas.
+- **Ramas:** se trabaja directamente en `main`. Una versión solo se publica cuando sube el número de versión en `app/build.gradle.kts`.
 - **Ideas descartadas** (no implementar): autocompletado, calendario coloreado por intensidad, «lo más repetido», comparar meses, comparar el mismo periodo, «dinero adelantado en el año», recordatorio nocturno.

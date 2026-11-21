@@ -2,6 +2,11 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.0.4] - 2026-11-21
+
+### Cambiado
+- **Iconos de la app más sencillos**: versión plana de la N que sube, la cartera y el crecimiento, sin degradados ni bordes más claros. Ocupan mucho menos y se ven nítidos en cualquier pantalla.
+
 ## [1.0.3] - 2026-11-21
 
 ### Arreglado

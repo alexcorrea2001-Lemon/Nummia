@@ -379,7 +379,7 @@ Siempre con `NetworkType.CONNECTED` (o `UNMETERED` si está activado «solo con 
 
 ### 12.4 Versiones y publicación
 - **Versionado semántico:** `vMAYOR.MENOR.CORRECCIÓN`, con `versionCode = MAYOR×10000 + MENOR×100 + CORRECCIÓN`. Se muestra en Ajustes → Acerca de.
-- **Ramas:** se trabaja en `desarrollo`. Cada versión se fusiona en `main`; el flujo de publicación crea la etiqueta `vX.Y.Z` y el Release automáticamente.
+- **Ramas:** se trabaja directamente en `main`. Cuando llega a `main` un número de versión aún no publicado, el flujo de publicación crea la etiqueta `vX.Y.Z` y el Release automáticamente.
 - **GitHub Actions:**
   - En cada push o PR: lint + pruebas unitarias + compilación debug.
   - En cada push a `main` con una versión aún no publicada: pruebas → APK firmado (release) → `.sha256` → GitHub Release con las notas de `CHANGELOG.md`. **Si cualquier paso falla, no se publica.**
@@ -410,7 +410,7 @@ Propuestas (en la maqueta):
 - **B.** Una moneda con una «n».
 - **C.** Tres barras que crecen.
 
-**Sustituidos por los tres iconos que diseñó el propietario** (N que sube, cartera y crecimiento), convertidos a icono adaptable y teñidos en los 12 colores. **Por defecto: N que sube, en violeta.** Los otros dos se ofrecen como iconos alternativos en Ajustes. Será un icono adaptable de Android, con capa monocroma para los iconos temáticos.
+**Versión plana y vectorial de los tres iconos que diseñó el propietario** (N que sube, cartera y crecimiento), en los 12 colores, con capa monocroma. **Por defecto: N que sube, en violeta.** Los otros dos se ofrecen como iconos alternativos en Ajustes. Será un icono adaptable de Android, con capa monocroma para los iconos temáticos.
 
 ## 14. Queda a criterio del desarrollador
 

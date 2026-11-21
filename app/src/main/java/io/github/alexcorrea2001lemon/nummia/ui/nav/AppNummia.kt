@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.FloatingActionButton
@@ -94,7 +96,7 @@ private val pestanas = listOf(
 )
 
 @Composable
-fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
+fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) {
     if (!ajustes.bienvenidaVista) {
         Bienvenida(alTerminar = alTerminarBienvenida)
         return
@@ -126,10 +128,12 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
         }
     }
 
+    // Tablet, plegable abierto o móvil en horizontal: barra lateral y contenido centrado.
+    val ancha = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            AnimatedVisibility(esPrincipal, enter = slideInVertically { it }, exit = slideOutVertically { it }) {
+            AnimatedVisibility(esPrincipal && !ancha, enter = slideInVertically { it }, exit = slideOutVertically { it }) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                     pestanas.forEach { p ->
                         NavigationBarItem(
@@ -156,7 +160,23 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
             }
         },
     ) { relleno ->
-        SharedTransitionLayout {
+        androidx.compose.foundation.layout.Row(Modifier.fillMaxSize()) {
+        if (ancha && esPrincipal) {
+            androidx.compose.material3.NavigationRail(containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                pestanas.forEach { p ->
+                    androidx.compose.material3.NavigationRailItem(
+                        selected = ruta == p.ruta,
+                        onClick = { if (ruta != p.ruta) irAPestana(nav, p.ruta) },
+                        icon = { Icon(p.icono, null) },
+                        label = { Text(p.nombre, maxLines = 1) },
+                    )
+                }
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            }
+        }
+        Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+        SharedTransitionLayout(Modifier.widthIn(max = 760.dp)) {
             CompositionLocalProvider(LocalTransicionCompartida provides this) {
                 NavHost(
                     navController = nav,
@@ -170,6 +190,8 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?) -> Unit) {
                     grafo(nav, snackbar, relleno)
                 }
             }
+        }
+        }
         }
         if (menuAbierto) {
             Box(
@@ -194,7 +216,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             alDrive = { nav.navigate(Rutas.DRIVE) },
             alPresupuestos = { nav.navigate(Rutas.PRESUPUESTOS) },
             alEstadisticas = { p, ym -> Saltos.estadisticas.value = p to ym; irAPestana(nav, Rutas.ESTADISTICAS) },
-            alPendientes = { Saltos.movimientos.value = io.github.alexcorrea2001lemon.nummia.ui.movimientos.Pestana.PENDIENTES; irAPestana(nav, Rutas.MOVIMIENTOS) },
+            alPendientes = { nav.navigate(Rutas.DEBEN) },
             relleno = relleno,
         )
     }
@@ -208,7 +230,9 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             alAjustes = { nav.navigate(Rutas.AJUSTES) }, relleno = relleno,
         )
     }
-    pantalla(Rutas.ESTADISTICAS) { EstadisticasScreen(hiltViewModel(), ::abrirGasto, { nav.navigate(Rutas.AJUSTES) }, relleno, alInformes = { nav.navigate(Rutas.INFORMES) }) }
+    pantalla(Rutas.ESTADISTICAS) {
+        EstadisticasScreen(hiltViewModel(), ::abrirGasto, { nav.navigate(Rutas.AJUSTES) }, relleno, alInformes = { nav.navigate(Rutas.INFORMES) }, alTienda = { nav.navigate(Rutas.tienda(it)) })
+    }
     pantalla(Rutas.INFORMES) {
         io.github.alexcorrea2001lemon.nummia.ui.informes.InformesScreen(hiltViewModel(), snackbar, { nav.navigate(Rutas.AJUSTES) }, relleno, alVolver = { nav.popBackStack() })
     }
@@ -219,6 +243,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             alEditar = { nav.navigate(Rutas.gasto(it)) },
             alAnadirReembolso = { nav.navigate(Rutas.reembolso(it)) },
             alAbrirGasto = { nav.navigate(Rutas.detalle(it)) { popUpTo(Rutas.DETALLE) { inclusive = true } } },
+            alTienda = { nav.navigate(Rutas.tienda(it)) },
         )
     }
     pantalla(
@@ -243,7 +268,11 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.AJUSTES) { AjustesScreen(hiltViewModel(), { nav.popBackStack() }) { nav.navigate(it) } }
     pantalla(Rutas.APARIENCIA) { AparienciaScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.SUELDO) { SueldoScreen(ajustesVm(nav), { nav.popBackStack() }) }
-    pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), { nav.popBackStack() }) }
+    pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), { nav.popBackStack() }) { nav.navigate(Rutas.DEBEN) } }
+    pantalla(Rutas.TIENDA, listOf(navArgument("nombre") { type = NavType.StringType })) {
+        io.github.alexcorrea2001lemon.nummia.ui.tiendas.FichaTiendaScreen(hiltViewModel(), ::abrirGasto) { nav.popBackStack() }
+    }
+    pantalla(Rutas.DEBEN) { io.github.alexcorrea2001lemon.nummia.ui.deben.DebenScreen(hiltViewModel(), snackbar, ::abrirGasto) { nav.popBackStack() } }
     pantalla(Rutas.DATOS) { DatosScreen(ajustesVm(nav), snackbar, { nav.navigate(it) }) { nav.popBackStack() } }
     pantalla(Rutas.NOTIFICACIONES) { io.github.alexcorrea2001lemon.nummia.ui.ajustes.NotificacionesScreen(ajustesVm(nav)) { nav.popBackStack() } }
     pantalla(Rutas.SEGURIDAD) { io.github.alexcorrea2001lemon.nummia.ui.ajustes.SeguridadScreen(ajustesVm(nav)) { nav.popBackStack() } }

@@ -23,6 +23,9 @@ object Rutas {
     const val PRESUPUESTOS = "ajustes/presupuestos"
     const val TIENDAS = "ajustes/tiendas"
     const val CATEGORIAS = "ajustes/categorias"
+    const val DEBEN = "deben"
+    const val TIENDA = "tienda/{nombre}"
+    fun tienda(nombre: String) = "tienda/${android.net.Uri.encode(nombre)}"
     const val NOTIFICACIONES = "ajustes/notificaciones"
     const val SEGURIDAD = "ajustes/seguridad"
 

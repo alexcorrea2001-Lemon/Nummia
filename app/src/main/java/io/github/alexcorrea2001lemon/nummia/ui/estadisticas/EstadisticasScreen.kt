@@ -82,7 +82,7 @@ private val INICIALES = listOf("E", "F", "M", "A", "M", "J", "J", "A", "S", "O",
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EstadisticasScreen(vm: EstadisticasViewModel, alAbrirGasto: (String) -> Unit, alAjustes: () -> Unit, relleno: PaddingValues, alInformes: () -> Unit = {}) {
+fun EstadisticasScreen(vm: EstadisticasViewModel, alAbrirGasto: (String) -> Unit, alAjustes: () -> Unit, relleno: PaddingValues, alInformes: () -> Unit = {}, alTienda: (String) -> Unit = {}) {
     androidx.compose.runtime.LaunchedEffect(Unit) {
         io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.estadisticas.collect { salto ->
             if (salto != null) { vm.ir(salto.first, salto.second); io.github.alexcorrea2001lemon.nummia.ui.nav.Saltos.estadisticas.value = null }
@@ -114,7 +114,7 @@ fun EstadisticasScreen(vm: EstadisticasViewModel, alAbrirGasto: (String) -> Unit
                     PestanaEst.MES -> pestanaMes(e, vm)
                     PestanaEst.ANIO -> pestanaAnio(e, vm)
                     PestanaEst.COMPARAR -> pestanaComparar(e, vm)
-                    PestanaEst.DONDE -> pestanaDonde(e, vm)
+                    PestanaEst.DONDE -> pestanaDonde(e, vm, alTienda)
                 }
             }
         }
@@ -399,7 +399,7 @@ private fun ElegirAnio(actual: Int, anios: List<Int>, alElegir: (Int) -> Unit, p
 
 // ------------------------------------------------------------------ Dónde gasto
 
-private fun LazyListScope.pestanaDonde(e: EstadoEst, vm: EstadisticasViewModel) {
+private fun LazyListScope.pestanaDonde(e: EstadoEst, vm: EstadisticasViewModel, alTienda: (String) -> Unit) {
     item {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
             Periodo.entries.forEach { p -> FilterChip(selected = e.sel.periodo == p, onClick = { vm.periodo(p) }, label = { Text(p.nombre) }) }
@@ -412,7 +412,7 @@ private fun LazyListScope.pestanaDonde(e: EstadoEst, vm: EstadisticasViewModel) 
     val maximo = e.ranking.maxOfOrNull { it.total }?.coerceAtLeast(1) ?: 1
     items(e.ranking, key = { it.nombre }) { g ->
         val fraccion by animateFloatAsState((g.total.toFloat() / maximo).coerceIn(0.02f, 1f), label = "barra")
-        Tarjeta(Modifier.animateItem().clickable { vm.abrirTienda(g.nombre) }) {
+        Tarjeta(Modifier.animateItem().clickable { alTienda(g.nombre) }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(g.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(formatearEuros(g.total, discreto = e.discreto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

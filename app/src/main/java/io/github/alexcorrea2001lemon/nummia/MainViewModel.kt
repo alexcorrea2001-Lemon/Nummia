@@ -95,8 +95,10 @@ class MainViewModel @Inject constructor(
     /** Destino pedido desde un acceso directo o el widget («Nuevo gasto», «Nuevo ingreso»). */
     val destino = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
 
-    fun terminarBienvenida(sueldo: Long?) = viewModelScope.launch {
+    /** Fin de la bienvenida: guarda el sueldo y, si eligió «Conectar Drive» o «Importar Excel», va allí. */
+    fun terminarBienvenida(sueldo: Long?, destino: String?) = viewModelScope.launch {
         if (sueldo != null) ajustesRepo.sueldoHabitual(sueldo)
         ajustesRepo.bienvenidaVista()
+        if (destino != null) this@MainViewModel.destino.value = destino
     }
 }

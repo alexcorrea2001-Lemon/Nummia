@@ -25,6 +25,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -148,14 +150,56 @@ fun EstadoVacio(icono: ImageVector, titulo: String, texto: String, modifier: Mod
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Espacio.m),
     ) {
-        Box(Modifier.size(64.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
-            Icon(icono, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-        }
+        DibujoVacio(icono)
         Text(titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
         Text(texto, style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave, textAlign = TextAlign.Center)
         if (accion != null) {
             Spacer(Modifier.height(Espacio.xs))
             androidx.compose.material3.Button(onClick = alPulsar) { Text(accion) }
+        }
+    }
+}
+
+/**
+ * Dibujo de los estados vacíos: dos tarjetas inclinadas, unas monedas y el icono delante, en el color de la app.
+ * Se dibuja en código (no ocupa nada) y flota un poco (si «Quitar animaciones» está activo, se queda quieto).
+ */
+@Composable
+fun DibujoVacio(icono: ImageVector) {
+    val acento = MaterialTheme.colorScheme.primary
+    val fondo = MaterialTheme.colorScheme.primaryContainer
+    val tarjeta = MaterialTheme.colorScheme.surfaceContainerHigh
+    val borde = LocalColoresNummia.current.borde
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "flotar")
+    val flota by t.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(2400), androidx.compose.animation.core.RepeatMode.Reverse),
+        label = "flota",
+    )
+    Box(Modifier.size(width = 150.dp, height = 112.dp), contentAlignment = Alignment.Center) {
+        androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            drawCircle(fondo, radius = h * 0.48f, center = androidx.compose.ui.geometry.Offset(w / 2, h / 2))
+            fun carta(dx: Float, giro: Float) = rotate(giro, pivot = androidx.compose.ui.geometry.Offset(w / 2 + dx, h / 2)) {
+                val tl = androidx.compose.ui.geometry.Offset(w / 2 + dx - w * 0.2f, h * 0.24f)
+                val tam = androidx.compose.ui.geometry.Size(w * 0.4f, h * 0.52f)
+                drawRoundRect(tarjeta, tl, tam, androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()))
+                drawRoundRect(borde, tl, tam, androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+                drawRoundRect(acento.copy(alpha = 0.35f), tl + androidx.compose.ui.geometry.Offset(w * 0.05f, h * 0.08f), androidx.compose.ui.geometry.Size(w * 0.18f, 5.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
+            }
+            carta(-w * 0.12f, -10f)
+            carta(w * 0.12f, 10f)
+            val sube = flota * 4.dp.toPx()
+            drawCircle(acento.copy(alpha = 0.85f), 7.dp.toPx(), androidx.compose.ui.geometry.Offset(w * 0.16f, h * 0.30f - sube))
+            drawCircle(acento.copy(alpha = 0.5f), 5.dp.toPx(), androidx.compose.ui.geometry.Offset(w * 0.86f, h * 0.24f + sube))
+            drawCircle(acento.copy(alpha = 0.65f), 4.dp.toPx(), androidx.compose.ui.geometry.Offset(w * 0.82f, h * 0.80f - sube))
+        }
+        Box(
+            Modifier.offset(y = (-3 * flota).dp).size(52.dp).background(acento, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icono, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(26.dp))
         }
     }
 }

@@ -321,12 +321,13 @@ fun SueldoScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
 // ------------------------------------------------------------------ Personas
 
 @Composable
-fun PersonasScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
+fun PersonasScreen(vm: AjustesViewModel, alVolver: () -> Unit, alDeben: () -> Unit = {}) {
     val personas by vm.personas.collectAsStateWithLifecycle()
     var creando by rememberSaveable { mutableStateOf(false) }
     var editando by remember { mutableStateOf<io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity?>(null) }
     PantallaAjustes("Personas", alVolver) {
         Text("Las personas que te devuelven dinero: padres, hermanos, amigos…", style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
+        Tarjeta(relleno = false) { OpcionAjuste(Iconos.Euro, "Lo que me deben", "Cuánto te debe cada persona y «Me lo ha pagado todo»", alPulsar = alDeben) }
         Tarjeta(relleno = false) {
             if (personas.isEmpty()) Text("Aún no has añadido a nadie.", modifier = Modifier.padding(Espacio.l), color = LocalColoresNummia.current.textoSuave)
             personas.forEach { p ->

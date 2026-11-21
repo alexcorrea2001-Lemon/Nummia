@@ -2,6 +2,22 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.9.0] - 2026-11-21
+
+### Nuevo
+- **Te deben, por persona** (desde «Te deben» en Inicio o Ajustes → Personas): cuánto te debe cada uno, qué cosas y desde cuándo, y el botón **«Me lo ha pagado todo»** (con «Deshacer»).
+- **Elegir varios en Movimientos**: mantén pulsado un movimiento y toca otros; arriba puedes borrarlos, cambiarles la categoría o la tienda de una vez.
+- **Ficha de cada tienda** (toca una tienda en «Dónde gasto» o en el detalle de un gasto): cuánto llevas, veces, media, los últimos 12 meses en un gráfico, sus gastos y cambiar la categoría de todos a la vez.
+- **Bienvenida en dos pasos**: después de presentarte Nummia te pregunta cómo empezar: conectar tu Drive, importar tu Excel o empezar de cero.
+- **Buscador en Ajustes**: escribe «huella», «drive» o «presupuesto» y lo encuentras.
+- **Pantallas grandes** (tablet, plegable o en horizontal): barra lateral y contenido centrado.
+
+### Cambiado
+- **4 pestañas abajo**: Informes pasa a Estadísticas (botón «Informes» arriba), y las demás tienen más sitio.
+- **Ajustes ordenados por secciones**: Tus datos, Dinero, Aspecto, Seguridad y avisos, y Nummia.
+- **Detalle del gasto**: arriba el icono de su categoría, la tienda se puede tocar y el historial es una línea de tiempo.
+- **Estados vacíos con dibujo** en vez de un simple icono.
+
 ## [1.7.1] - 2026-11-21
 
 ### Cambiado

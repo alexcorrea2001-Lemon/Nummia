@@ -520,6 +520,12 @@ class MovimientosRepo @Inject constructor(
         return n
     }
 
+    /** Ficha de una tienda: todos sus gastos confirmados (sin mayúsculas ni tildes). */
+    fun gastosDeTienda(nombre: String): Flow<List<GastoConReembolsos>> {
+        val clave = claveTienda(nombre)
+        return db.gastos().todos().map { l -> l.filter { it.gasto.estado == Estado.CONFIRMADO && claveTienda(it.gasto.tienda) == clave } }
+    }
+
     // ---------- Categorías ----------
 
     suspend fun crearCategoria(nombre: String, color: Long, icono: String = "more"): String {

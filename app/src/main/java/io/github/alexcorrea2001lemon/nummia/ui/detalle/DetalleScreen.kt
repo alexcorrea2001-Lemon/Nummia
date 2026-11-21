@@ -3,6 +3,8 @@ package io.github.alexcorrea2001lemon.nummia.ui.detalle
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -73,6 +75,7 @@ fun DetalleScreen(
     alEditar: (String) -> Unit,
     alAnadirReembolso: (String) -> Unit,
     alAbrirGasto: (String) -> Unit,
+    alTienda: (String) -> Unit = {},
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
     val alcance = rememberCoroutineScope()
@@ -102,10 +105,27 @@ fun DetalleScreen(
         ) {
             item {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                    Box(Modifier.size(64.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape), contentAlignment = Alignment.Center) {
-                        Text(gasto.concepto.take(1).uppercase(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    // Icono y color de su categoría (o la inicial si no tiene)
+                    val cat = gasto.categoriaId?.let { io.github.alexcorrea2001lemon.nummia.ui.comun.LocalCategorias.current[it] }
+                    val colorCat = cat?.let { Color(it.color) }
+                    Box(
+                        Modifier.size(72.dp).background(colorCat?.copy(alpha = 0.2f) ?: MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (cat != null) {
+                            Icon(io.github.alexcorrea2001lemon.nummia.ui.comun.IconosCategoria.de(cat.icono), null, tint = colorCat!!, modifier = Modifier.size(34.dp))
+                        } else {
+                            Text(gasto.concepto.take(1).uppercase(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        }
                     }
                     Text(gasto.concepto, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    if (gasto.tienda.isNotBlank()) {
+                        // Toca la tienda para ver su ficha
+                        TextButton(onClick = { alTienda(gasto.tienda) }) {
+                            Icon(Iconos.Bolsa, null, Modifier.size(16.dp))
+                            Text("  ${gasto.tienda}")
+                        }
+                    }
                     Text(
                         listOfNotNull(fechaLarga(gasto.fecha), gasto.categoriaId?.let(e.categorias::get)).joinToString(" · "),
                         style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, textAlign = TextAlign.Center,
@@ -182,12 +202,22 @@ fun DetalleScreen(
 
             item {
                 Tarjeta {
-                    Text("Historial de cambios", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Línea de tiempo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     val formato = remember { SimpleDateFormat("d MMM yyyy · HH:mm", io.github.alexcorrea2001lemon.nummia.ui.comun.ES) }
-                    e.historial.take(30).forEach { h ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                            Box(Modifier.padding(top = 6.dp).size(8.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
-                            Column {
+                    val eventos = e.historial.take(30)
+                    eventos.forEachIndexed { i, h ->
+                        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                            // Punto y línea que une los cambios, del más nuevo al más antiguo
+                            Column(Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                val color = when (h.campo) {
+                                    "reembolso" -> c.ingreso
+                                    "borrado", "reembolso borrado" -> c.gasto
+                                    else -> MaterialTheme.colorScheme.primary
+                                }
+                                Box(Modifier.padding(top = 5.dp).size(10.dp).background(color, CircleShape))
+                                if (i < eventos.lastIndex) Box(Modifier.width(2.dp).weight(1f).background(c.borde))
+                            }
+                            Column(Modifier.padding(bottom = Espacio.m)) {
                                 Text(textoHistorial(h.campo, h.antes, h.despues), style = MaterialTheme.typography.bodyMedium)
                                 Text("${formato.format(Date(h.fecha))} · desde el ${if (h.origen.name == "ORDENADOR") "ordenador" else "móvil"}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
                             }

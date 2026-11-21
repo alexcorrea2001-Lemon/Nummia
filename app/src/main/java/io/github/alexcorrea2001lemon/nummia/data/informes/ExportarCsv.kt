@@ -15,6 +15,8 @@ import javax.inject.Singleton
 /** CSV «a la española»: separador «;», decimales con coma y BOM para que Excel lea bien las tildes. */
 object Csv {
     private const val SEP = ';'
+    /** Marca de orden de bytes: sin ella Excel abre el UTF-8 con las tildes rotas. */
+    private val BOM = 0xFEFF.toChar()
 
     fun celda(s: String): String =
         if (s.any { it == SEP || it == '"' || it == '\n' || it == '\r' }) "\"" + s.replace("\"", "\"\"") + "\"" else s
@@ -27,7 +29,7 @@ object Csv {
 
     fun texto(filas: List<List<String>>): String =
         buildString {
-            append('﻿')
+            append(BOM)
             filas.forEach { f -> append(f.joinToString(SEP.toString(), transform = ::celda)).append("\r\n") }
         }
 }

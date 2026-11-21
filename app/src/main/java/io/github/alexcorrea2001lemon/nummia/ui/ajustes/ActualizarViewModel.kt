@@ -36,6 +36,7 @@ class ActualizarViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val actualizador: Actualizador,
     private val ajustes: AjustesRepo,
+    private val sinc: io.github.alexcorrea2001lemon.nummia.data.drive.Sincronizador,
 ) : ViewModel() {
     private val _estado = MutableStateFlow<EstadoPantallaActualizar>(EstadoPantallaActualizar.Inicial)
     val estado = _estado.asStateFlow()
@@ -81,6 +82,8 @@ class ActualizarViewModel @Inject constructor(
                     _estado.value = EstadoPantallaActualizar.Error("La actualización no está firmada por Nummia. No se instalará.")
                 } else {
                     _estado.value = EstadoPantallaActualizar.Instalando
+                    // Antes de instalar, copia de seguridad en Drive (si está conectado). Máximo 20 s.
+                    kotlinx.coroutines.withTimeoutOrNull(20_000) { sinc.copiaAhora() }
                     runCatching { withContext(Dispatchers.IO) { Instalador.instalar(context, apk) } }.onFailure {
                         apk.delete()
                         _estado.value = EstadoPantallaActualizar.Error("No se pudo instalar la actualización.")

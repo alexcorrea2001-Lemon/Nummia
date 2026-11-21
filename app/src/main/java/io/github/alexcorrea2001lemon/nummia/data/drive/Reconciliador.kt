@@ -83,3 +83,23 @@ fun reconciliar(
     }
     return Plan(actualizar, anadir, borrarR.sortedDescending(), aplicar, borrarL, nuevas, conflictos, invalidas, nueva)
 }
+
+/**
+ * Tras restaurar una copia, la hoja debe quedar igual que el móvil: se actualiza lo distinto,
+ * se añade lo que falta y se borra de la hoja lo que no existe en el móvil.
+ */
+fun reconciliarForzandoLocal(local: Map<String, Canon>, remoto: List<FilaRemota>): Plan {
+    val vistos = HashSet<String>()
+    val actualizar = ArrayList<Triple<Int, String, Canon>>()
+    val borrar = ArrayList<Int>()
+    for (r in remoto) {
+        val id = r.id
+        val l = id?.let(local::get)
+        when {
+            id == null || l == null || !vistos.add(id) -> borrar += r.fila
+            r.canon == null || firma(r.canon) != firma(l) -> actualizar += Triple(r.fila, id, l)
+        }
+    }
+    val anadir = local.filterKeys { it !in vistos }.map { it.key to it.value }
+    return Plan(actualizar, anadir, borrar.sortedDescending(), instantanea = local.mapValues { firma(it.value) })
+}

@@ -50,10 +50,19 @@ data class IngresoInput(
 )
 
 @Singleton
+/** Avisa de que algo ha cambiado (para sincronizar con Drive al poco rato). */
+fun interface AvisoCambios {
+    fun cambio()
+}
+
 class MovimientosRepo @Inject constructor(
     private val db: NummiaDb,
     private val reloj: Reloj,
+    private val aviso: AvisoCambios,
 ) {
+    /** Para las pruebas: sin aviso. */
+    constructor(db: NummiaDb, reloj: Reloj) : this(db, reloj, AvisoCambios {})
+
     private val fechaCorta = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     // ---------- Lectura ----------
@@ -256,13 +265,17 @@ class MovimientosRepo @Inject constructor(
         return p.id
     }
 
-    suspend fun renombrarPersona(p: PersonaEntity, nombre: String) = db.personas().guardar(p.copy(nombre = nombre.trim()))
+    suspend fun renombrarPersona(p: PersonaEntity, nombre: String) {
+        db.personas().guardar(p.copy(nombre = nombre.trim()))
+        aviso.cambio()
+    }
     suspend fun borrarPersona(p: PersonaEntity) = db.personas().guardar(p.copy(deletedAt = reloj.ahoraMs()))
 
     // ---------- Historial ----------
 
     private suspend fun anotar(entidad: String, id: String, campo: String, antes: String?, despues: String?) {
         db.historial().insertar(listOf(HistorialEntity(0, entidad, id, campo, antes, despues, Origen.MOVIL, reloj.ahoraMs())))
+        aviso.cambio()
     }
 
     private suspend fun anotarCambios(a: GastoEntity, b: GastoEntity) {

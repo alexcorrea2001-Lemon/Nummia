@@ -164,6 +164,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             alBuscar = { irAPestana(nav, Rutas.MOVIMIENTOS) },
             alAjustes = { nav.navigate(Rutas.AJUSTES) },
             alAnadirGasto = { nav.navigate(Rutas.gasto()) },
+            alDrive = { nav.navigate(Rutas.DRIVE) },
             relleno = relleno,
         )
     }
@@ -208,6 +209,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.SUELDO) { SueldoScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.DATOS) { DatosScreen(ajustesVm(nav), snackbar) { nav.popBackStack() } }
+    pantalla(Rutas.DRIVE) { io.github.alexcorrea2001lemon.nummia.ui.drive.DriveScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
     pantalla(Rutas.ACERCA) { AcercaScreen(ajustesVm(nav), hiltViewModel(), { nav.popBackStack() }) }
 }
 

@@ -55,5 +55,8 @@ object Iconos {
     val Paleta by lazy { trazo("paleta", "M12 3a9 9 0 1 1 0 18a9 9 0 1 1 0-18zM12 3v18M12 8h5M12 12h7M12 16h5") }
     val Actualizar by lazy { trazo("actualizar", "M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5") }
     val Escudo by lazy { trazo("escudo", "M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z") }
+    val Wifi by lazy { trazo("wifi", "M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01", grosor = 2f) }
+    val Aviso by lazy { trazo("aviso", "M12 3 2 20h20zM12 10v4M12 17h.01", grosor = 2f) }
+    val Abrir by lazy { trazo("abrir", "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5") }
     val Codigo by lazy { trazo("codigo", "M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14") }
 }

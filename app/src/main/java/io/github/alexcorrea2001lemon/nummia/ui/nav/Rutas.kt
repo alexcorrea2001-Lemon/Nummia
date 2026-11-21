@@ -16,6 +16,7 @@ object Rutas {
     const val SUELDO = "ajustes/sueldo"
     const val DATOS = "ajustes/datos"
     const val ACERCA = "ajustes/acerca"
+    const val DRIVE = "ajustes/drive"
 
     fun detalle(id: String) = "detalle/$id"
     fun gasto(id: String? = null, paraOtro: Boolean = false, fecha: java.time.LocalDate? = null) =

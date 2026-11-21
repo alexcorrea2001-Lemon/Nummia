@@ -102,7 +102,7 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
             }
         }
         Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Nube, "Tu Drive", "Llega en la versión 1.2.0. Por ahora tus datos se guardan solo en este móvil.")
+            OpcionAjuste(Iconos.Nube, "Tu Drive", "Sincroniza con tu Google Drive y guarda copias de seguridad") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.DRIVE) }
         }
         Tarjeta(relleno = false) {
             OpcionAjuste(Iconos.Paleta, "Apariencia", "Tema, color de la app, icono y tamaño del texto") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.APARIENCIA) }

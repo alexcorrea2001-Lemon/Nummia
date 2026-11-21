@@ -67,6 +67,7 @@ fun InicioScreen(
     alAjustes: () -> Unit,
     alAnadirGasto: () -> Unit,
     relleno: PaddingValues,
+    alDrive: () -> Unit = {},
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
     var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
@@ -77,7 +78,9 @@ fun InicioScreen(
         verticalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
         item {
-            Cabecera(e, vm::mesAnterior, vm::mesSiguiente, vm::irAHoy, alBuscar, alAjustes)
+            Cabecera(e, vm::mesAnterior, vm::mesSiguiente, vm::irAHoy, alBuscar, alAjustes) {
+                io.github.alexcorrea2001lemon.nummia.ui.drive.IconoEstadoDrive(alDrive)
+            }
         }
         item { TarjetaBalance(e, vm::alternarDiscreto) }
         item { Indicadores(e) }
@@ -161,7 +164,7 @@ fun InicioScreen(
 }
 
 @Composable
-private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Unit, hoy: () -> Unit, buscar: () -> Unit, ajustes: () -> Unit) {
+private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Unit, hoy: () -> Unit, buscar: () -> Unit, ajustes: () -> Unit, estadoDrive: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = anterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
         TextButton(onClick = hoy, enabled = !e.esMesActual) {
@@ -169,6 +172,7 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
         }
         IconButton(onClick = siguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
         Box(Modifier.weight(1f))
+        estadoDrive()
         IconButton(onClick = buscar) { Icon(Iconos.Buscar, "Buscar") }
         IconButton(onClick = ajustes) { Icon(Iconos.Ajustes, "Ajustes") }
     }

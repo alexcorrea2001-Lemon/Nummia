@@ -33,6 +33,7 @@ data class Ajustes(
     val buscarActualizaciones: Boolean = true,
     val bienvenidaVista: Boolean = false,
     val versionDisponible: String? = null,
+    val driveSoloWifi: Boolean = false,
 )
 
 private val Context.almacen: DataStore<Preferences> by preferencesDataStore(name = "ajustes")
@@ -55,6 +56,7 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
         val buscar = booleanPreferencesKey("buscar_actualizaciones")
         val bienvenida = booleanPreferencesKey("bienvenida_vista")
         val versionDisponible = stringPreferencesKey("version_disponible")
+        val driveSoloWifi = booleanPreferencesKey("drive_solo_wifi")
     }
 
     val ajustes: Flow<Ajustes> = store.data.map { p ->
@@ -73,6 +75,7 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
             buscarActualizaciones = p[K.buscar] ?: d.buscarActualizaciones,
             bienvenidaVista = p[K.bienvenida] ?: d.bienvenidaVista,
             versionDisponible = p[K.versionDisponible],
+            driveSoloWifi = p[K.driveSoloWifi] ?: d.driveSoloWifi,
         )
     }
 
@@ -86,6 +89,7 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
     suspend fun sueldoHabitual(c: Long?) = store.edit { if (c == null) it.remove(K.sueldo) else it[K.sueldo] = c }
     suspend fun actualizacionesSoloWifi(v: Boolean) = store.edit { it[K.soloWifi] = v }
     suspend fun buscarActualizaciones(v: Boolean) = store.edit { it[K.buscar] = v }
+    suspend fun driveSoloWifi(v: Boolean) = store.edit { it[K.driveSoloWifi] = v }
     suspend fun bienvenidaVista() = store.edit { it[K.bienvenida] = true }
     suspend fun versionDisponible(v: String?) = store.edit { if (v == null) it.remove(K.versionDisponible) else it[K.versionDisponible] = v }
 

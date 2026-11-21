@@ -33,6 +33,7 @@ class AjustesViewModel @Inject constructor(
     private val repo: MovimientosRepo,
     private val copia: CopiaLocal,
     private val reloj: Reloj,
+    private val sinc: io.github.alexcorrea2001lemon.nummia.data.drive.Sincronizador,
 ) : ViewModel() {
     val ajustes: StateFlow<Ajustes> = ajustesRepo.ajustes.stateIn(viewModelScope, SharingStarted.Eagerly, Ajustes())
     val personas: StateFlow<List<PersonaEntity>> = repo.personas().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -67,7 +68,12 @@ class AjustesViewModel @Inject constructor(
             val dir = File(context.filesDir, "copias").apply { mkdirs() }
             File(dir, "antes_de_importar_${reloj.ahoraMs()}.nummia").writeBytes(copia.exportar(reloj.ahoraMs()))
         }
+        kotlinx.coroutines.withTimeoutOrNull(20_000) { sinc.copiaAhora() } // también en tu Drive, si está conectado
         copia.restaurar(c)
+        if (sinc.correo() != null) {
+            sinc.trasRestaurar() // la hoja de Drive quedará igual que el móvil
+            io.github.alexcorrea2001lemon.nummia.data.drive.TrabajoSync.pronto(context, ajustes.first().driveSoloWifi, 5)
+        }
         repo.prepararDatos()
         repo.asegurarSueldoPrevisto(reloj.hoy(), ajustes.first().sueldoHabitual)
         c.gastos.count { it.deletedAt == null } + c.ingresos.count { it.deletedAt == null }

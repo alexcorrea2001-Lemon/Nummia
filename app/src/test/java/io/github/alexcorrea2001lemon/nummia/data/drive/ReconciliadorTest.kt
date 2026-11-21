@@ -112,3 +112,25 @@ class ReconciliadorTest {
         assertEquals("150", filas[1].canon!![4])
     }
 }
+
+class ForzarLocalTest {
+    private fun c(vararg v: String): Canon = v.toList()
+    private val a = c("G-0001", "1", "Cafetería", "Café", "275")
+    private val a2 = c("G-0001", "1", "Cafetería", "Café", "325")
+    private val b = c("G-0002", "2", "Librería", "Libro", "5180")
+
+    @Test fun laHojaQuedaIgualQueElMovil() {
+        val remoto = listOf(
+            FilaRemota(2, "a", a2), // distinta → se reescribe
+            FilaRemota(3, "x", b), // no existe en el móvil → se borra
+            FilaRemota(4, null, b), // fila sin id → se borra
+            FilaRemota(5, "a", a), // repetida → se borra
+        )
+        val p = reconciliarForzandoLocal(mapOf("a" to a, "b" to b), remoto)
+        assertEquals(listOf(Triple(2, "a", a)), p.actualizarRemoto)
+        assertEquals(listOf("b" to b), p.anadirRemoto)
+        assertEquals(listOf(5, 4, 3), p.borrarRemoto)
+        assertEquals(mapOf("a" to firma(a), "b" to firma(b)), p.instantanea)
+        assertTrue(p.aplicarLocal.isEmpty() && p.borrarLocal.isEmpty() && p.conflictos.isEmpty())
+    }
+}

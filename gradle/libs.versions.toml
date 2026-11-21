@@ -23,6 +23,7 @@ turbine = "1.2.0"
 androidxTestCore = "1.6.1"
 androidxTestExt = "1.2.1"
 splashscreen = "1.0.1"
+playAuth = "21.2.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -64,6 +65,8 @@ androidx-test-core = { module = "androidx.test:core-ktx", version.ref = "android
 androidx-test-ext = { module = "androidx.test.ext:junit-ktx", version.ref = "androidxTestExt" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playAuth" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 
 [plugins]

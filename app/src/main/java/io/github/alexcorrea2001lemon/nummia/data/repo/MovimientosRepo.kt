@@ -7,6 +7,7 @@ import io.github.alexcorrea2001lemon.nummia.data.db.HistorialEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.IngresoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.NummiaDb
 import io.github.alexcorrea2001lemon.nummia.data.db.Origen
+import io.github.alexcorrea2001lemon.nummia.data.db.PagoMensualEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.ReembolsoEntity
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.Estado
@@ -38,6 +39,8 @@ data class GastoInput(
     val notas: String = "",
     /** Solo al crear: «¿Ya te lo han dado?» → crea el reembolso de lo esperado. */
     val yaDevuelto: Boolean = false,
+    /** Solo al crear: «Se paga cada mes» → crea el pago mensual y lo enlaza. */
+    val cadaMes: Boolean = false,
 )
 
 data class IngresoInput(
@@ -50,6 +53,8 @@ data class IngresoInput(
 )
 
 @Singleton
+const val DIAS_PAPELERA = 30
+
 /** Avisa de que algo ha cambiado (para sincronizar con Drive al poco rato). */
 fun interface AvisoCambios {
     fun cambio()
@@ -117,7 +122,16 @@ class MovimientosRepo @Inject constructor(
             createdAt = previo?.createdAt ?: ahora,
             updatedAt = ahora,
             deletedAt = previo?.deletedAt,
+            pagoMensualId = previo?.pagoMensualId ?: if (input.cadaMes) UUID.randomUUID().toString() else null,
         )
+        if (previo == null && input.cadaMes) {
+            db.pagos().guardar(
+                PagoMensualEntity(
+                    id = nuevo.pagoMensualId!!, concepto = nuevo.concepto, tienda = nuevo.tienda, categoriaId = nuevo.categoriaId,
+                    importe = nuevo.importe, dia = nuevo.fecha.dayOfMonth, createdAt = ahora, updatedAt = ahora,
+                ),
+            )
+        }
         db.gastos().guardar(nuevo)
         if (previo == null) {
             anotar("gasto", id, "creado", null, nuevo.codigo)
@@ -270,6 +284,101 @@ class MovimientosRepo @Inject constructor(
         aviso.cambio()
     }
     suspend fun borrarPersona(p: PersonaEntity) = db.personas().guardar(p.copy(deletedAt = reloj.ahoraMs()))
+
+    // ---------- Pagos mensuales ----------
+
+    fun pagos(): Flow<List<PagoMensualEntity>> = db.pagos().todos()
+    fun historialPago(id: String): Flow<List<GastoEntity>> = db.pagos().historial(id)
+
+    suspend fun guardarPago(p: PagoMensualEntity) = db.withTransaction {
+        val previo = db.pagos().obtener(p.id)
+        db.pagos().guardar(p.copy(dia = p.dia.coerceIn(1, 31), updatedAt = reloj.ahoraMs()))
+        // Los previstos aún sin confirmar se ajustan al nuevo precio y día (o desaparecen si se pausa).
+        db.pagos().previstosDe(p.id).forEach { gid ->
+            val g = db.gastos().obtener(gid) ?: return@forEach
+            if (!p.activo) { db.gastos().eliminar(listOf(gid)); db.historial().eliminarDe(listOf(gid)); return@forEach }
+            val ym = YearMonth.from(g.fecha)
+            db.gastos().guardar(
+                g.copy(
+                    importe = p.importe, concepto = p.concepto, tienda = p.tienda, categoriaId = p.categoriaId,
+                    fecha = ym.atDay(p.dia.coerceIn(1, ym.lengthOfMonth())), updatedAt = reloj.ahoraMs(),
+                ),
+            )
+        }
+        if (previo == null) aviso.cambio()
+    }
+
+    /** Deja de existir el pago; los gastos ya confirmados se quedan, los previstos se quitan. */
+    suspend fun borrarPago(id: String) = db.withTransaction {
+        val p = db.pagos().obtener(id) ?: return@withTransaction
+        db.pagos().guardar(p.copy(deletedAt = reloj.ahoraMs(), activo = false, updatedAt = reloj.ahoraMs()))
+        val previstos = db.pagos().previstosDe(id)
+        db.gastos().eliminar(previstos)
+        db.historial().eliminarDe(previstos)
+    }
+
+    /**
+     * Crea el gasto PREVISTO de cada pago activo para el mes de [hoy], si ese mes aún no tiene ninguno
+     * (tampoco uno borrado: «este mes no» se respeta). No cuenta en las cifras hasta que se confirma.
+     */
+    suspend fun asegurarPagosPrevistos(hoy: LocalDate) = db.withTransaction {
+        val ym = YearMonth.from(hoy)
+        for (p in db.pagos().activos()) {
+            if (db.pagos().gastosEnMes(p.id, ym.atDay(1), ym.atEndOfMonth()) > 0) continue
+            val ahora = reloj.ahoraMs()
+            val g = GastoEntity(
+                id = UUID.randomUUID().toString(), codigo = codigo("G", db.gastos().maxCodigo()),
+                fecha = ym.atDay(p.dia.coerceIn(1, ym.lengthOfMonth())), concepto = p.concepto, tienda = p.tienda,
+                categoriaId = p.categoriaId, importe = p.importe, estado = Estado.PREVISTO,
+                createdAt = ahora, updatedAt = ahora, pagoMensualId = p.id,
+            )
+            db.gastos().guardar(g)
+            db.historial().insertar(listOf(HistorialEntity(0, "gasto", g.id, "previsto", null, g.codigo, Origen.MOVIL, ahora)))
+        }
+    }
+
+    /** Confirma el pago del mes. Si el importe cambia, el pago mensual pasa a tener ese precio. */
+    suspend fun confirmarPago(gastoId: String, importe: Long) = db.withTransaction {
+        val g = requireNotNull(db.gastos().obtener(gastoId))
+        confirmarGasto(gastoId, g.fecha, importe)
+        val pid = g.pagoMensualId ?: return@withTransaction
+        val p = db.pagos().obtener(pid) ?: return@withTransaction
+        if (p.importe != importe) db.pagos().guardar(p.copy(importe = importe, updatedAt = reloj.ahoraMs()))
+    }
+
+    /** «Este mes no»: el previsto se quita (queda marcado para no volver a crearse este mes). */
+    suspend fun omitirPago(gastoId: String) = db.withTransaction {
+        db.gastos().marcarBorrado(gastoId, reloj.ahoraMs())
+        anotar("gasto", gastoId, "este mes no", null, null)
+    }
+
+    // ---------- Papelera (30 días) ----------
+
+    fun papeleraGastos(): Flow<List<GastoConReembolsos>> = db.gastos().borrados().map { l -> l.filter { it.gasto.estado == Estado.CONFIRMADO } }
+    fun papeleraIngresos(): Flow<List<IngresoEntity>> = db.ingresos().borrados()
+
+    /** Borra para siempre (con sus reembolsos e historial). */
+    suspend fun eliminarDefinitivo(gastos: List<String>, ingresos: List<String>) = db.withTransaction {
+        if (gastos.isNotEmpty()) {
+            db.reembolsos().eliminarDeGastos(gastos)
+            db.gastos().eliminar(gastos)
+        }
+        if (ingresos.isNotEmpty()) db.ingresos().eliminar(ingresos)
+        db.historial().eliminarDe(gastos + ingresos)
+    }
+
+    /** Lo que lleva más de [dias] días en la papelera desaparece. Se llama al abrir la app. */
+    suspend fun purgarPapelera(dias: Int = DIAS_PAPELERA) {
+        val limite = reloj.ahoraMs() - dias * 86_400_000L
+        // Los previstos omitidos («este mes no») se guardan 62 días para que no se vuelvan a crear ese mes.
+        val limitePrevistos = reloj.ahoraMs() - 62 * 86_400_000L
+        val gastos = db.gastos().volcar().filter { g ->
+            val b = g.deletedAt ?: return@filter false
+            if (g.estado == Estado.PREVISTO) b < limitePrevistos else b < limite
+        }.map { it.id }
+        eliminarDefinitivo(gastos, db.ingresos().borradosAntesDe(limite))
+        db.reembolsos().eliminarBorradosAntesDe(limite)
+    }
 
     // ---------- Historial ----------
 

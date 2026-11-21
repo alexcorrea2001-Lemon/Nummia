@@ -149,4 +149,36 @@ class MovimientosRepoTest {
         repo.prepararDatos()
         assertEquals(NummiaDb.CATEGORIAS_INICIALES.size, repo.categorias().first().size)
     }
+
+    @Test fun papeleraGuardaLoBorradoYSeRecupera() = runTest {
+        val id = repo.guardarGasto(gasto(275))
+        repo.borrarGasto(id)
+        assertEquals(listOf(id), repo.papeleraGastos().first().map { it.gasto.id })
+        repo.deshacerBorradoGasto(id)
+        assertTrue(repo.papeleraGastos().first().isEmpty())
+    }
+
+    @Test fun laPapeleraSeVaciaALos30Dias() = runTest {
+        val viejo = repo.guardarGasto(gasto(275))
+        repo.anadirReembolso(viejo, 100, null, null)
+        repo.borrarGasto(viejo)
+        reloj.ms += 29L * 86_400_000L
+        val reciente = repo.guardarGasto(gasto(500))
+        repo.borrarGasto(reciente)
+        reloj.ms += 2L * 86_400_000L
+        repo.purgarPapelera()
+        assertNull(db.gastos().obtener(viejo))
+        assertTrue(db.reembolsos().volcar().isEmpty())
+        assertTrue(db.historial().volcar().none { it.entidadId == viejo })
+        assertEquals(listOf(reciente), repo.papeleraGastos().first().map { it.gasto.id })
+    }
+
+    @Test fun borrarParaSiempreNoTocaLoDemas() = runTest {
+        val a = repo.guardarGasto(gasto(275))
+        val b = repo.guardarGasto(gasto(500))
+        repo.borrarGasto(a)
+        repo.eliminarDefinitivo(listOf(a), emptyList())
+        assertNull(db.gastos().obtener(a))
+        assertEquals(500L, db.gastos().obtener(b)!!.importe)
+    }
 }

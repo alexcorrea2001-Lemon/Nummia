@@ -128,6 +128,7 @@ class DatosLocales(private val db: NummiaDb, private val reloj: Reloj) {
                         categoriaId = categoriaPorNombre(c[5]), importe = c[4].toLong(), meLoDevuelven = meLo,
                         personaId = if (meLo) personaPorNombre(c[7]) else null, importeEsperado = if (meLo) c[8].toLongOrNull() else null,
                         notas = c[9], estado = Estado.CONFIRMADO, createdAt = previo?.createdAt ?: ahora, updatedAt = ahora, deletedAt = null,
+                        pagoMensualId = previo?.pagoMensualId,
                     ),
                 )
                 anotar("gasto", id, if (previo == null) "creado" else "editado")

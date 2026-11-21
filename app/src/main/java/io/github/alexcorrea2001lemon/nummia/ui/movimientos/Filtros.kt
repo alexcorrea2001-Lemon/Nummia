@@ -38,12 +38,29 @@ fun aplicar(filas: List<FilaMov>, f: Filtros): List<FilaMov> {
         }
         .filter {
             q.isEmpty() || normalizar(it.titulo).contains(q) || normalizar(it.tienda).contains(q) ||
-                normalizar(it.subtitulo).contains(q) || coincideImporte(it, q)
+                normalizar(it.subtitulo).contains(q) || coincideImporte(it, q) || coincideFecha(it.fecha, q)
         }
         .filter { f.conReembolso == null || (it.esGasto && (it.pagado != null || it.etiqueta is EtiquetaMov.AFavor) == f.conReembolso) }
         .filter { f.minimo == null || kotlin.math.abs(it.importe) >= f.minimo }
         .filter { f.maximo == null || kotlin.math.abs(it.importe) <= f.maximo }
         .toList()
+}
+
+private val MESES = listOf("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+private val DIA_MES = Regex("""^(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?$""")
+private val NOMBRE_MES = Regex("""^([a-z]+)(?:\s+(?:de\s+)?(\d{4}))?$""")
+
+/** «15/03», «15/3/2026», «marzo», «marzo de 2026» o «2026». */
+fun coincideFecha(f: LocalDate, q: String): Boolean {
+    DIA_MES.find(q)?.let { m ->
+        val anio = m.groupValues[3].takeIf { it.isNotEmpty() }?.toInt()?.let { if (it < 100) 2000 + it else it }
+        return f.dayOfMonth == m.groupValues[1].toInt() && f.monthValue == m.groupValues[2].toInt() && (anio == null || f.year == anio)
+    }
+    NOMBRE_MES.find(q)?.let { m ->
+        val mes = MESES.indexOf(m.groupValues[1]).takeIf { it >= 0 } ?: return false
+        return f.monthValue == mes + 1 && (m.groupValues[2].isEmpty() || f.year == m.groupValues[2].toInt())
+    }
+    return q.length == 4 && q.all { it.isDigit() } && f.year == q.toInt()
 }
 
 private fun coincideImporte(f: FilaMov, q: String): Boolean {

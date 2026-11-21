@@ -45,6 +45,12 @@ interface GastoDao {
     @Query("UPDATE gastos SET deletedAt = :ts, updatedAt = :ts WHERE id = :id") suspend fun marcarBorrado(id: String, ts: Long)
     @Query("UPDATE gastos SET deletedAt = NULL, updatedAt = :ts WHERE id = :id") suspend fun restaurar(id: String, ts: Long)
     @Query("SELECT * FROM gastos") suspend fun volcar(): List<GastoEntity>
+
+    @Transaction
+    @Query("SELECT * FROM gastos WHERE deletedAt IS NOT NULL ORDER BY deletedAt DESC")
+    fun borrados(): Flow<List<GastoConReembolsos>>
+    @Query("SELECT id FROM gastos WHERE deletedAt IS NOT NULL AND deletedAt < :limite") suspend fun borradosAntesDe(limite: Long): List<String>
+    @Query("DELETE FROM gastos WHERE id IN (:ids)") suspend fun eliminar(ids: List<String>)
 }
 
 @Dao
@@ -54,6 +60,8 @@ interface ReembolsoDao {
     @Query("SELECT MAX(CAST(SUBSTR(codigo, 3) AS INTEGER)) FROM reembolsos") suspend fun maxCodigo(): Int?
     @Query("UPDATE reembolsos SET deletedAt = :ts, updatedAt = :ts WHERE id = :id") suspend fun marcarBorrado(id: String, ts: Long)
     @Query("SELECT * FROM reembolsos") suspend fun volcar(): List<ReembolsoEntity>
+    @Query("DELETE FROM reembolsos WHERE gastoId IN (:gastos)") suspend fun eliminarDeGastos(gastos: List<String>)
+    @Query("DELETE FROM reembolsos WHERE deletedAt IS NOT NULL AND deletedAt < :limite") suspend fun eliminarBorradosAntesDe(limite: Long)
 }
 
 @Dao
@@ -74,6 +82,28 @@ interface IngresoDao {
     @Query("UPDATE ingresos SET deletedAt = :ts, updatedAt = :ts WHERE id = :id") suspend fun marcarBorrado(id: String, ts: Long)
     @Query("UPDATE ingresos SET deletedAt = NULL, updatedAt = :ts WHERE id = :id") suspend fun restaurar(id: String, ts: Long)
     @Query("SELECT * FROM ingresos") suspend fun volcar(): List<IngresoEntity>
+    @Query("SELECT * FROM ingresos WHERE deletedAt IS NOT NULL ORDER BY deletedAt DESC") fun borrados(): Flow<List<IngresoEntity>>
+    @Query("SELECT id FROM ingresos WHERE deletedAt IS NOT NULL AND deletedAt < :limite") suspend fun borradosAntesDe(limite: Long): List<String>
+    @Query("DELETE FROM ingresos WHERE id IN (:ids)") suspend fun eliminar(ids: List<String>)
+}
+
+@Dao
+interface PagoMensualDao {
+    @Upsert suspend fun guardar(p: PagoMensualEntity)
+    @Query("SELECT * FROM pagos_mensuales WHERE id = :id") suspend fun obtener(id: String): PagoMensualEntity?
+    @Query("SELECT * FROM pagos_mensuales WHERE deletedAt IS NULL ORDER BY dia, concepto COLLATE NOCASE") fun todos(): Flow<List<PagoMensualEntity>>
+    @Query("SELECT * FROM pagos_mensuales WHERE deletedAt IS NULL AND activo = 1") suspend fun activos(): List<PagoMensualEntity>
+    @Query("SELECT * FROM pagos_mensuales") suspend fun volcar(): List<PagoMensualEntity>
+
+    /** Gastos de este pago en un mes, incluidos los borrados («este mes no»): así no se vuelve a crear. */
+    @Query("SELECT COUNT(*) FROM gastos WHERE pagoMensualId = :pago AND fecha BETWEEN :desde AND :hasta")
+    suspend fun gastosEnMes(pago: String, desde: LocalDate, hasta: LocalDate): Int
+
+    @Query("SELECT * FROM gastos WHERE pagoMensualId = :pago AND deletedAt IS NULL AND estado = 'CONFIRMADO' ORDER BY fecha DESC LIMIT 24")
+    fun historial(pago: String): Flow<List<GastoEntity>>
+
+    @Query("SELECT id FROM gastos WHERE pagoMensualId = :pago AND estado = 'PREVISTO' AND deletedAt IS NULL")
+    suspend fun previstosDe(pago: String): List<String>
 }
 
 @Dao
@@ -96,6 +126,7 @@ interface HistorialDao {
     @Insert suspend fun insertar(h: List<HistorialEntity>)
     @Query("SELECT * FROM historial WHERE entidadId = :id ORDER BY fecha DESC, id DESC") fun de(id: String): Flow<List<HistorialEntity>>
     @Query("SELECT * FROM historial") suspend fun volcar(): List<HistorialEntity>
+    @Query("DELETE FROM historial WHERE entidadId IN (:ids)") suspend fun eliminarDe(ids: List<String>)
 }
 
 @Dao
@@ -106,4 +137,5 @@ interface VaciarDao {
     @Query("DELETE FROM personas") suspend fun personas()
     @Query("DELETE FROM categorias") suspend fun categorias()
     @Query("DELETE FROM historial") suspend fun historial()
+    @Query("DELETE FROM pagos_mensuales") suspend fun pagos()
 }

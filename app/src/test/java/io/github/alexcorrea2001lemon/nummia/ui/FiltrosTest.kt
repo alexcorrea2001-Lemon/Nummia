@@ -28,6 +28,15 @@ class FiltrosTest {
         assertEquals(listOf("3"), aplicar(filas, Filtros(texto = "MOVIL")).map { it.id })
     }
 
+    @Test fun buscaPorFecha() {
+        assertEquals(listOf("2"), aplicar(filas, Filtros(texto = "15/01")).map { it.id })
+        assertEquals(listOf("1"), aplicar(filas, Filtros(texto = "3/1/2030")).map { it.id })
+        assertEquals(4, aplicar(filas, Filtros(texto = "Enero")).size)
+        assertEquals(4, aplicar(filas, Filtros(texto = "enero de 2030")).size)
+        assertEquals(0, aplicar(filas, Filtros(texto = "febrero")).size)
+        assertEquals(4, aplicar(filas, Filtros(texto = "2030")).size)
+    }
+
     @Test fun buscaPorImporte() {
         assertEquals(listOf("1"), aplicar(filas, Filtros(texto = "2,75")).map { it.id })
         assertEquals(listOf("2"), aplicar(filas, Filtros(texto = "240")).map { it.id })

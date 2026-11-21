@@ -105,7 +105,7 @@ fun MovimientosScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalAlignment = Alignment.CenterVertically) {
                         TextField(
                             value = e.filtros.texto, onValueChange = vm::texto, singleLine = true,
-                            placeholder = { Text("Buscar por nombre, tienda o importe") },
+                            placeholder = { Text("Buscar por nombre, tienda, importe o fecha") },
                             leadingIcon = { Icon(Iconos.Buscar, null) },
                             trailingIcon = { if (e.filtros.texto.isNotEmpty()) IconButton(onClick = { vm.texto("") }) { Icon(Iconos.Cerrar, "Borrar búsqueda") } },
                             shape = RoundedCornerShape(28.dp),

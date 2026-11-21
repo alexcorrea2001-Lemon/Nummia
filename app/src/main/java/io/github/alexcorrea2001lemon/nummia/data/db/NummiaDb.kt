@@ -3,13 +3,15 @@ package io.github.alexcorrea2001lemon.nummia.data.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
         GastoEntity::class, ReembolsoEntity::class, IngresoEntity::class,
-        PersonaEntity::class, CategoriaEntity::class, HistorialEntity::class,
+        PersonaEntity::class, CategoriaEntity::class, HistorialEntity::class, PagoMensualEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(Conversores::class)
@@ -21,8 +23,21 @@ abstract class NummiaDb : RoomDatabase() {
     abstract fun categorias(): CategoriaDao
     abstract fun historial(): HistorialDao
     abstract fun vaciar(): VaciarDao
+    abstract fun pagos(): PagoMensualDao
 
     companion object {
+        /** v1.3.0: pagos mensuales. Solo añade: no toca ningún dato existente. */
+        val MIGRACION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `gastos` ADD COLUMN `pagoMensualId` TEXT")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `pagos_mensuales` (`id` TEXT NOT NULL, `concepto` TEXT NOT NULL, `tienda` TEXT NOT NULL, " +
+                        "`categoriaId` TEXT, `importe` INTEGER NOT NULL, `dia` INTEGER NOT NULL, `activo` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
+                )
+            }
+        }
+
         /** Categorías de serie. Son opcionales: un gasto puede no tener ninguna. */
         val CATEGORIAS_INICIALES = listOf(
             CategoriaEntity("alimentacion", "Alimentación", "restaurant", 0xFF4ADE80, true, 0),

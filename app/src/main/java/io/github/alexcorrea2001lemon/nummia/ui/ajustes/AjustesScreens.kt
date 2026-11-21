@@ -112,10 +112,12 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
         Tarjeta(relleno = false) {
             OpcionAjuste(Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.SUELDO) }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Repetir, "Pagos mensuales", "Gimnasio, móvil, suscripciones…") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PAGOS) }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
             OpcionAjuste(Iconos.Persona, "Personas", "Quién te devuelve el dinero") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PERSONAS) }
         }
         Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Descargar, "Copia de seguridad", "Guarda o recupera todos tus datos en un archivo") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.DATOS) }
+            OpcionAjuste(Iconos.Descargar, "Datos", "Importar Excel, papelera y copia en archivo") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.DATOS) }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
             OpcionAjuste(Iconos.Info, "Acerca de Nummia", "Versión ${BuildConfig.VERSION_NAME} · actualizaciones") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.ACERCA) }
         }
@@ -313,7 +315,7 @@ fun PersonasScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
 // ------------------------------------------------------------------ Copia de seguridad
 
 @Composable
-fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, alVolver: () -> Unit) {
+fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) -> Unit, alVolver: () -> Unit) {
     val ctx = LocalContext.current
     val alcance = rememberCoroutineScope()
     var pendiente by remember { mutableStateOf<ByteArray?>(null) }
@@ -329,9 +331,14 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, alVolver: () 
         if (uri != null) pendiente = runCatching { ctx.contentResolver.openInputStream(uri)!!.use { it.readBytes() } }.getOrNull()
     }
 
-    PantallaAjustes("Copia de seguridad", alVolver) {
+    PantallaAjustes("Datos", alVolver) {
+        Tarjeta(relleno = false) {
+            OpcionAjuste(Iconos.Informes, "Importar Excel", "Trae los gastos e ingresos de tu Excel de cuentas") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.IMPORTAR) }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Papelera, "Papelera", "Lo borrado en los últimos 30 días") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PAPELERA) }
+        }
         Text(
-            "Guarda todos tus datos en un archivo .nummia (por ejemplo, en tu Drive o en el ordenador). La copia automática en Drive llega en la versión 1.2.0.",
+            "Copia en un archivo .nummia que guardas donde quieras. Las copias automáticas están en Ajustes → Tu Drive.",
             style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
         )
         Tarjeta(relleno = false) {

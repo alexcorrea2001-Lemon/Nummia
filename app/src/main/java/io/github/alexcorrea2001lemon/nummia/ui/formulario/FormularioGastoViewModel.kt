@@ -37,6 +37,7 @@ data class FormGasto(
     val personaId: String? = null,
     val esperado: String = "",
     val yaDevuelto: Boolean = false,
+    val cadaMes: Boolean = false,
     val notas: String = "",
     val errorImporte: String? = null,
     val errorConcepto: String? = null,
@@ -95,6 +96,7 @@ class FormularioGastoViewModel @Inject constructor(
     fun persona(v: String?) = _form.update { it.copy(personaId = v) }
     fun esperado(v: String) = _form.update { it.copy(esperado = v, errorEsperado = null) }
     fun yaDevuelto(v: Boolean) = _form.update { it.copy(yaDevuelto = v) }
+    fun cadaMes(v: Boolean) = _form.update { it.copy(cadaMes = v) }
     fun notas(v: String) = _form.update { it.copy(notas = v) }
 
     /** Al escribir la tienda se sugiere su categoría habitual (si aún no hay una elegida). */
@@ -131,7 +133,7 @@ class FormularioGastoViewModel @Inject constructor(
                 GastoInput(
                     id = f.id, fecha = f.fecha, concepto = f.concepto, tienda = f.tienda, categoriaId = f.categoriaId,
                     importe = importe.getOrThrow(), meLoDevuelven = f.meLoDevuelven, personaId = f.personaId,
-                    esperado = esperado?.getOrNull(), notas = f.notas, yaDevuelto = f.yaDevuelto && f.id == null,
+                    esperado = esperado?.getOrNull(), notas = f.notas, yaDevuelto = f.yaDevuelto && f.id == null, cadaMes = f.cadaMes && f.id == null,
                 ),
             )
             _form.value = if (otro) FormGasto(fecha = f.fecha) else f.copy(guardando = false)

@@ -162,6 +162,24 @@ fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostSt
                 }
             }
 
+            if (!f.editando) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer,
+                    border = BorderStroke(1.dp, if (f.cadaMes) MaterialTheme.colorScheme.primary else c.borde),
+                ) {
+                    Row(Modifier.padding(Espacio.l), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Se paga cada mes", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Cada mes aparecerá como previsto el día ${f.fecha.dayOfMonth} para confirmarlo o cambiar el importe",
+                                style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                            )
+                        }
+                        Switch(checked = f.cadaMes, onCheckedChange = vm::cadaMes)
+                    }
+                }
+            }
+
             OutlinedTextField(
                 f.notas, vm::notas, label = { Text("Notas (opcional)") }, minLines = 2, modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),

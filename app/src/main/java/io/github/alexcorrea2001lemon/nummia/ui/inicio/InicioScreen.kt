@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,6 +58,7 @@ import io.github.alexcorrea2001lemon.nummia.ui.nav.compartido
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Espacio
 import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun InicioScreen(
     vm: InicioViewModel,
@@ -71,6 +73,7 @@ fun InicioScreen(
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
     var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
+    var cambiandoPago by remember { mutableStateOf<PagoPendiente?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -85,7 +88,7 @@ fun InicioScreen(
         item { TarjetaBalance(e, vm::alternarDiscreto) }
         item { Indicadores(e) }
 
-        if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty()) {
+        if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty() || e.pagosPendientes.isNotEmpty()) {
             item { EncabezadoSeccion("Pendientes") }
             items(e.sueldosPendientes, key = { "s" + it.id }) { s ->
                 Tarjeta {
@@ -96,6 +99,25 @@ fun InicioScreen(
                             Text(formatearEuros(s.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
                         }
                         Button(onClick = { confirmando = s }) { Text("Confirmar") }
+                    }
+                }
+            }
+            items(e.pagosPendientes, key = { "p" + it.id }) { p ->
+                Tarjeta(modifier = Modifier.animateItem()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                        Avatar("", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, Iconos.Repetir)
+                        Column(Modifier.weight(1f)) {
+                            Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text(
+                                "${formatearEuros(p.importe, discreto = e.discreto)} · pago mensual, día ${p.fecha.dayOfMonth}",
+                                style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
+                            )
+                        }
+                    }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                        Button(onClick = { vm.confirmarPago(p.id, p.importe) }) { Text("Confirmar") }
+                        OutlinedButton(onClick = { cambiandoPago = p }) { Text("Otro importe") }
+                        TextButton(onClick = { vm.omitirPago(p.id) }) { Text("Este mes no") }
                     }
                 }
             }
@@ -160,6 +182,9 @@ fun InicioScreen(
         }
     }
 
+    cambiandoPago?.let { p ->
+        DialogoImporte("${p.concepto}: ¿cuánto has pagado este mes?", p.importe, alCerrar = { cambiandoPago = null }) { vm.confirmarPago(p.id, it); cambiandoPago = null }
+    }
     confirmando?.let { s -> DialogoConfirmarSueldo(s, alCerrar = { confirmando = null }) { fecha, importe -> vm.confirmarSueldo(s.id, fecha, importe); confirmando = null } }
 }
 
@@ -249,6 +274,33 @@ private fun DondeMas(e: InicioEstado) {
             }
         }
     }
+}
+
+@Composable
+private fun DialogoImporte(titulo: String, inicial: Long, alCerrar: () -> Unit, alAceptar: (Long) -> Unit) {
+    var texto by rememberSaveable { mutableStateOf(formatearEuros(inicial).removeSuffix("€").trim()) }
+    var error by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        title = { Text(titulo) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                OutlinedTextField(
+                    value = texto, onValueChange = { texto = it; error = null },
+                    label = { Text("Importe") }, suffix = { Text("€") }, singleLine = true,
+                    isError = error != null, supportingText = error?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                )
+                Text("A partir de ahora será el precio de este pago.", style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                leerImporte(texto).fold({ alAceptar(it) }, { error = (it as? io.github.alexcorrea2001lemon.nummia.domain.dinero.ImporteInvalido)?.motivo ?: "Importe no válido" })
+            }) { Text("Confirmar") }
+        },
+        dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -25,6 +25,7 @@ object DbModule {
         val fabrica = SupportOpenHelperFactory(ClaveDb.obtener(context))
         return Room.databaseBuilder(context, NummiaDb::class.java, "nummia.db")
             .openHelperFactory(fabrica)
+            .addMigrations(NummiaDb.MIGRACION_1_2)
             .build()
     }
 }

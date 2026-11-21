@@ -39,12 +39,16 @@ data class TopTienda(val nombre: String, val importe: Long, val fraccion: Float)
 data class SueldoPendiente(val id: String, val importe: Long, val fecha: LocalDate)
 
 @Immutable
+data class PagoPendiente(val id: String, val concepto: String, val importe: Long, val fecha: LocalDate)
+
+@Immutable
 data class InicioEstado(
     val mes: YearMonth,
     val resumen: Resumen = Resumen.VACIO,
     /** Variación del gasto real frente al mes anterior, ×10. */
     val variacion: Int? = null,
     val sueldosPendientes: List<SueldoPendiente> = emptyList(),
+    val pagosPendientes: List<PagoPendiente> = emptyList(),
     val teDeben: List<Pair<String, Long>> = emptyList(),
     val top: List<TopTienda> = emptyList(),
     val ahorradoAnio: Long = 0,
@@ -100,6 +104,12 @@ class InicioViewModel @Inject constructor(
             .filter { val m = YearMonth.from(it.fecha); m < YearMonth.from(hoy) || (m == YearMonth.from(hoy) && hoy.dayOfMonth >= 27) }
             .map { SueldoPendiente(it.id, it.importe, it.fecha) }
 
+        // Pagos mensuales previstos: desde 3 días antes de su fecha.
+        val pagos = anio.gastos.map { it.gasto }
+            .filter { it.estado == Estado.PREVISTO && it.pagoMensualId != null && !it.fecha.isAfter(hoy.plusDays(3)) }
+            .sortedBy { it.fecha }
+            .map { PagoPendiente(it.id, it.concepto, it.importe, it.fecha) }
+
         val deben = teDeben(conDev.map { it.aMov() }, conDev.flatMap { it.reembolsosMov() }) { id ->
             conDev.firstOrNull { it.gasto.id == id }?.gasto?.personaId
         }.map { (pid, importe) -> (pid?.let(personas::get) ?: "Sin persona") to importe }.sortedByDescending { it.second }
@@ -121,6 +131,7 @@ class InicioViewModel @Inject constructor(
             resumen = r,
             variacion = variacionPorMil(r.gastoReal, rAnt.gastoReal),
             sueldosPendientes = sueldos,
+            pagosPendientes = pagos,
             teDeben = deben,
             top = top,
             ahorradoAnio = ahorrado,
@@ -137,6 +148,9 @@ class InicioViewModel @Inject constructor(
     fun irAHoy() { mes.value = YearMonth.from(reloj.hoy()) }
 
     fun alternarDiscreto() = viewModelScope.launch { ajustesRepo.modoDiscreto(!estado.value.discreto) }
+
+    fun confirmarPago(id: String, importe: Long) = viewModelScope.launch { repo.confirmarPago(id, importe) }
+    fun omitirPago(id: String) = viewModelScope.launch { repo.omitirPago(id) }
 
     fun confirmarSueldo(id: String, fecha: LocalDate, importe: Long) = viewModelScope.launch {
         repo.confirmarIngreso(id, fecha, importe)

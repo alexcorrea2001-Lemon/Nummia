@@ -26,6 +26,8 @@ data class GastoEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+    /** Pago mensual del que sale este gasto (desde la v1.3.0). */
+    val pagoMensualId: String? = null,
 )
 
 @Entity(tableName = "reembolsos", indices = [Index("gastoId"), Index("codigo", unique = true)])
@@ -97,3 +99,20 @@ data class GastoConReembolsos(
 ) {
     val activos: List<ReembolsoEntity> get() = reembolsos.filter { it.deletedAt == null }
 }
+
+/** Algo que se paga cada mes (el precio puede cambiar). Cada mes se crea un gasto PREVISTO enlazado. */
+@Entity(tableName = "pagos_mensuales")
+data class PagoMensualEntity(
+    @PrimaryKey val id: String,
+    val concepto: String,
+    val tienda: String,
+    val categoriaId: String? = null,
+    /** Precio actual: el del próximo previsto. */
+    val importe: Long,
+    /** Día del mes (1–31; en meses más cortos, el último día). */
+    val dia: Int,
+    val activo: Boolean = true,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)

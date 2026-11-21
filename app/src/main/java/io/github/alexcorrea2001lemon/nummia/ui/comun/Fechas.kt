@@ -1,5 +1,7 @@
 package io.github.alexcorrea2001lemon.nummia.ui.comun
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -25,3 +27,25 @@ fun fechaCorta(f: LocalDate): String = DateTimeFormatter.ofPattern("d MMM yyyy",
 
 /** «Jueves 15 de enero de 2026» */
 fun fechaLarga(f: LocalDate): String = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", ES).format(f).mayuscula()
+
+/**
+ * Nombre del mes que siempre cabe: «Noviembre 2026» y, si no hay sitio, «Nov 2026» (nunca se corta el año).
+ */
+@androidx.compose.runtime.Composable
+fun TextoMes(
+    ym: YearMonth,
+    style: androidx.compose.ui.text.TextStyle,
+    color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
+    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
+) {
+    val medidor = androidx.compose.ui.text.rememberTextMeasurer()
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val completo = nombreMes(ym)
+        val corto = "${ym.month.getDisplayName(TextStyle.SHORT_STANDALONE, ES).trimEnd('.').mayuscula()} ${ym.year}"
+        val cabe = medidor.measure(completo, style, maxLines = 1).size.width <= constraints.maxWidth
+        androidx.compose.material3.Text(
+            if (cabe) completo else corto, style = style, color = color, maxLines = 1, softWrap = false,
+            modifier = androidx.compose.ui.Modifier.semantics { contentDescription = completo },
+        )
+    }
+}

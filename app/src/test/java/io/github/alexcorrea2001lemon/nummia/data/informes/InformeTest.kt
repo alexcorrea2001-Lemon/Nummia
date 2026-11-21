@@ -62,8 +62,10 @@ class InformeTest {
         val bytes = EscritorXlsx.escribir(hojasDeInforme(informe(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 31))))
         val celdas = LectorXlsx.leer(bytes) // primera hoja: Resumen
         assertEquals("Informe", celdas["A1"]?.texto)
-        assertEquals(BigDecimal("1500.00"), celdas["B4"]?.numero)
-        assertEquals(BigDecimal("327.00"), celdas["B7"]?.numero)
+        assertEquals("Concepto", celdas["A4"]?.texto) // cabecera de la tabla
+        assertEquals(BigDecimal("1500.00"), celdas["B5"]?.numero)
+        assertEquals(BigDecimal("327.00"), celdas["B8"]?.numero)
+        assertEquals(EscritorXlsx.EUROS, celdas["B5"]?.estilo)
     }
 
     @Test fun columnasDeExcel() {

@@ -193,11 +193,27 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
                             Modifier.fillMaxWidth().heightIn(max = 520.dp).border(1.dp, c.borde), contentScale = ContentScale.Fit,
                         )
                     }
-                    if (a.formato == Formato.EXCEL) Text("Hoja de Excel lista. Se abre en Excel, Google Sheets o LibreOffice.", color = c.textoSuave)
+                    if (a.formato == Formato.EXCEL) {
+                        e.vistaExcel?.let { VistaExcel(it) } ?: Text("Hoja de Excel lista. Se abre en Excel, Google Sheets o LibreOffice.", color = c.textoSuave)
+                    }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
                         Button(onClick = { ctx.startActivity(vm.intentCompartir(a)) }) { Text("Compartir") }
                         OutlinedButton(onClick = { (if (a.formato == Formato.PDF) guardarPdf else guardarExcel).launch(a.nombre) }) { Text("Guardar en el móvil") }
-                        if (e.driveConectado) OutlinedButton(onClick = { vm.guardarEnDrive(a) }) { Text("Guardar en Drive") }
+                        if (e.driveConectado) {
+                            val subiendo = e.subiendo == a.nombre
+                            val hecho = a.nombre in e.enDrive
+                            OutlinedButton(enabled = !subiendo && !hecho, onClick = { vm.guardarEnDrive(a) }) {
+                                if (subiendo) {
+                                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                                    Text("  Guardando…")
+                                } else if (hecho) {
+                                    Icon(Iconos.Check, null, Modifier.size(18.dp))
+                                    Text("  En tu Drive")
+                                } else {
+                                    Text("Guardar en Drive")
+                                }
+                            }
+                        }
                     }
                 }
             }

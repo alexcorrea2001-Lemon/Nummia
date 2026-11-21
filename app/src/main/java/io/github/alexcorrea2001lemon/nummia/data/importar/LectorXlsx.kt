@@ -10,7 +10,7 @@ import java.util.zip.ZipInputStream
 import javax.xml.parsers.SAXParserFactory
 
 /** Una celda: texto o número. [formula] = la celda tiene fórmula ([numero] es su último resultado guardado). */
-data class Celda(val texto: String? = null, val numero: BigDecimal? = null, val formula: Boolean = false)
+data class Celda(val texto: String? = null, val numero: BigDecimal? = null, val formula: Boolean = false, val estilo: Int? = null)
 
 class ExcelNoValido(motivo: String) : Exception(motivo)
 
@@ -20,6 +20,30 @@ class ExcelNoValido(motivo: String) : Exception(motivo)
  */
 object LectorXlsx {
     private const val MAX_ENTRADA = 30L * 1024 * 1024 // protección contra archivos enormes o comprimidos de forma maliciosa
+
+    /** Todas las hojas, en orden: nombre → celdas. */
+    fun leerHojas(bytes: ByteArray): List<Pair<String, Map<String, Celda>>> {
+        val archivos = descomprimir(bytes)
+        val compartidas = archivos["xl/sharedStrings.xml"]?.let(::textosCompartidos).orEmpty()
+        val hojas = ArrayList<Pair<String, String>>() // nombre, r:id
+        analizar(archivos.getValue("xl/workbook.xml"), object : DefaultHandler() {
+            override fun startElement(uri: String?, local: String?, q: String, a: Attributes) {
+                if (q == "sheet") hojas += (a.getValue("name") ?: "Hoja") to (a.getValue("r:id") ?: "")
+            }
+        })
+        val destinos = HashMap<String, String>()
+        archivos["xl/_rels/workbook.xml.rels"]?.let { rels ->
+            analizar(rels, object : DefaultHandler() {
+                override fun startElement(uri: String?, local: String?, q: String, a: Attributes) {
+                    if (q == "Relationship") destinos[a.getValue("Id")] = a.getValue("Target")
+                }
+            })
+        }
+        return hojas.mapNotNull { (nombre, rid) ->
+            val ruta = destinos[rid]?.let { if (it.startsWith("/")) it.removePrefix("/") else "xl/$it" } ?: return@mapNotNull null
+            archivos[ruta]?.let { nombre to celdas(it, compartidas) }
+        }
+    }
 
     fun leer(bytes: ByteArray): Map<String, Celda> {
         val archivos = descomprimir(bytes)
@@ -115,6 +139,7 @@ object LectorXlsx {
         analizar(xml, object : DefaultHandler() {
             var ref: String? = null
             var tipo: String? = null
+            var estilo: Int? = null
             var formula = false
             val valor = StringBuilder()
             val enLinea = StringBuilder()
@@ -122,7 +147,7 @@ object LectorXlsx {
             var enT = false
             override fun startElement(uri: String?, local: String?, q: String, a: Attributes) {
                 when (q) {
-                    "c" -> { ref = a.getValue("r"); tipo = a.getValue("t"); formula = false; valor.setLength(0); enLinea.setLength(0) }
+                    "c" -> { ref = a.getValue("r"); tipo = a.getValue("t"); estilo = a.getValue("s")?.toIntOrNull(); formula = false; valor.setLength(0); enLinea.setLength(0) }
                     "f" -> formula = true
                     "v" -> enV = true
                     "t" -> enT = true
@@ -145,7 +170,8 @@ object LectorXlsx {
                             "b", "e" -> null
                             else -> v.trim().takeIf { it.isNotEmpty() }?.toBigDecimalOrNull()?.let { Celda(numero = it, formula = formula) }
                         }
-                        if (celda != null) res[r.uppercase()] = celda
+                        if (celda != null) res[r.uppercase()] = celda.copy(estilo = estilo)
+                        else if (estilo != null) res[r.uppercase()] = Celda(estilo = estilo) // celda vacía con formato (p. ej. fila de totales)
                     }
                 }
             }

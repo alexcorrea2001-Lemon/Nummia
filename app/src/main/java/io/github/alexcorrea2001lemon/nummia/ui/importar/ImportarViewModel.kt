@@ -114,6 +114,7 @@ class ImportarViewModel @Inject constructor(
             }
             withTimeoutOrNull(20_000) { sinc.copiaAhora() }
             val r = importador.importar(v.analisis, v.porOtros)
+            repo.unificarTiendasIguales() // «Bonobús» del Excel y «BonoBus» del móvil son la misma tienda
             repo.completarCategorias() // lo importado toma la categoría que ya tenga su tienda
             EstadoImportar.Hecho(r, v.analisis.anio)
         }.getOrElse { EstadoImportar.Error("No se pudo importar. No se ha guardado nada.") }

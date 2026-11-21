@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -208,14 +209,13 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
     Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
         // El mes ocupa el espacio que sobra: los iconos de la derecha siempre tienen el mismo tamaño.
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = anterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
+            IconButton(onClick = anterior, modifier = Modifier.size(40.dp)) { Icon(Iconos.ChevronIzq, "Mes anterior") }
             TextButton(onClick = hoy, enabled = !e.esMesActual, modifier = Modifier.weight(1f, fill = false), contentPadding = PaddingValues(horizontal = Espacio.xs)) {
-                Text(
-                    nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                io.github.alexcorrea2001lemon.nummia.ui.comun.TextoMes(
+                    e.mes, MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), MaterialTheme.colorScheme.onSurface,
                 )
             }
-            IconButton(onClick = siguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
+            IconButton(onClick = siguiente, modifier = Modifier.size(40.dp)) { Icon(Iconos.ChevronDer, "Mes siguiente") }
         }
         estadoDrive()
         IconButton(onClick = buscar) { Icon(Iconos.Buscar, "Buscar") }

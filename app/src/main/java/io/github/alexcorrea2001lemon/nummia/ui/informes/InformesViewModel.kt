@@ -47,6 +47,9 @@ data class EstadoInformes(
     val generando: Boolean = false,
     val ultimo: ArchivoInforme? = null,
     val vistaPrevia: Bitmap? = null,
+    val vistaExcel: List<HojaVista>? = null,
+    val subiendo: String? = null,
+    val enDrive: Set<String> = emptySet(),
     val historial: List<ArchivoInforme> = emptyList(),
     val driveConectado: Boolean = false,
     val mensaje: String? = null,
@@ -85,7 +88,7 @@ class InformesViewModel @Inject constructor(
 
     fun generar(titulo: String, desde: LocalDate, hasta: LocalDate, contenidos: Set<Contenido>, persona: String? = null) = viewModelScope.launch {
         if (_e.value.generando) return@launch
-        _e.update { it.copy(generando = true, vistaPrevia = null) }
+        _e.update { it.copy(generando = true, vistaPrevia = null, vistaExcel = null) }
         val formato = _e.value.formato
         runCatching {
             val datos = repo.todo().first()
@@ -105,10 +108,10 @@ class InformesViewModel @Inject constructor(
                 f.writeBytes(bytes)
                 // Se guardan los 20 últimos.
                 dir.listFiles().orEmpty().sortedByDescending { it.lastModified() }.drop(20).forEach { it.delete() }
-                ArchivoInforme(f, formato) to (if (formato == Formato.PDF) vistaPrevia(f) else null)
+                Triple(ArchivoInforme(f, formato), if (formato == Formato.PDF) vistaPrevia(f) else null, if (formato == Formato.EXCEL) runCatching { vistaExcel(f) }.getOrNull() else null)
             }
-        }.onSuccess { (a, img) ->
-            _e.update { it.copy(generando = false, ultimo = a, vistaPrevia = img) }
+        }.onSuccess { (a, img, tabla) ->
+            _e.update { it.copy(generando = false, ultimo = a, vistaPrevia = img, vistaExcel = tabla) }
             cargarHistorial()
         }.onFailure {
             _e.update { it.copy(generando = false, mensaje = "No se pudo crear el informe.") }
@@ -131,10 +134,15 @@ class InformesViewModel @Inject constructor(
     }.getOrNull()
 
     fun abrir(a: ArchivoInforme) {
-        _e.update { it.copy(ultimo = a, vistaPrevia = null) }
-        if (a.formato == Formato.PDF) viewModelScope.launch {
-            val img = withContext(Dispatchers.IO) { vistaPrevia(a.archivo) }
-            if (_e.value.ultimo == a) _e.update { it.copy(vistaPrevia = img) }
+        _e.update { it.copy(ultimo = a, vistaPrevia = null, vistaExcel = null) }
+        viewModelScope.launch {
+            if (a.formato == Formato.PDF) {
+                val img = withContext(Dispatchers.IO) { vistaPrevia(a.archivo) }
+                if (_e.value.ultimo == a) _e.update { it.copy(vistaPrevia = img) }
+            } else {
+                val tabla = withContext(Dispatchers.IO) { runCatching { vistaExcel(a.archivo) }.getOrNull() }
+                if (_e.value.ultimo == a) _e.update { it.copy(vistaExcel = tabla) }
+            }
         }
     }
 
@@ -154,8 +162,16 @@ class InformesViewModel @Inject constructor(
     }
 
     fun guardarEnDrive(a: ArchivoInforme) = viewModelScope.launch {
-        val ok = runCatching { withContext(Dispatchers.IO) { sinc.subirInforme(a.nombre, a.archivo.readBytes(), a.formato.mime) } }
-        _e.update { it.copy(mensaje = if (ok.getOrNull() == true) "Guardado en tu Drive (Nummia_Datos/Informes)" else "No se pudo guardar en Drive. Comprueba la conexión.") }
+        if (_e.value.subiendo != null) return@launch
+        _e.update { it.copy(subiendo = a.nombre) }
+        val ok = runCatching { withContext(Dispatchers.IO) { sinc.subirInforme(a.nombre, a.archivo.readBytes(), a.formato.mime) } }.getOrNull() == true
+        _e.update {
+            it.copy(
+                subiendo = null,
+                enDrive = if (ok) it.enDrive + a.nombre else it.enDrive,
+                mensaje = if (ok) "Guardado en tu Drive, en Nummia_Datos/Informes" else "No se pudo guardar en Drive. Comprueba la conexión.",
+            )
+        }
     }
 
     fun borrar(a: ArchivoInforme) = viewModelScope.launch {

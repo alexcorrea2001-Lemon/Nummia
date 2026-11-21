@@ -2,6 +2,17 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.5.2] - 2026-11-21
+
+### Arreglado
+- **Nombre del mes**: ya nunca se corta el año. Si no cabe entero, se abrevia («Nov 2026»).
+- **Tiendas iguales**: «BonoBus» y «Bonobús» (o con espacios distintos) son la misma tienda. Se unen solas con la forma que más usas, también al apuntar un gasto nuevo y al importar el Excel.
+- **Guardar informe en Drive**: el botón muestra «Guardando…» y después «En tu Drive».
+
+### Mejorado
+- **Excel con más diseño**: título y periodo, cabecera en el color de Nummia que se queda fija al bajar, filtros, filas alternas, totales destacados y listo para imprimir en horizontal.
+- **Vista previa del Excel** dentro de la app, con una pestaña por hoja, igual que la del PDF.
+
 ## [1.5.1] - 2026-11-21
 
 ### Arreglado

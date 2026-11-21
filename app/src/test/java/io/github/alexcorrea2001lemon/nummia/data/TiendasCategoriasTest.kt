@@ -41,10 +41,10 @@ class TiendasCategoriasTest {
         repo.guardarGasto(GastoInput(fecha = LocalDate.of(2030, 3, 10), concepto = "Compra", tienda = tienda, importe = importe, categoriaId = cat))
 
     @Test fun unirTiendasCambiaGastosYPresupuestos() = runBlocking {
-        gasto("Supermercado", 1000); gasto("supermercado", 500); gasto("Super mercado", 200); gasto("Panadería", 100)
-        repo.guardarPresupuesto(PresupuestoEntity("p", Ambito.TIENDA.name, "supermercado", 5000, 1, 1))
+        gasto("Supermercado", 1000); gasto("Super Sol", 500); gasto("Hiper", 200); gasto("Panadería", 100)
+        repo.guardarPresupuesto(PresupuestoEntity("p", Ambito.TIENDA.name, "Super Sol", 5000, 1, 1))
         avisos = 0
-        assertEquals(2, repo.unirTiendas(listOf("supermercado", "Super mercado", "Supermercado"), "Supermercado"))
+        assertEquals(2, repo.unirTiendas(listOf("Super Sol", "Hiper", "Supermercado"), "Supermercado"))
         val t = repo.tiendas().first()
         assertEquals(listOf("Supermercado" to 3, "Panadería" to 1), t.map { it.nombre to it.veces })
         assertEquals(1700L, t.first().total)
@@ -105,5 +105,21 @@ class TiendasCategoriasTest {
         assertEquals(1, repo.completarCategorias())
         assertEquals("ocio", db.gastos().obtener("imp")!!.categoriaId)
         assertNull(db.gastos().obtener("otro")!!.categoriaId)
+    }
+
+    @Test fun laMismaTiendaConTildesOMayusculasSeGuardaIgual() = runBlocking {
+        gasto("BonoBus", 1000); gasto("BonoBus", 1000)
+        val c = gasto("Bonobús", 1000)
+        assertEquals("BonoBus", db.gastos().obtener(c)!!.tienda)
+    }
+
+    @Test fun unificarTiendasIgualesAlAbrir() = runBlocking {
+        gasto("Bus", 100)
+        val g = db.gastos().obtener(gasto("Bus", 100))!!
+        db.gastos().guardar(g.copy(id = "x1", codigo = "G-0090", tienda = "Bonobús"))
+        db.gastos().guardar(g.copy(id = "x2", codigo = "G-0091", tienda = "BonoBus"))
+        db.gastos().guardar(g.copy(id = "x3", codigo = "G-0092", tienda = "BonoBus"))
+        assertEquals(1, repo.unificarTiendasIguales())
+        assertEquals(setOf("BonoBus"), db.gastos().volcar().filter { it.id.startsWith("x") }.map { it.tienda }.toSet())
     }
 }

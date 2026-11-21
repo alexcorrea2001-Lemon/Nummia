@@ -116,7 +116,7 @@ fun MovimientosScreen(
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = vm::mesAnterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
-                            Text(nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            io.github.alexcorrea2001lemon.nummia.ui.comun.TextoMes(e.mes, MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                             IconButton(onClick = vm::mesSiguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
                         }
                     }

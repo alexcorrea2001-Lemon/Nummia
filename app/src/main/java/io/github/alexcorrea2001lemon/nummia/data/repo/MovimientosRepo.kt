@@ -64,6 +64,9 @@ data class IngresoInput(
 @Singleton
 const val DIAS_PAPELERA = 30
 
+/** Clave para comparar tiendas: sin mayúsculas, tildes, espacios ni signos («Bono bús» = «bonobus»). */
+fun claveTienda(s: String): String = claveTexto(s).replace(Regex("[^a-z0-9ñ]"), "")
+
 data class TiendaResumen(val nombre: String, val veces: Int, val total: Long)
 
 fun PresupuestoEntity.aLimite() = Limite(id, runCatching { Ambito.valueOf(ambito) }.getOrDefault(Ambito.TOTAL), ref, limite)
@@ -120,7 +123,8 @@ class MovimientosRepo @Inject constructor(
             val ahora = reloj.ahoraMs()
             val previo = input.id?.let { db.gastos().obtener(it) }
             val id = previo?.id ?: UUID.randomUUID().toString()
-            val tienda = input.tienda.trim().ifEmpty { input.concepto.trim() }
+            // La misma tienda escrita con otras mayúsculas o tildes («Bonobús» / «BonoBus») se guarda con la grafía que ya se usa.
+            val tienda = grafiaDeTienda(input.tienda.trim().ifEmpty { input.concepto.trim() }, id)
             // Sin categoría: se usa la que ya tiene esa tienda en otros gastos.
             val categoria = input.categoriaId ?: categoriaDeTienda(tienda, id)
             val pagoActual = previo?.pagoMensualId?.let { db.pagos().obtener(it) }?.takeIf { it.deletedAt == null }
@@ -167,6 +171,33 @@ class MovimientosRepo @Inject constructor(
             id
         }
         return id
+    }
+
+    /** Grafía más usada de una tienda que ya existe (sin mayúsculas, tildes ni espacios); si no existe, la escrita. */
+    private suspend fun grafiaDeTienda(tienda: String, excepto: String): String {
+        val clave = claveTienda(tienda)
+        if (clave.isEmpty()) return tienda
+        return db.gastos().volcar().asSequence()
+            .filter { it.id != excepto && it.deletedAt == null && claveTienda(it.tienda) == clave }
+            .groupingBy { it.tienda.trim() }.eachCount()
+            .maxByOrNull { it.value }?.key ?: tienda
+    }
+
+    /**
+     * Une las tiendas que solo se diferencian en mayúsculas, tildes o espacios, con la grafía más usada.
+     * Se llama al abrir la app. Devuelve cuántos gastos han cambiado.
+     */
+    suspend fun unificarTiendasIguales(): Int {
+        val grupos = db.gastos().volcar().filter { it.deletedAt == null && it.tienda.isNotBlank() }
+            .groupBy { claveTienda(it.tienda) }
+            .values.map { gs -> gs.groupingBy { it.tienda.trim() }.eachCount() }
+            .filter { it.size > 1 }
+        var n = 0
+        for (g in grupos) {
+            val destino = g.entries.sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenByDescending { e -> e.key.count { it.isUpperCase() } }).first().key
+            n += unirTiendas(g.keys, destino)
+        }
+        return n
     }
 
     /** Categoría más reciente de una tienda (sin mayúsculas ni tildes), sin contar el gasto [excepto]. */

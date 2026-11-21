@@ -74,6 +74,7 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
         val avisoPagos = booleanPreferencesKey("aviso_pagos")
         val avisoPresupuestos = booleanPreferencesKey("aviso_presupuestos")
         val avisosHechos = stringSetPreferencesKey("avisos_hechos")
+        val copiaLocal = longPreferencesKey("ultima_copia_local")
         val bloqueo = booleanPreferencesKey("bloqueo")
         val mantenimiento = longPreferencesKey("ultimo_mantenimiento")
         val vibracion = booleanPreferencesKey("vibracion")
@@ -139,6 +140,10 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
     suspend fun volverADiscretoSiTemporal() = store.edit {
         if (it[K.discretoTemporal] == true) { it[K.modoDiscreto] = true; it[K.discretoTemporal] = false }
     }
+
+    /** Día (epoch) de la última copia guardada en archivo. */
+    suspend fun ultimaCopiaLocal(): Long? = store.data.first()[K.copiaLocal]
+    suspend fun ultimaCopiaLocal(dia: Long) = store.edit { it[K.copiaLocal] = dia }
 
     suspend fun ultimoMantenimiento(): Long? = store.data.first()[K.mantenimiento]
     suspend fun ultimoMantenimiento(dia: Long) = store.edit { it[K.mantenimiento] = dia }

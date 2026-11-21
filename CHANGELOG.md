@@ -2,6 +2,14 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.1.0] - 2026-11-21
+
+### Nuevo
+- **Exportar todo a CSV** (Ajustes → Datos): un .zip con tus gastos, ingresos, devoluciones y pagos y cobros fijos, listo para abrir en Excel, Google Sheets o Numbers.
+- **Qué llegó del ordenador** (Ajustes → Tu Drive): debajo de la última sincronización verás, por ejemplo, «Desde el ordenador: 2 nuevos y 1 cambiado».
+- **Recordatorio de copia**: si no tienes Drive conectado, una vez al mes Nummia te recuerda guardar una copia en un archivo (solo si la última tiene más de un mes). Al tocarlo se abre Ajustes → Datos.
+- **Inicio en dos columnas** en tablets y plegables abiertos.
+
 ## [2.0.0] - 2026-11-21
 
 ### Nuevo

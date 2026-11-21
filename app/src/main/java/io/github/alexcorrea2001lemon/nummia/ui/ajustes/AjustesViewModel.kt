@@ -34,6 +34,7 @@ class AjustesViewModel @Inject constructor(
     private val copia: CopiaLocal,
     private val reloj: Reloj,
     private val sinc: io.github.alexcorrea2001lemon.nummia.data.drive.Sincronizador,
+    private val csv: io.github.alexcorrea2001lemon.nummia.data.informes.ExportadorCsv,
 ) : ViewModel() {
     val ajustes: StateFlow<Ajustes> = ajustesRepo.ajustes.stateIn(viewModelScope, SharingStarted.Eagerly, Ajustes())
     val personas: StateFlow<List<PersonaEntity>> = repo.personas().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -68,6 +69,8 @@ class AjustesViewModel @Inject constructor(
     fun borrarPersona(p: PersonaEntity) = viewModelScope.launch { repo.borrarPersona(p) }
 
     suspend fun exportar(): ByteArray = copia.exportar(reloj.ahoraMs())
+    suspend fun copiaGuardada() = ajustesRepo.ultimaCopiaLocal(reloj.hoy().toEpochDay())
+    suspend fun exportarCsv(): ByteArray = csv.zip()
 
     /** Antes de restaurar se guarda una copia del estado actual en el móvil. */
     suspend fun importar(bytes: ByteArray): Result<Int> = runCatching {

@@ -80,9 +80,11 @@ class Sincronizador(
             val hojas = descubrirHojas(n, carpeta)
             val avisos = ArrayList<String>()
             var conflictos = 0
+            val cambios = IntArray(3) // nuevos, editados y borrados desde el ordenador
             for (anio in (datos.anios() + hojas.keys).sorted()) {
-                conflictos += anioSync(n, carpeta, anio, hojas[anio], forzar, avisos)
+                conflictos += anioSync(n, carpeta, anio, hojas[anio], forzar, avisos, cambios)
             }
+            sync.guardarMeta(MetaEntity(Meta.CAMBIOS_ORDENADOR, CambiosOrdenador(cambios[0], cambios[1], cambios[2]).guardar()))
             sync.borrarMeta(Meta.FORZAR_SUBIDA); sync.borrarMeta(Meta.PENDIENTE); sync.borrarMeta(Meta.ERROR)
             if (avisos.isEmpty()) sync.borrarMeta(Meta.AVISOS) else sync.guardarMeta(MetaEntity(Meta.AVISOS, avisos.joinToString("\n")))
             sync.guardarMeta(MetaEntity(Meta.ULTIMA, reloj.ahoraMs().toString()))
@@ -143,7 +145,9 @@ class Sincronizador(
         n.actualizar(id, formatosHoja())
     }
 
-    private suspend fun anioSync(n: Nube, carpeta: String, anio: Int, conocida: HojaEntity?, forzar: Boolean, avisos: MutableList<String>): Int {
+    private suspend fun anioSync(
+        n: Nube, carpeta: String, anio: Int, conocida: HojaEntity?, forzar: Boolean, avisos: MutableList<String>, cambios: IntArray,
+    ): Int {
         val locales = Pestana.entries.associateWith { datos.canon(it, anio) }
         val instantaneas = Pestana.entries.associateWith { p -> sync.instantanea(p.name, anio).associate { it.entidadId to it.firma } }
         if (conocida == null && locales.values.all { it.isEmpty() }) return 0
@@ -186,6 +190,7 @@ class Sincronizador(
             if (nuevas.isNotEmpty()) {
                 n.escribir(id, nuevas.map { (fila, nid, _) -> "${p.nombre}!${p.letraFinal}$fila" to listOf(listOf(JsonPrimitive(nid))) })
             }
+            cambios[0] += plan.nuevasDesdeRemoto.size; cambios[1] += plan.aplicarLocal.size; cambios[2] += plan.borrarLocal.size
             // 2) Cambios hacia el móvil.
             for ((nid, c) in plan.aplicarLocal) if (datos.aplicar(p, nid, c) == null) avisos += "${p.nombre}: no se pudo aplicar una fila (¿código de gasto inexistente?)"
             plan.borrarLocal.forEach { datos.borrar(p, it) }

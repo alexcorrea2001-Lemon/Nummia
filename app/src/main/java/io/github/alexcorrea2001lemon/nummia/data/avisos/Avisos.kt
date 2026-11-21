@@ -6,8 +6,8 @@ import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import java.time.LocalDate
 import java.time.YearMonth
 
-/** Una notificación. [clave] sirve para no repetirla nunca. */
-data class Aviso(val clave: String, val titulo: String, val texto: String, val accion: AccionAviso? = null)
+/** Una notificación. [clave] sirve para no repetirla nunca. [abrir] es la acción de MainActivity al tocarla. */
+data class Aviso(val clave: String, val titulo: String, val texto: String, val accion: AccionAviso? = null, val abrir: String? = null)
 
 /** Lo que hace el botón «Confirmar» de la notificación. */
 data class AccionAviso(val tipo: Tipo, val id: String, val importe: Long) {
@@ -65,4 +65,18 @@ fun avisosPendientes(
         }
     }
     return res.filter { it.clave !in hechos }
+}
+
+/**
+ * Sin Drive conectado, una vez al mes se recuerda guardar una copia en archivo si la última tiene 30 días o más
+ * (o no hay ninguna). A quien acaba de empezar (menos de una semana con datos) no se le molesta.
+ */
+fun avisoCopia(hoy: LocalDate, driveConectado: Boolean, ultimaCopia: LocalDate?, primerMovimiento: LocalDate?): Aviso? {
+    if (driveConectado || primerMovimiento == null || primerMovimiento.isAfter(hoy.minusDays(7))) return null
+    if (ultimaCopia != null && ultimaCopia.isAfter(hoy.minusDays(30))) return null
+    return Aviso(
+        "copia-${YearMonth.from(hoy)}", "Guarda una copia de tus datos",
+        "No tienes Drive conectado. Guarda una copia en un archivo (o conecta Drive) para no perder nada si cambias de móvil.",
+        abrir = io.github.alexcorrea2001lemon.nummia.MainActivity.ACCION_DATOS,
+    )
 }

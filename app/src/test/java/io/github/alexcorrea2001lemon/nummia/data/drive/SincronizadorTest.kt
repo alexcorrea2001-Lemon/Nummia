@@ -106,6 +106,15 @@ class SincronizadorTest {
         assertEquals("G-0002", texto(fila, 0))
     }
 
+    @Test fun seApuntaLoQueLlegoDelOrdenador() = runBlocking {
+        repo.guardarGasto(gasto(275))
+        hecho()
+        assertEquals(CambiosOrdenador(), CambiosOrdenador.leer(syncDb.sync().meta(Meta.CAMBIOS_ORDENADOR)))
+        nube.editarDesdeOrdenador(hoja, "Gastos", 2, 5, JsonPrimitive(3.25))
+        hecho()
+        assertEquals("Desde el ordenador: 1 cambiado", CambiosOrdenador.leer(syncDb.sync().meta(Meta.CAMBIOS_ORDENADOR))?.texto())
+    }
+
     @Test fun borrarEnElMovilBorraLaFila() = runBlocking {
         val a = repo.guardarGasto(gasto(275))
         repo.guardarGasto(gasto(5180, "Libro"))

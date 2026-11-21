@@ -176,7 +176,12 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
             }
         }
         Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-        SharedTransitionLayout(Modifier.widthIn(max = 760.dp)) {
+        // Inicio aprovecha la pantalla grande en dos columnas; lo demás se queda centrado y legible.
+        val maximo by androidx.compose.animation.core.animateDpAsState(
+            if (ruta == Rutas.INICIO && androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= ANCHO_DOS_COLUMNAS) 1200.dp else 760.dp,
+            label = "ancho",
+        )
+        SharedTransitionLayout(Modifier.widthIn(max = maximo)) {
             CompositionLocalProvider(LocalTransicionCompartida provides this) {
                 NavHost(
                     navController = nav,
@@ -324,6 +329,9 @@ private fun ajustesVm(nav: NavHostController): AjustesViewModel {
     val padre = remember(nav.currentBackStackEntry) { runCatching { nav.getBackStackEntry(Rutas.AJUSTES) }.getOrNull() }
     return if (padre != null) hiltViewModel(padre) else hiltViewModel()
 }
+
+/** A partir de este ancho (dp) Inicio se muestra en dos columnas. */
+const val ANCHO_DOS_COLUMNAS = 840
 
 private fun NavGraphBuilder.pantalla(
     ruta: String,

@@ -139,6 +139,13 @@ fun DriveScreen(vm: DriveViewModel, snackbar: SnackbarHostState, alVolver: () ->
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
+            if (e.ultima != null && !e.ocupado) {
+                Text(
+                    e.cambiosOrdenador ?: "Sin cambios desde el ordenador",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (e.cambiosOrdenador != null) MaterialTheme.colorScheme.primary else LocalColoresNummia.current.textoSuave,
+                )
+            }
             AnimatedVisibility(e.error != null && !e.ocupado) {
                 Text(e.error.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.aviso)
             }

@@ -28,6 +28,7 @@ class MainActivity : FragmentActivity() {
         vm.destino.value = when (i?.action) {
             ACCION_GASTO -> io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.gasto()
             ACCION_INGRESO -> io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.ingreso()
+            ACCION_DATOS -> io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.DATOS
             else -> return
         }
     }
@@ -40,6 +41,7 @@ class MainActivity : FragmentActivity() {
     companion object {
         const val ACCION_GASTO = "io.github.alexcorrea2001lemon.nummia.NUEVO_GASTO"
         const val ACCION_INGRESO = "io.github.alexcorrea2001lemon.nummia.NUEVO_INGRESO"
+        const val ACCION_DATOS = "io.github.alexcorrea2001lemon.nummia.DATOS"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

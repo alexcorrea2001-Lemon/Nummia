@@ -103,7 +103,7 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
     val R = io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas
     val entradas = listOf(
         EntradaAjuste("Tus datos", Iconos.Nube, "Tu Drive", "Sincroniza con Google Drive y guarda copias de seguridad", R.DRIVE, "google sincronizar copia nube hoja excel"),
-        EntradaAjuste("Tus datos", Iconos.Descargar, "Datos", "Importar Excel, papelera y copia en archivo", R.DATOS, "importar exportar excel papelera borrado restaurar copia archivo"),
+        EntradaAjuste("Tus datos", Iconos.Descargar, "Datos", "Importar Excel, exportar a CSV, papelera y copia en archivo", R.DATOS, "importar exportar excel csv papelera borrado restaurar copia archivo"),
         EntradaAjuste("Dinero", Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar", R.SUELDO, "nomina salario ingreso"),
         EntradaAjuste("Dinero", Iconos.Repetir, "Pagos y cobros fijos", "Suscripciones, gimnasio, lo que cobras cada mes…", R.PAGOS, "suscripcion recibo cada mes fijo pagos mensuales ingreso cobro"),
         EntradaAjuste("Dinero", Iconos.Estadisticas, "Presupuestos", "Límites de gasto al mes", R.PRESUPUESTOS, "limite tope ahorro"),
@@ -379,8 +379,22 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
             val ok = runCatching {
                 val datos = vm.exportar()
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { ctx.contentResolver.openOutputStream(uri)!!.use { it.write(datos) } }
+                vm.copiaGuardada()
             }.isSuccess
             snackbar.showSnackbar(if (ok) "Copia guardada" else "No se pudo guardar la copia")
+        }
+    }
+    val nombreCsv = remember { "Nummia_${SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())}_csv.zip" }
+    var exportandoCsv by remember { mutableStateOf(false) }
+    val guardarCsv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri: Uri? ->
+        if (uri != null) alcance.launch {
+            exportandoCsv = true
+            val ok = runCatching {
+                val datos = vm.exportarCsv()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { ctx.contentResolver.openOutputStream(uri)!!.use { it.write(datos) } }
+            }.isSuccess
+            exportandoCsv = false
+            snackbar.showSnackbar(if (ok) "Exportado: gastos, ingresos y devoluciones en CSV" else "No se pudo exportar")
         }
     }
     val abrir = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -405,6 +419,15 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
             OpcionAjuste(Iconos.Descargar, "Guardar copia", "Crea un archivo con todo") { guardar.launch(nombre) }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
             OpcionAjuste(Iconos.Subir, "Restaurar copia", "Sustituye tus datos por los del archivo") { abrir.launch(arrayOf("*/*")) }
+        }
+        Text(
+            "Para abrir tus datos en Excel, Google Sheets o Numbers: un .zip con un CSV de gastos, otro de ingresos y otro de devoluciones.",
+            style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
+        )
+        Tarjeta(relleno = false) {
+            OpcionAjuste(Iconos.Informes, if (exportandoCsv) "Exportando…" else "Exportar todo a CSV", "Todos tus movimientos, menos lo de la papelera") {
+                if (!exportandoCsv) guardarCsv.launch(nombreCsv)
+            }
         }
     }
 

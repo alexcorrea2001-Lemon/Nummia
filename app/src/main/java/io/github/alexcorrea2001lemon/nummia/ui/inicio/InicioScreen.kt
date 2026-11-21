@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -94,7 +96,11 @@ fun InicioScreen(
 
     val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
     val umbral = with(androidx.compose.ui.platform.LocalDensity.current) { 96.dp.toPx() }
-    LazyColumn(
+    // En pantallas grandes (tablet, plegable abierto), dos columnas.
+    val columnas = if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= io.github.alexcorrea2001lemon.nummia.ui.nav.ANCHO_DOS_COLUMNAS) 2 else 1
+    val todaLaFila = StaggeredGridItemSpan.FullLine
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Fixed(columnas),
         // Deslizar a los lados cambia de mes (como en el Calendario).
         modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
             var total = 0f
@@ -106,9 +112,10 @@ fun InicioScreen(
             ) { _, d -> total += d }
         },
         contentPadding = PaddingValues(start = Espacio.l, end = Espacio.l, bottom = relleno.calculateBottomPadding() + 96.dp),
-        verticalArrangement = Arrangement.spacedBy(Espacio.l),
+        verticalItemSpacing = Espacio.l,
+        horizontalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
-        item {
+        item(span = todaLaFila) {
             Cabecera(e, vm::mesAnterior, vm::mesSiguiente, { eligiendoMes = true }, alBuscar, alAjustes) {
                 io.github.alexcorrea2001lemon.nummia.ui.drive.IconoEstadoDrive(alDrive)
             }
@@ -139,7 +146,7 @@ fun InicioScreen(
         }
 
         if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty() || e.pagosPendientes.isNotEmpty() || e.cobrosPendientes.isNotEmpty()) {
-            item { EncabezadoSeccion("Pendientes") }
+            item(span = todaLaFila) { EncabezadoSeccion("Pendientes") }
             items(e.sueldosPendientes, key = { "s" + it.id }) { s ->
                 Tarjeta {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
@@ -207,7 +214,7 @@ fun InicioScreen(
         }
 
         if (e.vacio && !e.cargando) {
-            item {
+            item(span = todaLaFila) {
                 EstadoVacio(
                     Iconos.Bolsa,
                     "Empieza ${if (e.esMesActual) "tu mes" else nombreMesMinuscula(e.mes)}",
@@ -236,7 +243,7 @@ fun InicioScreen(
         }
 
         if (e.ultimos.isNotEmpty()) {
-            item { EncabezadoSeccion("Últimos movimientos", accion = "Ver todos", alPulsar = alVerTodos) }
+            item(span = todaLaFila) { EncabezadoSeccion("Últimos movimientos", accion = "Ver todos", alPulsar = alVerTodos) }
             item {
                 Tarjeta(relleno = false) {
                     e.ultimos.forEach { f ->

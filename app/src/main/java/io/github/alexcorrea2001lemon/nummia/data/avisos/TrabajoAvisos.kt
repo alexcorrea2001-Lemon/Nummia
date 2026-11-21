@@ -48,6 +48,7 @@ class TrabajoAvisos @AssistedInject constructor(
     private val repo: MovimientosRepo,
     private val db: NummiaDb,
     private val reloj: Reloj,
+    private val sinc: io.github.alexcorrea2001lemon.nummia.data.drive.Sincronizador,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -64,7 +65,12 @@ class TrabajoAvisos @AssistedInject constructor(
             .map { PagoDelDia(it.id, it.concepto, it.importe, it.fecha) }
         val categorias = db.categorias().volcar().associate { it.id to it.nombre }
         val presupuestos = repo.estadoPresupuestosAhora(ym).map { nombrePresupuesto(it, categorias) to it }
-        val nuevos = avisosPendientes(hoy, sueldo, pagos, presupuestos, ajustes.avisosHechos(), PreferenciasAvisos(a.avisoSueldo, a.avisoPagos, a.avisoPresupuestos), previsto?.id, previsto?.importe ?: 0)
+        val hechos = ajustes.avisosHechos()
+        val primero = db.gastos().volcar().filter { it.deletedAt == null }.minOfOrNull { it.fecha }
+        val copia = avisoCopia(hoy, sinc.correo() != null, ajustes.ultimaCopiaLocal()?.let(java.time.LocalDate::ofEpochDay), primero)
+            ?.takeIf { it.clave !in hechos }
+        val nuevos = avisosPendientes(hoy, sueldo, pagos, presupuestos, hechos, PreferenciasAvisos(a.avisoSueldo, a.avisoPagos, a.avisoPresupuestos), previsto?.id, previsto?.importe ?: 0) +
+            listOfNotNull(copia)
         nuevos.forEach { mostrar(context, it) }
         if (nuevos.isNotEmpty()) ajustes.anotarAvisos(nuevos.map { it.clave })
         return Result.success()
@@ -94,7 +100,8 @@ class TrabajoAvisos @AssistedInject constructor(
         private fun mostrar(context: Context, a: Aviso) {
             crearCanal(context)
             val abrir = PendingIntent.getActivity(
-                context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                context, if (a.abrir != null) a.clave.hashCode() else 0,
+                Intent(context, MainActivity::class.java).setAction(a.abrir ?: Intent.ACTION_MAIN).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
             val b = NotificationCompat.Builder(context, CANAL)

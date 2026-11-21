@@ -2,6 +2,11 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.0.6] - 2026-11-21
+
+### Arreglado
+- **Iconos centrados**: los tres dibujos quedan simétricos, con el mismo margen a cada lado. La flecha del icono de crecimiento empieza y acaba alineada con las barras.
+
 ## [1.0.5] - 2026-11-21
 
 ### Cambiado

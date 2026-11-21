@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generado por scripts: icono plano de Nummia. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="2" android:translateY="1.25">
     <path android:pathData="M35,64H39A3,3 0,0 1,42,67V76A3,3 0,0 1,39,79H35A3,3 0,0 1,32,76V67A3,3 0,0 1,35,64Z" android:fillColor="#FFFFFFFF" />
     <path android:pathData="M50,56H54A3,3 0,0 1,57,59V76A3,3 0,0 1,54,79H50A3,3 0,0 1,47,76V59A3,3 0,0 1,50,56Z" android:fillColor="#FFFFFFFF" />
     <path android:pathData="M65,48H69A3,3 0,0 1,72,51V76A3,3 0,0 1,69,79H65A3,3 0,0 1,62,76V51A3,3 0,0 1,65,48Z" android:fillColor="#FFFFFFFF" />
-    <path android:pathData="M28,52C44,50 58,41 72,28" android:strokeColor="#FFFFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" />
-    <path android:pathData="M62,28H72V38" android:strokeColor="#FFFFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M32,54C46,52 59,43 72,29" android:strokeColor="#FFFFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M62,29H72V39" android:strokeColor="#FFFFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    </group>
 </vector>

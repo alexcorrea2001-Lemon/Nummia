@@ -1,6 +1,7 @@
 package io.github.alexcorrea2001lemon.nummia.data.repo
 
 import androidx.room.withTransaction
+import io.github.alexcorrea2001lemon.nummia.data.db.CategoriaEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.GastoConReembolsos
 import io.github.alexcorrea2001lemon.nummia.data.db.GastoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.HistorialEntity
@@ -9,15 +10,23 @@ import io.github.alexcorrea2001lemon.nummia.data.db.NummiaDb
 import io.github.alexcorrea2001lemon.nummia.data.db.Origen
 import io.github.alexcorrea2001lemon.nummia.data.db.PagoMensualEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity
+import io.github.alexcorrea2001lemon.nummia.data.db.PresupuestoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.ReembolsoEntity
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.Ambito
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.Estado
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.EstadoPresupuesto
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.GastoDePresupuesto
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.Limite
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.estadoPresupuestos
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.Resumen
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.TipoIngreso
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.claveTexto
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.resumen
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.reloj.Reloj
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.YearMonth
@@ -54,6 +63,10 @@ data class IngresoInput(
 
 @Singleton
 const val DIAS_PAPELERA = 30
+
+data class TiendaResumen(val nombre: String, val veces: Int, val total: Long)
+
+fun PresupuestoEntity.aLimite() = Limite(id, runCatching { Ambito.valueOf(ambito) }.getOrDefault(Ambito.TOTAL), ref, limite)
 
 /** Avisa de que algo ha cambiado (para sincronizar con Drive al poco rato). */
 fun interface AvisoCambios {
@@ -351,6 +364,84 @@ class MovimientosRepo @Inject constructor(
         db.gastos().marcarBorrado(gastoId, reloj.ahoraMs())
         anotar("gasto", gastoId, "este mes no", null, null)
     }
+
+    // ---------- Tiendas ----------
+
+    /** Tiendas con cuántas veces y cuánto (gasto real) desde siempre. */
+    fun tiendas(): Flow<List<TiendaResumen>> = db.gastos().todos().map { gs ->
+        gs.filter { it.gasto.estado == Estado.CONFIRMADO }
+            .groupBy { it.gasto.tienda.trim() }
+            .filterKeys { it.isNotEmpty() }
+            .map { (n, l) -> TiendaResumen(n, l.size, l.sumOf { it.real }) }
+            .sortedByDescending { it.veces }
+    }
+
+    /**
+     * Une varias tiendas en una (o renombra una): cambia los gastos, los pagos mensuales y los presupuestos.
+     * Devuelve cuántos gastos han cambiado.
+     */
+    suspend fun unirTiendas(origen: Collection<String>, destino: String): Int {
+        val nuevo = destino.trim()
+        require(nuevo.isNotEmpty())
+        val nombres = origen.map { it.trim() }.toSet() - nuevo
+        if (nombres.isEmpty()) return 0
+        val n = db.withTransaction {
+            val ahora = reloj.ahoraMs()
+            val cambiados = db.gastos().volcar().filter { it.tienda.trim() in nombres }
+            cambiados.forEach { g -> db.gastos().guardar(g.copy(tienda = nuevo, updatedAt = ahora)) }
+            db.historial().insertar(cambiados.map { HistorialEntity(0, "gasto", it.id, "tienda", it.tienda, nuevo, Origen.MOVIL, ahora) })
+            db.pagos().volcar().filter { it.tienda.trim() in nombres }.forEach { db.pagos().guardar(it.copy(tienda = nuevo, updatedAt = ahora)) }
+            db.presupuestos().volcar().filter { p -> p.ambito == Ambito.TIENDA.name && p.ref?.trim()?.let { it in nombres } == true }
+                .forEach { db.presupuestos().guardar(it.copy(ref = nuevo, updatedAt = ahora)) }
+            cambiados.size
+        }
+        if (n > 0) aviso.cambio()
+        return n
+    }
+
+    // ---------- Categorías ----------
+
+    suspend fun crearCategoria(nombre: String, color: Long): String {
+        val todas = db.categorias().volcar()
+        todas.firstOrNull { claveTexto(it.nombre) == claveTexto(nombre) }?.let { return it.id }
+        val c = CategoriaEntity(UUID.randomUUID().toString(), nombre.trim(), "more", color, false, (todas.maxOfOrNull { it.orden } ?: 0) + 1)
+        db.categorias().guardar(c)
+        return c.id
+    }
+
+    suspend fun editarCategoria(c: CategoriaEntity) {
+        db.categorias().guardar(c.copy(nombre = c.nombre.trim()))
+        aviso.cambio() // el nombre sale en la hoja de Drive
+    }
+
+    /** Solo las creadas por ti. Sus gastos se quedan sin categoría. */
+    suspend fun borrarCategoria(c: CategoriaEntity) {
+        if (c.predefinida) return
+        db.withTransaction {
+            db.gastos().quitarCategoria(c.id, reloj.ahoraMs())
+            db.pagos().volcar().filter { it.categoriaId == c.id }.forEach { db.pagos().guardar(it.copy(categoriaId = null)) }
+            db.presupuestos().volcar().filter { it.ambito == Ambito.CATEGORIA.name && it.ref == c.id }.forEach { db.presupuestos().borrar(it.id) }
+            db.categorias().borrar(c.id)
+        }
+        aviso.cambio()
+    }
+
+    // ---------- Presupuestos ----------
+
+    fun presupuestos(): Flow<List<PresupuestoEntity>> = db.presupuestos().todos()
+    suspend fun guardarPresupuesto(p: PresupuestoEntity) = db.presupuestos().guardar(p.copy(updatedAt = reloj.ahoraMs()))
+    suspend fun borrarPresupuesto(id: String) = db.presupuestos().borrar(id)
+
+    /** Cómo va cada presupuesto en el mes [ym]. */
+    fun estadoPresupuestos(ym: YearMonth): Flow<List<EstadoPresupuesto>> = combine(presupuestos(), mes(ym)) { ps, d ->
+        estadoPresupuestos(
+            ps.map { it.aLimite() },
+            d.gastos.map { GastoDePresupuesto(it.aMov(), it.gasto.tienda, it.gasto.categoriaId) },
+            d.movReembolsos,
+        )
+    }
+
+    suspend fun estadoPresupuestosAhora(ym: YearMonth): List<EstadoPresupuesto> = estadoPresupuestos(ym).first()
 
     // ---------- Papelera (30 días) ----------
 

@@ -16,46 +16,62 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * La base de datos de la v1.2 (versión 1) se actualiza a la versión 2 sin perder nada.
- * La versión 1 se reconstruye a partir del esquema actual quitando lo que añade la migración.
+ * Las bases de datos de versiones anteriores se actualizan sin perder nada.
+ * Cada versión antigua se reconstruye a partir del esquema actual quitando lo que añadieron las migraciones posteriores.
+ * Room comprueba al abrirla que el esquema final es exactamente el esperado.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], application = Application::class)
 class MigracionTest {
     private val ctx: Application = ApplicationProvider.getApplicationContext()
 
-    @Test fun deLaVersion1ALa2SinPerderDatos() = runBlocking {
-        // 1) Esquema actual creado por Room
+    /** name → sql del esquema actual. */
+    private fun esquemaActual(): List<Pair<String, String>> {
+        ctx.getDatabasePath("actual.db").delete()
         val actual = Room.databaseBuilder(ctx, NummiaDb::class.java, "actual.db").build()
-        actual.openHelper.writableDatabase
-        val sentencias = ArrayList<String>()
-        actual.openHelper.writableDatabase.query("SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT IN ('android_metadata','sqlite_sequence','room_master_table')").use { c ->
-            while (c.moveToNext()) sentencias += c.getString(0) + "\u0000" + c.getString(1)
-        }
+        val res = ArrayList<Pair<String, String>>()
+        actual.openHelper.writableDatabase.query(
+            "SELECT name, sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT IN ('android_metadata','sqlite_sequence','room_master_table')",
+        ).use { c -> while (c.moveToNext()) res += c.getString(0) to c.getString(1) }
         actual.close()
+        return res
+    }
 
-        // 2) Base de datos «como la de la v1.2»: sin pagos_mensuales ni gastos.pagoMensualId, con un gasto dentro
-        val fichero = ctx.getDatabasePath("antigua.db").apply { parentFile?.mkdirs(); delete() }
+    private fun crearAntigua(nombre: String, version: Int) {
+        val esquema = esquemaActual()
+        val fichero = ctx.getDatabasePath(nombre).apply { parentFile?.mkdirs(); delete() }
         SQLiteDatabase.openOrCreateDatabase(fichero, null).use { db ->
-            sentencias.forEach { s ->
-                val (nombre, sql) = s.split("\u0000")
-                if (nombre == "pagos_mensuales") return@forEach
-                db.execSQL(if (nombre == "gastos") sql.replace(Regex(""",\s*`pagoMensualId` TEXT"""), "") else sql)
+            esquema.forEach { (tabla, sql) ->
+                if (tabla == "presupuestos" && version < 3) return@forEach
+                if (tabla == "pagos_mensuales" && version < 2) return@forEach
+                db.execSQL(if (tabla == "gastos" && version < 2) sql.replace(Regex(""",\s*`pagoMensualId` TEXT"""), "") else sql)
             }
-            assertTrue(sentencias.any { it.startsWith("gastos\u0000") && "pagoMensualId" in it })
             db.insertOrThrow("gastos", null, ContentValues().apply {
                 put("id", "g1"); put("codigo", "G-0001"); put("fecha", 21_990L); put("concepto", "Café"); put("tienda", "Cafetería")
                 put("importe", 275L); put("meLoDevuelven", 0); put("notas", ""); put("estado", "CONFIRMADO"); put("createdAt", 1L); put("updatedAt", 1L)
             })
-            db.version = 1
+            db.version = version
         }
+    }
 
-        // 3) Se abre con la app nueva: migra y Room comprueba que el esquema es exactamente el esperado
-        val migrada = Room.databaseBuilder(ctx, NummiaDb::class.java, "antigua.db").addMigrations(NummiaDb.MIGRACION_1_2).build()
-        val g = migrada.gastos().obtener("g1")!!
+    private fun comprobar(nombre: String) = runBlocking {
+        val db = Room.databaseBuilder(ctx, NummiaDb::class.java, nombre).addMigrations(*NummiaDb.MIGRACIONES).build()
+        val g = db.gastos().obtener("g1")!!
         assertEquals(275L, g.importe)
         assertNull(g.pagoMensualId)
-        assertTrue(migrada.pagos().activos().isEmpty())
-        migrada.close()
+        assertTrue(db.pagos().activos().isEmpty())
+        assertTrue(db.presupuestos().volcar().isEmpty())
+        db.close()
+    }
+
+    @Test fun desdeLaVersion1() {
+        assertTrue(esquemaActual().any { it.first == "gastos" && "pagoMensualId" in it.second })
+        crearAntigua("v1.db", 1)
+        comprobar("v1.db")
+    }
+
+    @Test fun desdeLaVersion2() {
+        crearAntigua("v2.db", 2)
+        comprobar("v2.db")
     }
 }

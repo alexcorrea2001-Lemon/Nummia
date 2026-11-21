@@ -20,6 +20,9 @@ object Rutas {
     const val IMPORTAR = "ajustes/importar"
     const val PAPELERA = "ajustes/papelera"
     const val PAGOS = "ajustes/pagos"
+    const val PRESUPUESTOS = "ajustes/presupuestos"
+    const val TIENDAS = "ajustes/tiendas"
+    const val CATEGORIAS = "ajustes/categorias"
 
     fun detalle(id: String) = "detalle/$id"
     fun gasto(id: String? = null, paraOtro: Boolean = false, fecha: java.time.LocalDate? = null) =

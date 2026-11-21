@@ -116,3 +116,14 @@ data class PagoMensualEntity(
     val updatedAt: Long,
     val deletedAt: Long? = null,
 )
+
+/** Límite de gasto mensual: total, de una categoría ([ref] = id) o de una tienda ([ref] = nombre). [ambito] = nombre de Ambito. */
+@Entity(tableName = "presupuestos")
+data class PresupuestoEntity(
+    @PrimaryKey val id: String,
+    val ambito: String,
+    val ref: String?,
+    val limite: Long,
+    val createdAt: Long,
+    val updatedAt: Long,
+)

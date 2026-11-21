@@ -143,6 +143,13 @@ class InicioViewModel @Inject constructor(
         )
     }
 
+    /** Presupuestos del mes elegido, con su nombre (vacío si no hay ninguno). */
+    val presupuestos: StateFlow<List<Pair<String, io.github.alexcorrea2001lemon.nummia.domain.calculo.EstadoPresupuesto>>> =
+        combine(mes.flatMapLatest { repo.estadoPresupuestos(it) }, repo.categorias()) { ps, cats ->
+            val nombres = cats.associate { it.id to it.nombre }
+            ps.map { io.github.alexcorrea2001lemon.nummia.ui.presupuestos.nombrePresupuesto(it, nombres) to it }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     fun mesAnterior() = mes.update { it.minusMonths(1) }
     fun mesSiguiente() = mes.update { it.plusMonths(1) }
     fun irAHoy() { mes.value = YearMonth.from(reloj.hoy()) }

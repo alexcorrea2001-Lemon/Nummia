@@ -9,6 +9,7 @@ import io.github.alexcorrea2001lemon.nummia.data.db.NummiaDb
 import io.github.alexcorrea2001lemon.nummia.data.db.Origen
 import io.github.alexcorrea2001lemon.nummia.data.db.PagoMensualEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity
+import io.github.alexcorrea2001lemon.nummia.data.db.PresupuestoEntity
 import io.github.alexcorrea2001lemon.nummia.data.db.ReembolsoEntity
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.Estado
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.TipoIngreso
@@ -33,6 +34,7 @@ class CopiaInvalida(motivo: String) : Exception(motivo)
     val id: String, val concepto: String, val tienda: String, val categoriaId: String?, val importe: Long, val dia: Int,
     val activo: Boolean, val createdAt: Long, val updatedAt: Long, val deletedAt: Long?,
 )
+@Serializable data class PresupuestoDto(val id: String, val ambito: String, val ref: String?, val limite: Long, val createdAt: Long, val updatedAt: Long)
 @Serializable data class ReembolsoDto(
     val id: String, val codigo: String, val gastoId: String, val fecha: Long?, val importe: Long, val personaId: String?,
     val nota: String, val createdAt: Long, val updatedAt: Long, val deletedAt: Long?,
@@ -57,6 +59,7 @@ data class Copia(
     val categorias: List<CategoriaDto>,
     val historial: List<HistorialDto>,
     val pagos: List<PagoDto> = emptyList(),
+    val presupuestos: List<PresupuestoDto> = emptyList(),
 ) {
     companion object { const val VERSION = 1 }
 }
@@ -75,6 +78,7 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
             personas = db.personas().volcar().map { PersonaDto(it.id, it.nombre, it.createdAt, it.deletedAt) },
             categorias = db.categorias().volcar().map { CategoriaDto(it.id, it.nombre, it.icono, it.color, it.predefinida, it.orden) },
             historial = db.historial().volcar().map { HistorialDto(it.entidad, it.entidadId, it.campo, it.antes, it.despues, it.origen.name, it.fecha) },
+            presupuestos = db.presupuestos().volcar().map { PresupuestoDto(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt) },
             pagos = db.pagos().volcar().map { PagoDto(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt) },
         )
         val salida = ByteArrayOutputStream()
@@ -96,7 +100,8 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
 
     /** Sustituye TODOS los datos por los de la copia, en una sola transacción. */
     suspend fun restaurar(c: Copia) = db.withTransaction {
-        db.vaciar().apply { gastos(); reembolsos(); ingresos(); personas(); categorias(); historial(); pagos() }
+        db.vaciar().apply { gastos(); reembolsos(); ingresos(); personas(); categorias(); historial(); pagos(); presupuestos() }
+        c.presupuestos.forEach { db.presupuestos().guardar(PresupuestoEntity(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt)) }
         c.pagos.forEach { db.pagos().guardar(PagoMensualEntity(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt)) }
         c.personas.forEach { db.personas().guardar(PersonaEntity(it.id, it.nombre, it.createdAt, it.deletedAt)) }
         c.categorias.forEach { db.categorias().guardar(CategoriaEntity(it.id, it.nombre, it.icono, it.color, it.predefinida, it.orden)) }

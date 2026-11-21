@@ -165,6 +165,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
             alAjustes = { nav.navigate(Rutas.AJUSTES) },
             alAnadirGasto = { nav.navigate(Rutas.gasto()) },
             alDrive = { nav.navigate(Rutas.DRIVE) },
+            alPresupuestos = { nav.navigate(Rutas.PRESUPUESTOS) },
             relleno = relleno,
         )
     }
@@ -209,6 +210,9 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.SUELDO) { SueldoScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.DATOS) { DatosScreen(ajustesVm(nav), snackbar, { nav.navigate(it) }) { nav.popBackStack() } }
+    pantalla(Rutas.TIENDAS) { io.github.alexcorrea2001lemon.nummia.ui.tiendas.TiendasScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
+    pantalla(Rutas.CATEGORIAS) { io.github.alexcorrea2001lemon.nummia.ui.tiendas.CategoriasScreen(hiltViewModel()) { nav.popBackStack() } }
+    pantalla(Rutas.PRESUPUESTOS) { io.github.alexcorrea2001lemon.nummia.ui.presupuestos.PresupuestosScreen(hiltViewModel()) { nav.popBackStack() } }
     pantalla(Rutas.PAGOS) { io.github.alexcorrea2001lemon.nummia.ui.pagos.PagosScreen(hiltViewModel()) { nav.popBackStack() } }
     pantalla(Rutas.PAPELERA) { io.github.alexcorrea2001lemon.nummia.ui.papelera.PapeleraScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
     pantalla(Rutas.IMPORTAR) {

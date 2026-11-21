@@ -114,7 +114,13 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
             HorizontalDivider(color = LocalColoresNummia.current.borde)
             OpcionAjuste(Iconos.Repetir, "Pagos mensuales", "Gimnasio, móvil, suscripciones…") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PAGOS) }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Estadisticas, "Presupuestos", "Límites de gasto al mes") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PRESUPUESTOS) }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
             OpcionAjuste(Iconos.Persona, "Personas", "Quién te devuelve el dinero") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.PERSONAS) }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Bolsa, "Tiendas", "Unir nombres repetidos o cambiarlos") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.TIENDAS) }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Filtro, "Categorías", "Crear, renombrar y cambiar colores") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.CATEGORIAS) }
         }
         Tarjeta(relleno = false) {
             OpcionAjuste(Iconos.Descargar, "Datos", "Importar Excel, papelera y copia en archivo") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.DATOS) }

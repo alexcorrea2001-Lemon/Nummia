@@ -51,6 +51,7 @@ interface GastoDao {
     fun borrados(): Flow<List<GastoConReembolsos>>
     @Query("SELECT id FROM gastos WHERE deletedAt IS NOT NULL AND deletedAt < :limite") suspend fun borradosAntesDe(limite: Long): List<String>
     @Query("DELETE FROM gastos WHERE id IN (:ids)") suspend fun eliminar(ids: List<String>)
+    @Query("UPDATE gastos SET categoriaId = NULL, updatedAt = :ts WHERE categoriaId = :categoria") suspend fun quitarCategoria(categoria: String, ts: Long)
 }
 
 @Dao
@@ -107,6 +108,14 @@ interface PagoMensualDao {
 }
 
 @Dao
+interface PresupuestoDao {
+    @Upsert suspend fun guardar(p: PresupuestoEntity)
+    @Query("DELETE FROM presupuestos WHERE id = :id") suspend fun borrar(id: String)
+    @Query("SELECT * FROM presupuestos ORDER BY CASE ambito WHEN 'TOTAL' THEN 0 WHEN 'CATEGORIA' THEN 1 ELSE 2 END, ref") fun todos(): Flow<List<PresupuestoEntity>>
+    @Query("SELECT * FROM presupuestos") suspend fun volcar(): List<PresupuestoEntity>
+}
+
+@Dao
 interface PersonaDao {
     @Upsert suspend fun guardar(p: PersonaEntity)
     @Query("SELECT * FROM personas WHERE deletedAt IS NULL ORDER BY nombre COLLATE NOCASE") fun todas(): Flow<List<PersonaEntity>>
@@ -119,6 +128,7 @@ interface CategoriaDao {
     @Upsert suspend fun guardar(c: CategoriaEntity)
     @Query("SELECT * FROM categorias ORDER BY orden") fun todas(): Flow<List<CategoriaEntity>>
     @Query("SELECT * FROM categorias") suspend fun volcar(): List<CategoriaEntity>
+    @Query("DELETE FROM categorias WHERE id = :id AND predefinida = 0") suspend fun borrar(id: String)
 }
 
 @Dao
@@ -138,4 +148,5 @@ interface VaciarDao {
     @Query("DELETE FROM categorias") suspend fun categorias()
     @Query("DELETE FROM historial") suspend fun historial()
     @Query("DELETE FROM pagos_mensuales") suspend fun pagos()
+    @Query("DELETE FROM presupuestos") suspend fun presupuestos()
 }

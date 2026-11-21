@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -70,8 +71,10 @@ fun InicioScreen(
     alAnadirGasto: () -> Unit,
     relleno: PaddingValues,
     alDrive: () -> Unit = {},
+    alPresupuestos: () -> Unit = {},
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
+    val presupuestos by vm.presupuestos.collectAsStateWithLifecycle()
     var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
     var cambiandoPago by remember { mutableStateOf<PagoPendiente?>(null) }
 
@@ -87,6 +90,17 @@ fun InicioScreen(
         }
         item { TarjetaBalance(e, vm::alternarDiscreto) }
         item { Indicadores(e) }
+
+        if (presupuestos.isNotEmpty()) {
+            item("presupuestos") {
+                Tarjeta(modifier = Modifier.animateItem().clickable(onClick = alPresupuestos)) {
+                    Text("Presupuestos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    presupuestos.forEach { (nombre, p) ->
+                        io.github.alexcorrea2001lemon.nummia.ui.presupuestos.BarraPresupuesto(p, nombre, e.discreto)
+                    }
+                }
+            }
+        }
 
         if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty() || e.pagosPendientes.isNotEmpty()) {
             item { EncabezadoSeccion("Pendientes") }

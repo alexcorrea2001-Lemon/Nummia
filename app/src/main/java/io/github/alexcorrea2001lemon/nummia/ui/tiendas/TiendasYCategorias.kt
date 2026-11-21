@@ -35,7 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.ui.draw.zIndex
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged

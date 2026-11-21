@@ -2,6 +2,21 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.0.0] - 2026-11-21
+
+### Nuevo
+- **Cobros fijos**: activa «Se cobra cada mes» al apuntar un ingreso (o añádelo en Ajustes → Pagos y cobros fijos). Cada mes aparece en Inicio con «Cobrado», «Otro importe» o «Este mes no».
+- **Filtrar Movimientos por categoría, tienda o persona** (botón de filtros). Los filtros activos se ven arriba y se quitan con un toque.
+- **Botón «Nuevo gasto» en los Ajustes rápidos** (el panel que se baja desde arriba): añádelo editando los botones del panel.
+- **✓ al guardar**: un gasto, un ingreso o una devolución guardados se confirman con una marca animada.
+- **Pasar de un gasto a otro en el detalle**: desliza a los lados o usa las flechas de arriba («3 de 12 del mes»).
+- **Ordenar las categorías arrastrando** (Ajustes → Categorías). El orden es el de los chips al apuntar un gasto.
+- **Modo discreto con huella**: mantén pulsado el balance de Inicio y, con tu huella, se ven los importes hasta que salgas de la app.
+- **A tu gusto** (Ajustes → Apariencia): forma de las tarjetas (redondas, normales o rectas), listas compactas y vibración sí/no.
+
+### Cambiado
+- «Pagos mensuales» pasa a llamarse **«Pagos y cobros fijos»**.
+
 ## [1.9.0] - 2026-11-21
 
 ### Nuevo

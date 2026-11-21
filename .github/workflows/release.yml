@@ -1,8 +1,11 @@
 name: Publicar versión
 
+# Se publica sola: al llegar a main una versión (versionMayor/Menor/Corrección) que aún no tiene
+# publicación, GitHub crea la etiqueta vX.Y.Z y la publicación con el APK firmado.
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,7 +24,10 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Comprobar que la etiqueta coincide con la versión de la app
+      - name: Versión de la app
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           V=$(python3 - <<'PY'
           import re
@@ -30,10 +36,17 @@ jobs:
           print(f"v{g('versionMayor')}.{g('versionMenor')}.{g('versionCorreccion')}")
           PY
           )
-          echo "Versión en el código: $V · etiqueta: $GITHUB_REF_NAME"
-          test "$V" = "$GITHUB_REF_NAME"
+          echo "etiqueta=$V" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/$V" >/dev/null; then
+            echo "La versión $V ya está publicada; no hay nada que hacer."
+            echo "publicar=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Se publicará $V"
+            echo "publicar=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Preparar la firma
+        if: steps.v.outputs.publicar == 'true'
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
@@ -42,6 +55,7 @@ jobs:
           echo "NUMMIA_KEYSTORE_PATH=$RUNNER_TEMP/nummia.jks" >> "$GITHUB_ENV"
 
       - name: Pruebas y APK firmado
+        if: steps.v.outputs.publicar == 'true'
         env:
           NUMMIA_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           NUMMIA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -51,6 +65,7 @@ jobs:
           ./gradlew testDebugUnitTest assembleRelease --stacktrace --console=plain 2>&1 | tee build.log
 
       - name: Verificar firma, tamaño y huella
+        if: steps.v.outputs.publicar == 'true'
         run: |
           APK=app/build/outputs/apk/release/app-release.apk
           test -f "$APK" || { echo "::error::No se generó el APK firmado"; exit 1; }
@@ -59,25 +74,30 @@ jobs:
           echo "Tamaño: $TAM bytes"
           test "$TAM" -lt 10485760 || { echo "::error::El APK pesa más de 10 MB ($TAM bytes)"; exit 1; }
           mkdir -p salida
-          cp "$APK" "salida/nummia-$GITHUB_REF_NAME.apk"
-          (cd salida && sha256sum "nummia-$GITHUB_REF_NAME.apk" > "nummia-$GITHUB_REF_NAME.apk.sha256")
+          cp "$APK" "salida/nummia-${{ steps.v.outputs.etiqueta }}.apk"
+          (cd salida && sha256sum "nummia-${{ steps.v.outputs.etiqueta }}.apk" > "nummia-${{ steps.v.outputs.etiqueta }}.apk.sha256")
           cat salida/*.sha256
 
       - name: Notas de la versión
+        if: steps.v.outputs.publicar == 'true'
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ steps.v.outputs.etiqueta }}"; VERSION="${VERSION#v}"
           awk -v v="## [$VERSION]" 'index($0, v) == 1 {p=1; next} /^## \[/ {p=0} p' CHANGELOG.md > notas.md
           test -s notas.md || { echo "::error::CHANGELOG.md no tiene sección para $VERSION"; exit 1; }
           cat notas.md
 
       - name: Crear la publicación en GitHub
+        if: steps.v.outputs.publicar == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          name: Nummia ${{ github.ref_name }}
+          tag_name: ${{ steps.v.outputs.etiqueta }}
+          target_commitish: ${{ github.sha }}
+          name: Nummia ${{ steps.v.outputs.etiqueta }}
           body_path: notas.md
+          make_latest: true
           files: |
-            salida/nummia-${{ github.ref_name }}.apk
-            salida/nummia-${{ github.ref_name }}.apk.sha256
+            salida/nummia-${{ steps.v.outputs.etiqueta }}.apk
+            salida/nummia-${{ steps.v.outputs.etiqueta }}.apk.sha256
 
       - name: Informe de errores
         if: failure()

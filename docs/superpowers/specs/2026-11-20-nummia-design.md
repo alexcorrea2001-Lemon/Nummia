@@ -379,10 +379,10 @@ Siempre con `NetworkType.CONNECTED` (o `UNMETERED` si está activado «solo con 
 
 ### 12.4 Versiones y publicación
 - **Versionado semántico:** `vMAYOR.MENOR.CORRECCIÓN`, con `versionCode = MAYOR×10000 + MENOR×100 + CORRECCIÓN`. Se muestra en Ajustes → Acerca de.
-- **Ramas:** se trabaja en `desarrollo`. Cada versión se fusiona en `main` y se etiqueta `vX.Y.Z`.
+- **Ramas:** se trabaja en `desarrollo`. Cada versión se fusiona en `main`; el flujo de publicación crea la etiqueta `vX.Y.Z` y el Release automáticamente.
 - **GitHub Actions:**
   - En cada push o PR: lint + pruebas unitarias + compilación debug.
-  - En cada etiqueta `v*`: pruebas → APK firmado (release) → `.sha256` → GitHub Release con las notas de `CHANGELOG.md`. **Si cualquier paso falla, no se publica.**
+  - En cada push a `main` con una versión aún no publicada: pruebas → APK firmado (release) → `.sha256` → GitHub Release con las notas de `CHANGELOG.md`. **Si cualquier paso falla, no se publica.**
 - **Secretos de GitHub:** `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` y, desde la v1.2.0, `GOOGLE_WEB_CLIENT_ID`.
 - **`CHANGELOG.md`** en español, con un apartado por versión.
 - **Política de privacidad y página de la app** en GitHub Pages (necesarias para el consentimiento de Google).

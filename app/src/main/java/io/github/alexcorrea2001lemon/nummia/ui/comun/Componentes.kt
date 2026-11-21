@@ -97,7 +97,7 @@ fun Tarjeta(
     contenido: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = fondo,
         border = BorderStroke(1.dp, LocalColoresNummia.current.borde),

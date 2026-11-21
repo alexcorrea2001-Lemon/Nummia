@@ -410,7 +410,7 @@ Propuestas (en la maqueta):
 - **B.** Una moneda con una «n».
 - **C.** Tres barras que crecen.
 
-**Elegido: A (N que sube), en violeta.** Los otros dos se ofrecen como iconos alternativos en Ajustes. Será un icono adaptable de Android, con capa monocroma para los iconos temáticos.
+**Sustituidos por los tres iconos que diseñó el propietario** (N que sube, cartera y crecimiento), convertidos a icono adaptable y teñidos en los 12 colores. **Por defecto: N que sube, en violeta.** Los otros dos se ofrecen como iconos alternativos en Ajustes. Será un icono adaptable de Android, con capa monocroma para los iconos temáticos.
 
 ## 14. Queda a criterio del desarrollador
 

@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.0.2] - 2026-11-21
+
+### Nuevo
+- **Iconos nuevos**: N que sube, cartera y crecimiento, en los 12 colores. Se eligen en Ajustes → Apariencia → Icono de la app.
+- **Icono de Ajustes** renovado.
+
+### Arreglado
+- La tarjeta de actualizaciones ya no se encoge al buscar.
+- Se quita de Inicio el icono del móvil: no hacía nada. Volverá en la versión 1.2.0 para mostrar si tus datos están guardados en Drive.
+
 ## [1.0.1] - 2026-11-21
 
 ### Arreglado

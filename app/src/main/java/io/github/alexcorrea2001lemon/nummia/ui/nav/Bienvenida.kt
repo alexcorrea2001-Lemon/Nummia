@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
-import io.github.alexcorrea2001lemon.nummia.ui.ajustes.DibujoLogo
+import io.github.alexcorrea2001lemon.nummia.ui.comun.ImagenLogo
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Acento
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Espacio
@@ -50,7 +50,7 @@ fun Bienvenida(alTerminar: (Long?) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Espacio.xl),
         ) {
             Spacer(Modifier.height(Espacio.xl))
-            DibujoLogo(Logo.A, Acento.VIOLETA.color, Modifier.size(80.dp))
+            ImagenLogo(Logo.A, Acento.VIOLETA, Modifier.size(80.dp))
             Text("Bienvenido a Nummia", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text("Apunta lo que gastas y lo que ganas. Nummia hace las cuentas por ti.", style = MaterialTheme.typography.bodyLarge, color = LocalColoresNummia.current.textoSuave)
             Punto(Iconos.Bolsa, "Gastos y reembolsos", "Aunque te devuelvan el dinero en varias veces o redondeen hacia arriba.")

@@ -47,8 +47,8 @@ enum class ModoAcento { PALETA, PERSONALIZADO, FONDO_PANTALLA }
 
 enum class Logo(val nombre: String) {
     A("N que sube"),
-    B("Moneda"),
-    C("Ahorro que crece"),
+    B("Cartera"),
+    C("Crecimiento"),
 }
 
 enum class TamanoTexto(val nombre: String, val escala: Float) {

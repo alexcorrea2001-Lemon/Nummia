@@ -169,7 +169,6 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
         }
         IconButton(onClick = siguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
         Box(Modifier.weight(1f))
-        Icon(Iconos.Movil, "Datos guardados solo en este móvil", tint = LocalColoresNummia.current.textoSuave, modifier = Modifier.padding(Espacio.s))
         IconButton(onClick = buscar) { Icon(Iconos.Buscar, "Buscar") }
         IconButton(onClick = ajustes) { Icon(Iconos.Ajustes, "Ajustes") }
     }

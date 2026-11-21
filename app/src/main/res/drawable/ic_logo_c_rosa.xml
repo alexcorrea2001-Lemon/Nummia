@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generado: iconos alternativos de Nummia. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:pathData="M35.5,60a6.5,6.5 0,0 1,6.5 6.5v7a6.5,6.5 0,0 1,-13 0v-7a6.5,6.5 0,0 1,6.5 -6.5z" android:fillColor="#FFF472B6" android:fillAlpha="0.55" />
-    <path android:pathData="M54,46a6.5,6.5 0,0 1,6.5 6.5v21a6.5,6.5 0,0 1,-13 0v-21a6.5,6.5 0,0 1,6.5 -6.5z" android:fillColor="#FFF472B6" android:fillAlpha="0.8" />
-    <path android:pathData="M72.5,30a6.5,6.5 0,0 1,6.5 6.5v37a6.5,6.5 0,0 1,-13 0v-37a6.5,6.5 0,0 1,6.5 -6.5z" android:fillColor="#FFF472B6" />
-</vector>

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generado: iconos alternativos de Nummia. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:pathData="M33,76V38L71,72V32" android:strokeWidth="9" android:strokeColor="#FF94A3B8" android:strokeLineCap="round" android:strokeLineJoin="round" />
-    <path android:pathData="M61,42L71,32L81,42" android:strokeWidth="9" android:strokeColor="#FF94A3B8" android:strokeLineCap="round" android:strokeLineJoin="round" />
-</vector>

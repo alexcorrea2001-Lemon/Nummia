@@ -71,6 +71,7 @@ import io.github.alexcorrea2001lemon.nummia.BuildConfig
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
+import io.github.alexcorrea2001lemon.nummia.ui.comun.ImagenLogo
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Tarjeta
 import io.github.alexcorrea2001lemon.nummia.ui.formulario.DialogoNombre
 import io.github.alexcorrea2001lemon.nummia.ui.formulario.textoImporte
@@ -185,7 +186,7 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
                         border = BorderStroke(if (elegido) 2.dp else 1.dp, if (elegido) MaterialTheme.colorScheme.onSurface else c.borde),
                         modifier = Modifier.weight(1f).height(96.dp).semantics { selected = elegido; role = Role.RadioButton; contentDescription = "Logo ${l.nombre}" },
                     ) {
-                        Box(contentAlignment = Alignment.Center) { DibujoLogo(l, a.iconoColor.color, Modifier.size(60.dp)) }
+                        Box(contentAlignment = Alignment.Center) { ImagenLogo(l, a.iconoColor, Modifier.size(64.dp)) }
                     }
                 }
             }
@@ -217,46 +218,6 @@ private fun SelectorColores(seleccionado: Acento?, alElegir: (Acento) -> Unit) {
                     .clickable { alElegir(ac) }.padding(4.dp)
                     .semantics { selected = elegido; role = Role.RadioButton; contentDescription = ac.nombre },
             ) { Box(Modifier.fillMaxWidth().aspectRatio(1f).background(ac.color, CircleShape)) }
-        }
-    }
-}
-
-/** El mismo dibujo que los iconos del lanzador (lienzo 108), con trazos continuos y esquinas redondeadas. */
-@Composable
-fun DibujoLogo(logo: Logo, color: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier.clip(RoundedCornerShape(26)).background(Color(0xFF15111F))) {
-        val k = size.width / 108f
-        fun trazo(grosor: Float) = Stroke(width = grosor * k, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
-        fun camino(bloque: Path.() -> Unit) = Path().apply(bloque)
-        fun Path.m(x: Float, y: Float) = moveTo(x * k, y * k)
-        fun Path.l(x: Float, y: Float) = lineTo(x * k, y * k)
-        when (logo) {
-            Logo.A -> {
-                drawPath(camino { m(33f, 76f); l(33f, 38f); l(71f, 72f); l(71f, 32f) }, color, style = trazo(9f))
-                drawPath(camino { m(61f, 42f); l(71f, 32f); l(81f, 42f) }, color, style = trazo(9f))
-            }
-            Logo.B -> {
-                drawCircle(color, radius = 31 * k, center = Offset(54 * k, 54 * k), style = Stroke(7 * k))
-                drawPath(
-                    camino {
-                        m(44f, 68f); l(44f, 45f)
-                        m(44f, 55f)
-                        cubicTo(44 * k, 48.5f * k, 48.5f * k, 44.5f * k, 54 * k, 44.5f * k)
-                        cubicTo(59.5f * k, 44.5f * k, 64 * k, 48.5f * k, 64 * k, 55 * k)
-                        l(64f, 68f)
-                    },
-                    color, style = trazo(7f),
-                )
-            }
-            Logo.C -> {
-                listOf(Triple(29f, 60f, 0.55f), Triple(47.5f, 46f, 0.8f), Triple(66f, 30f, 1f)).forEach { (x, y, al) ->
-                    drawRoundRect(
-                        color.copy(alpha = al), topLeft = Offset(x * k, y * k),
-                        size = androidx.compose.ui.geometry.Size(13 * k, (80 - y) * k),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.5f * k),
-                    )
-                }
-            }
         }
     }
 }
@@ -396,7 +357,7 @@ fun AcercaScreen(vm: AjustesViewModel, act: ActualizarViewModel, alVolver: () ->
     var leyendo by remember { mutableStateOf<Pair<String, String>?>(null) }
     PantallaAjustes("Acerca de Nummia", alVolver) {
         Column(Modifier.fillMaxWidth().padding(vertical = Espacio.l), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            DibujoLogo(a.iconoLogo, a.iconoColor.color, Modifier.size(88.dp))
+            ImagenLogo(a.iconoLogo, a.iconoColor, Modifier.size(88.dp), "Icono de Nummia")
             Text("Nummia", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text("Versión ${BuildConfig.VERSION_NAME}", color = LocalColoresNummia.current.textoSuave)
         }

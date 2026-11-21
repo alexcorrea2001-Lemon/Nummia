@@ -30,7 +30,7 @@ object Iconos {
     val Estadisticas by lazy { trazo("estadisticas", "M5 20V11M11 20V5M17 20v-7M3 20h18") }
     val Informes by lazy { trazo("informes", "M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6") }
     val Buscar by lazy { trazo("buscar", "M11 4a7 7 0 1 1 0 14a7 7 0 1 1 0-14zM20 20l-3.5-3.5") }
-    val Ajustes by lazy { trazo("ajustes", "M12 9a3 3 0 1 1 0 6a3 3 0 1 1 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1") }
+    val Ajustes by lazy { trazo("ajustes", "M4 7h9M17 7h3M15 5a2 2 0 1 1 0 4a2 2 0 1 1 0-4zM4 17h3M11 17h9M9 15a2 2 0 1 1 0 4a2 2 0 1 1 0-4z") }
     val Ojo by lazy { trazo("ojo", "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 1 0 6a3 3 0 1 1 0-6z") }
     val OjoTachado by lazy { trazo("ojo_tachado", "M3 3l18 18M10.6 6.1A10 10 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-2.6 3.2M6.6 6.6C4.3 8.1 3 12 3 12s4 6 9 6a9 9 0 0 0 4.4-1.1") }
     val Filtro by lazy { trazo("filtro", "M3 5h18l-7 8v6l-4 2v-8z") }

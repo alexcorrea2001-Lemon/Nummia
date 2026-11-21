@@ -1,6 +1,8 @@
 package io.github.alexcorrea2001lemon.nummia.ui.formulario
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -69,7 +71,7 @@ fun CampoImporteGrande(
     val gestor = androidx.compose.ui.platform.LocalFocusManager.current
     LaunchedEffect(valor.isEmpty()) { if (valor.isEmpty()) abierto = true } // tras «Guardar y otro»
     // Si se abre el teclado del móvil (al escribir el concepto), el nuestro se cierra: nunca los dos a la vez.
-    val tecladoMovil = androidx.compose.foundation.layout.WindowInsets.isImeVisible
+    val tecladoMovil = WindowInsets.isImeVisible
     LaunchedEffect(tecladoMovil) { if (tecladoMovil) abierto = false }
     val total = remember(valor) {
         if (io.github.alexcorrea2001lemon.nummia.domain.dinero.esOperacion(valor)) {

@@ -79,4 +79,31 @@ class TiendasCategoriasTest {
         assertEquals(9000L, e.gastado)
         assertEquals(Nivel.CERCA, e.nivel)
     }
+
+    @Test fun sinCategoriaSeUsaLaDeLaMismaTienda() = runBlocking {
+        val a = gasto("Cine", 800, "ocio")
+        val b = gasto("cine", 900) // sin categoría: hereda «ocio»
+        assertEquals("ocio", db.gastos().obtener(b)!!.categoriaId)
+        assertEquals("ocio", db.gastos().obtener(a)!!.categoriaId)
+    }
+
+    @Test fun ponerCategoriaLaPasaALosQueNoTenian() = runBlocking {
+        val a = gasto("Cine", 800)
+        val b = gasto("Cine", 900)
+        assertNull(db.gastos().obtener(a)!!.categoriaId)
+        val g = db.gastos().obtener(b)!!
+        repo.guardarGasto(GastoInput(id = b, fecha = g.fecha, concepto = g.concepto, tienda = g.tienda, importe = g.importe, categoriaId = "ocio"))
+        assertEquals("ocio", db.gastos().obtener(a)!!.categoriaId)
+    }
+
+    @Test fun completarCategoriasTrasImportar() = runBlocking {
+        val a = gasto("Cine", 800, "ocio")
+        // Gastos sin categoría metidos directamente (como al importar)
+        val g = db.gastos().obtener(a)!!
+        db.gastos().guardar(g.copy(id = "imp", codigo = "G-0099", categoriaId = null, tienda = "CINE"))
+        db.gastos().guardar(g.copy(id = "otro", codigo = "G-0098", categoriaId = null, tienda = "Teatro"))
+        assertEquals(1, repo.completarCategorias())
+        assertEquals("ocio", db.gastos().obtener("imp")!!.categoriaId)
+        assertNull(db.gastos().obtener("otro")!!.categoriaId)
+    }
 }

@@ -115,47 +115,97 @@ class MovimientosRepo @Inject constructor(
 
     // ---------- Gastos ----------
 
-    suspend fun guardarGasto(input: GastoInput): String = db.withTransaction {
-        val ahora = reloj.ahoraMs()
-        val previo = input.id?.let { db.gastos().obtener(it) }
-        val id = previo?.id ?: UUID.randomUUID().toString()
-        val nuevo = GastoEntity(
-            id = id,
-            codigo = previo?.codigo ?: codigo("G", db.gastos().maxCodigo()),
-            fecha = input.fecha,
-            concepto = input.concepto.trim(),
-            tienda = input.tienda.trim().ifEmpty { input.concepto.trim() },
-            categoriaId = input.categoriaId,
-            importe = input.importe,
-            meLoDevuelven = input.meLoDevuelven,
-            personaId = if (input.meLoDevuelven) input.personaId else null,
-            importeEsperado = if (input.meLoDevuelven) input.esperado else null,
-            notas = input.notas.trim(),
-            estado = previo?.estado ?: Estado.CONFIRMADO,
-            createdAt = previo?.createdAt ?: ahora,
-            updatedAt = ahora,
-            deletedAt = previo?.deletedAt,
-            pagoMensualId = previo?.pagoMensualId ?: if (input.cadaMes) UUID.randomUUID().toString() else null,
-        )
-        if (previo == null && input.cadaMes) {
-            db.pagos().guardar(
-                PagoMensualEntity(
-                    id = nuevo.pagoMensualId!!, concepto = nuevo.concepto, tienda = nuevo.tienda, categoriaId = nuevo.categoriaId,
-                    importe = nuevo.importe, dia = nuevo.fecha.dayOfMonth, createdAt = ahora, updatedAt = ahora,
-                ),
+    suspend fun guardarGasto(input: GastoInput): String {
+        val id = db.withTransaction {
+            val ahora = reloj.ahoraMs()
+            val previo = input.id?.let { db.gastos().obtener(it) }
+            val id = previo?.id ?: UUID.randomUUID().toString()
+            val tienda = input.tienda.trim().ifEmpty { input.concepto.trim() }
+            // Sin categoría: se usa la que ya tiene esa tienda en otros gastos.
+            val categoria = input.categoriaId ?: categoriaDeTienda(tienda, id)
+            val pagoActual = previo?.pagoMensualId?.let { db.pagos().obtener(it) }?.takeIf { it.deletedAt == null }
+            val nuevoPago = if (input.cadaMes && pagoActual == null) UUID.randomUUID().toString() else null
+            val nuevo = GastoEntity(
+                id = id,
+                codigo = previo?.codigo ?: codigo("G", db.gastos().maxCodigo()),
+                fecha = input.fecha,
+                concepto = input.concepto.trim(),
+                tienda = tienda,
+                categoriaId = categoria,
+                importe = input.importe,
+                meLoDevuelven = input.meLoDevuelven,
+                personaId = if (input.meLoDevuelven) input.personaId else null,
+                importeEsperado = if (input.meLoDevuelven) input.esperado else null,
+                notas = input.notas.trim(),
+                estado = previo?.estado ?: Estado.CONFIRMADO,
+                createdAt = previo?.createdAt ?: ahora,
+                updatedAt = ahora,
+                deletedAt = previo?.deletedAt,
+                pagoMensualId = nuevoPago ?: previo?.pagoMensualId,
             )
-        }
-        db.gastos().guardar(nuevo)
-        if (previo == null) {
-            anotar("gasto", id, "creado", null, nuevo.codigo)
-            if (input.meLoDevuelven && input.yaDevuelto) {
-                crearReembolso(id, input.esperado ?: input.importe, reloj.hoy(), input.personaId, "")
+            if (nuevoPago != null) {
+                db.pagos().guardar(
+                    PagoMensualEntity(
+                        id = nuevoPago, concepto = nuevo.concepto, tienda = nuevo.tienda, categoriaId = nuevo.categoriaId,
+                        importe = nuevo.importe, dia = nuevo.fecha.dayOfMonth, createdAt = ahora, updatedAt = ahora,
+                    ),
+                )
             }
-        } else {
-            anotarCambios(previo, nuevo)
+            db.gastos().guardar(nuevo)
+            // Al editar y quitar «Se paga cada mes», el pago deja de repetirse (este gasto se queda).
+            if (previo != null && !input.cadaMes && pagoActual != null) borrarPago(pagoActual.id)
+            if (previo == null) {
+                anotar("gasto", id, "creado", null, nuevo.codigo)
+                if (input.meLoDevuelven && input.yaDevuelto) {
+                    crearReembolso(id, input.esperado ?: input.importe, reloj.hoy(), input.personaId, "")
+                }
+            } else {
+                anotarCambios(previo, nuevo)
+            }
+            // Con categoría: los gastos de la misma tienda que no tenían ninguna pasan a tenerla.
+            if (categoria != null) ponerCategoriaATienda(tienda, categoria)
+            id
         }
-        id
+        return id
     }
+
+    /** Categoría más reciente de una tienda (sin mayúsculas ni tildes), sin contar el gasto [excepto]. */
+    private suspend fun categoriaDeTienda(tienda: String, excepto: String): String? {
+        val clave = claveTexto(tienda)
+        if (clave.isEmpty()) return null
+        return db.gastos().volcar().asSequence()
+            .filter { it.id != excepto && it.deletedAt == null && it.categoriaId != null && claveTexto(it.tienda) == clave }
+            .maxByOrNull { it.updatedAt }?.categoriaId
+    }
+
+    private suspend fun ponerCategoriaATienda(tienda: String, categoria: String): Int {
+        val clave = claveTexto(tienda)
+        val ahora = reloj.ahoraMs()
+        val sin = db.gastos().volcar().filter { it.deletedAt == null && it.categoriaId == null && claveTexto(it.tienda) == clave }
+        sin.forEach { db.gastos().guardar(it.copy(categoriaId = categoria, updatedAt = ahora)) }
+        return sin.size
+    }
+
+    /**
+     * Pone categoría a los gastos que no tienen, copiando la que ya tiene su tienda en otros gastos
+     * (por ejemplo, tras importar un Excel). Se llama al abrir la app. Devuelve cuántos ha cambiado.
+     */
+    suspend fun completarCategorias(): Int {
+        val n = db.withTransaction {
+            val todos = db.gastos().volcar().filter { it.deletedAt == null }
+            val porTienda = todos.filter { it.categoriaId != null }.groupBy { claveTexto(it.tienda) }
+                .mapValues { (_, gs) -> gs.maxBy { it.updatedAt }.categoriaId }
+            val ahora = reloj.ahoraMs()
+            val cambiar = todos.filter { it.categoriaId == null && porTienda[claveTexto(it.tienda)] != null }
+            cambiar.forEach { db.gastos().guardar(it.copy(categoriaId = porTienda.getValue(claveTexto(it.tienda)), updatedAt = ahora)) }
+            cambiar.size
+        }
+        if (n > 0) aviso.cambio()
+        return n
+    }
+
+    /** Si el gasto viene de un pago mensual que sigue activo. */
+    suspend fun esPagoMensual(g: GastoEntity): Boolean = g.pagoMensualId?.let { db.pagos().obtener(it) }?.let { it.deletedAt == null } == true
 
     suspend fun borrarGasto(id: String) = db.withTransaction {
         db.gastos().marcarBorrado(id, reloj.ahoraMs())

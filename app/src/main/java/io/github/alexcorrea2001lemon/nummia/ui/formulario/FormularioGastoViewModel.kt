@@ -83,6 +83,7 @@ class FormularioGastoViewModel @Inject constructor(
                     id = g.id, importe = textoImporte(g.importe), concepto = g.concepto, tienda = g.tienda,
                     fecha = g.fecha, categoriaId = g.categoriaId, meLoDevuelven = g.meLoDevuelven, personaId = g.personaId,
                     esperado = g.importeEsperado?.let(::textoImporte).orEmpty(), notas = g.notas,
+                    cadaMes = repo.esPagoMensual(g),
                 )
             }
         }
@@ -133,7 +134,7 @@ class FormularioGastoViewModel @Inject constructor(
                 GastoInput(
                     id = f.id, fecha = f.fecha, concepto = f.concepto, tienda = f.tienda, categoriaId = f.categoriaId,
                     importe = importe.getOrThrow(), meLoDevuelven = f.meLoDevuelven, personaId = f.personaId,
-                    esperado = esperado?.getOrNull(), notas = f.notas, yaDevuelto = f.yaDevuelto && f.id == null, cadaMes = f.cadaMes && f.id == null,
+                    esperado = esperado?.getOrNull(), notas = f.notas, yaDevuelto = f.yaDevuelto && f.id == null, cadaMes = f.cadaMes,
                 ),
             )
             _form.value = if (otro) FormGasto(fecha = f.fecha) else f.copy(guardando = false)

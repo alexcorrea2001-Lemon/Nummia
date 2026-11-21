@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
@@ -205,12 +206,17 @@ fun InicioScreen(
 @Composable
 private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Unit, hoy: () -> Unit, buscar: () -> Unit, ajustes: () -> Unit, estadoDrive: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = anterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
-        TextButton(onClick = hoy, enabled = !e.esMesActual) {
-            Text(nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        // El mes ocupa el espacio que sobra: los iconos de la derecha siempre tienen el mismo tamaño.
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = anterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
+            TextButton(onClick = hoy, enabled = !e.esMesActual, modifier = Modifier.weight(1f, fill = false), contentPadding = PaddingValues(horizontal = Espacio.xs)) {
+                Text(
+                    nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            IconButton(onClick = siguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
         }
-        IconButton(onClick = siguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
-        Box(Modifier.weight(1f))
         estadoDrive()
         IconButton(onClick = buscar) { Icon(Iconos.Buscar, "Buscar") }
         IconButton(onClick = ajustes) { Icon(Iconos.Ajustes, "Ajustes") }

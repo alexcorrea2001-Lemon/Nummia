@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.5.1] - 2026-11-21
+
+### Arreglado
+- **Inicio**: los iconos de arriba ya no cambian de tamaño según lo largo que sea el nombre del mes.
+- **Se paga cada mes**: ahora también se puede activar (o quitar) al editar un gasto que ya existía, y el pago aparece en Ajustes → Pagos mensuales.
+
+### Cambiado
+- **Movimientos, más clara**: arriba el mes que estás viendo, debajo el buscador y unas pestañas que siempre se ven enteras. Cada día indica su «Total del día». Se quita la barra flotante con el número de movimientos.
+- **Categoría automática**: si un gasto se guarda sin categoría y esa tienda ya tiene una en otros gastos (por ejemplo, Cine → Ocio), se pone sola. Al poner categoría a un gasto, los de la misma tienda que no tenían ninguna la toman. También se aplica a lo importado del Excel y a lo que ya tenías.
+
 ## [1.5.0] - 2026-11-21
 
 ### Nuevo

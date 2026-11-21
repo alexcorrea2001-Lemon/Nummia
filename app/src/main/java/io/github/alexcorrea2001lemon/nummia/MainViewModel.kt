@@ -38,6 +38,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             repo.prepararDatos()
             runCatching { repo.purgarPapelera() }
+            runCatching { repo.completarCategorias() }
             runCatching { repo.asegurarPagosPrevistos(reloj.hoy()) }
             actualizador.limpiar()
             // Si ya está instalada la versión que se anunciaba (o una posterior), se quita el aviso.

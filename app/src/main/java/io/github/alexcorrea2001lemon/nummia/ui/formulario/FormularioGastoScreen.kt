@@ -162,7 +162,7 @@ fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostSt
                 }
             }
 
-            if (!f.editando) {
+            run {
                 Surface(
                     shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer,
                     border = BorderStroke(1.dp, if (f.cadaMes) MaterialTheme.colorScheme.primary else c.borde),
@@ -171,7 +171,7 @@ fun FormularioGastoScreen(vm: FormularioGastoViewModel, snackbar: SnackbarHostSt
                         Column(Modifier.weight(1f)) {
                             Text("Se paga cada mes", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                             Text(
-                                "Cada mes aparecerá como previsto el día ${f.fecha.dayOfMonth} para confirmarlo o cambiar el importe",
+                                "Cada mes aparecerá en Inicio el día ${f.fecha.dayOfMonth} para confirmarlo o cambiar el importe. Lo verás en Ajustes → Pagos mensuales",
                                 style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
                             )
                         }

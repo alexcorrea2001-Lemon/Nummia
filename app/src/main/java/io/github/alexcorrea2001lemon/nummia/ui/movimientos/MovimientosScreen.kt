@@ -39,6 +39,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.material3.Tab
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -57,6 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
@@ -93,7 +98,7 @@ fun MovimientosScreen(
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
-            contentPadding = PaddingValues(bottom = relleno.calculateBottomPadding() + 150.dp),
+            contentPadding = PaddingValues(bottom = relleno.calculateBottomPadding() + 96.dp),
             verticalArrangement = Arrangement.spacedBy(Espacio.s),
         ) {
             item {
@@ -102,39 +107,59 @@ fun MovimientosScreen(
                         Text("Movimientos", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         IconButton(onClick = alAjustes) { Icon(Iconos.Ajustes, "Ajustes") }
                     }
+                    // 1) Qué mes miras (como en Inicio). Al buscar, se busca en todos.
+                    if (e.buscandoEnTodo) {
+                        Text(
+                            if (e.filtros.texto.isNotBlank()) "Buscando en todos los meses" else "Pendientes de todos los meses",
+                            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = Espacio.s),
+                        )
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = vm::mesAnterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
+                            Text(nombreMes(e.mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                            IconButton(onClick = vm::mesSiguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
+                        }
+                    }
+                    // 2) Buscar y filtrar
                     Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalAlignment = Alignment.CenterVertically) {
                         TextField(
                             value = e.filtros.texto, onValueChange = vm::texto, singleLine = true,
-                            placeholder = { Text("Buscar por nombre, tienda, importe o fecha") },
+                            placeholder = { Text("Buscar", maxLines = 1) },
                             leadingIcon = { Icon(Iconos.Buscar, null) },
                             trailingIcon = { if (e.filtros.texto.isNotEmpty()) IconButton(onClick = { vm.texto("") }) { Icon(Iconos.Cerrar, "Borrar búsqueda") } },
+                            supportingText = null,
                             shape = RoundedCornerShape(28.dp),
                             colors = TextFieldDefaults.colors(
                                 focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh, unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             ),
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).semantics { contentDescription = "Buscar por nombre, tienda, importe o fecha" },
                         )
                         BadgedBox(badge = { if (e.filtros.avanzados > 0) Badge { Text("${e.filtros.avanzados}") } }) {
                             IconButton(onClick = { verFiltros = true }) { Icon(Iconos.Filtro, "Filtros y orden") }
                         }
                     }
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                        Pestana.entries.forEach { p ->
-                            FilterChip(selected = e.filtros.pestana == p, onClick = { vm.pestana(p) }, label = { Text(p.nombre) })
-                        }
+                }
+            }
+            // 3) Qué tipo ver: pestañas de ancho fijo, siempre visibles enteras
+            item {
+                SecondaryTabRow(
+                    selectedTabIndex = e.filtros.pestana.ordinal,
+                    containerColor = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.padding(horizontal = Espacio.s),
+                ) {
+                    Pestana.entries.forEach { p ->
+                        Tab(
+                            selected = e.filtros.pestana == p, onClick = { haptica(); vm.pestana(p) },
+                            text = { Text(p.nombre, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp)) },
+                        )
                     }
-                    if (e.buscandoEnTodo) {
-                        Text("Mostrando todos los meses", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = vm::mesAnterior) { Icon(Iconos.ChevronIzq, "Mes anterior") }
-                            Text(nombreMes(e.mes), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                            IconButton(onClick = vm::mesSiguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
-                            Spacer(Modifier.weight(1f))
-                            Text("Orden: ${e.filtros.orden.nombre.lowercase()}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-                        }
-                    }
+                }
+                if (e.filtros.orden != Orden.FECHA) {
+                    Text(
+                        "Ordenado por ${e.filtros.orden.nombre.lowercase()}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                        modifier = Modifier.padding(horizontal = Espacio.xl, vertical = Espacio.s),
+                    )
                 }
             }
 
@@ -153,7 +178,7 @@ fun MovimientosScreen(
                     item(key = "d" + g.fecha) {
                         Row(Modifier.padding(horizontal = Espacio.l + Espacio.s, vertical = Espacio.xs)) {
                             Text(fechaCabecera(g.fecha, e.hoy), style = MaterialTheme.typography.labelLarge, color = c.textoSuave, modifier = Modifier.weight(1f))
-                            Text(formatearEuros(g.total, conSigno = true, discreto = e.discreto), style = MaterialTheme.typography.labelLarge, color = c.textoSuave)
+                            Text("Total del día ${formatearEuros(g.total, conSigno = true, discreto = e.discreto)}", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
                         }
                     }
                 }
@@ -183,17 +208,6 @@ fun MovimientosScreen(
             }
         }
 
-        AnimatedVisibility(e.cuenta > 0, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = relleno.calculateBottomPadding() + 84.dp)) {
-            Surface(
-                shape = RoundedCornerShape(26.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                tonalElevation = 3.dp, shadowElevation = 6.dp, modifier = Modifier.padding(horizontal = Espacio.l),
-            ) {
-                Row(Modifier.padding(horizontal = Espacio.xl, vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(Espacio.xl)) {
-                    Text("${e.cuenta} movimientos", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
-                    Text("Gasto real ${formatearEuros(e.totalGasto, discreto = e.discreto)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
     }
 
     if (verFiltros) {

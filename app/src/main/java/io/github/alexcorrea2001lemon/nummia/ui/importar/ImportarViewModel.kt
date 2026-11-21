@@ -113,7 +113,9 @@ class ImportarViewModel @Inject constructor(
                 File(dir, "antes_de_importar_excel_${reloj.ahoraMs()}.nummia").writeBytes(copia.exportar(reloj.ahoraMs()))
             }
             withTimeoutOrNull(20_000) { sinc.copiaAhora() }
-            EstadoImportar.Hecho(importador.importar(v.analisis, v.porOtros), v.analisis.anio)
+            val r = importador.importar(v.analisis, v.porOtros)
+            repo.completarCategorias() // lo importado toma la categoría que ya tenga su tienda
+            EstadoImportar.Hecho(r, v.analisis.anio)
         }.getOrElse { EstadoImportar.Error("No se pudo importar. No se ha guardado nada.") }
     }
 

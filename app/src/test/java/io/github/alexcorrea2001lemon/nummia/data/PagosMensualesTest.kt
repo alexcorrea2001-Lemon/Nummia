@@ -113,4 +113,16 @@ class PagosMensualesTest {
         assertEquals(3500L, p.importe)
         assertEquals(LocalDate.of(2030, 4, 10), p.fecha)
     }
+
+    @Test fun alEditarUnGastoSePuedeHacerMensualYQuitarlo() = runBlocking {
+        val id = repo.guardarGasto(GastoInput(fecha = LocalDate.of(2030, 3, 2), concepto = "Vídeos", tienda = "Vídeos", importe = 1399))
+        val g = db.gastos().obtener(id)!!
+        repo.guardarGasto(GastoInput(id = id, fecha = g.fecha, concepto = g.concepto, tienda = g.tienda, importe = g.importe, cadaMes = true))
+        val pago = db.gastos().obtener(id)!!.pagoMensualId!!
+        assertEquals(1, repo.pagos().first().size)
+        assertTrue(repo.esPagoMensual(db.gastos().obtener(id)!!))
+        repo.guardarGasto(GastoInput(id = id, fecha = g.fecha, concepto = g.concepto, tienda = g.tienda, importe = g.importe, cadaMes = false))
+        assertTrue(repo.pagos().first().isEmpty())
+        assertNotNull(db.pagos().obtener(pago)!!.deletedAt)
+    }
 }

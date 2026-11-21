@@ -47,11 +47,29 @@ class ApiGoogle(
                 if (resp.isSuccessful) return@withContext texto
                 if (resp.code == 401 && intento == 0) { renovar = true; return@use }
                 val mensaje = runCatching { json.parseToJsonElement(texto).jsonObject["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content }.getOrNull()
-                throw ErrorDrive(resp.code, mensaje ?: "Error ${resp.code} de Google")
+                throw ErrorDrive(resp.code, traducir(mensaje) ?: "Error ${resp.code} de Google")
             }
         }
         throw ErrorDrive(401, "Google no acepta el acceso. Vuelve a conectar tu Drive.")
     }
+
+    /** Los errores más habituales de configuración, en español y con qué hacer. */
+    private fun traducir(m: String?): String? {
+        if (m == null) return null
+        if ("has not been used in project" in m || "is disabled" in m) {
+            val api = when {
+                "sheets" in m.lowercase() -> "Google Sheets API"
+                "drive" in m.lowercase() -> "Google Drive API"
+                else -> "API de Google"
+            }
+            return "Falta activar la «$api» en tu proyecto de Google Cloud (APIs y servicios → Biblioteca). Si acabas de activarla, espera unos minutos y vuelve a sincronizar."
+        }
+        return m
+    }
+
+    override suspend fun correo(): String? = runCatching {
+        obj(llamar { it.url("${drive}drive/v3/about?fields=user(emailAddress)") })["user"]?.jsonObject?.get("emailAddress")?.jsonPrimitive?.content
+    }.getOrNull()
 
     private fun obj(texto: String) = json.parseToJsonElement(texto).jsonObject
 

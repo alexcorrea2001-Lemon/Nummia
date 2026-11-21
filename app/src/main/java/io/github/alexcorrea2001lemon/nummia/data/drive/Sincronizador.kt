@@ -74,6 +74,7 @@ class Sincronizador(
         _ocupado.value = true
         try {
             val n = nube(correo)
+            if ('@' !in correo) n.correo()?.let { sync.guardarMeta(MetaEntity(Meta.CUENTA, it)) }
             val carpeta = carpeta(n)
             val forzar = sync.meta(Meta.FORZAR_SUBIDA) == "1"
             val hojas = descubrirHojas(n, carpeta)
@@ -126,11 +127,20 @@ class Sincronizador(
 
     private suspend fun crearHoja(n: Nube, carpeta: String, anio: Int): HojaEntity {
         val id = n.crear("Nummia_$anio", ApiGoogle.HOJA, carpeta)
-        n.actualizar(id, peticionesHojaNueva())
+        val h = HojaEntity(anio, id, null).also { sync.guardarHoja(it) } // guardada antes de configurarla: si falla, se termina luego
+        configurarHoja(n, id, anio)
+        return h
+    }
+
+    /**
+     * Deja la hoja con sus pestañas, cabeceras, fórmulas y formatos. Se puede repetir sin problema:
+     * si una hoja se quedó a medio crear (por ejemplo, sin conexión), se termina la próxima vez.
+     */
+    private suspend fun configurarHoja(n: Nube, id: String, anio: Int) {
+        n.actualizar(id, peticionesHojaNueva(n.pestanas(id)))
         n.escribir(id, Pestana.entries.map { p -> "${p.nombre}!A1:${p.letraFinal}1" to listOf(p.columnas.map { JsonPrimitive(it.titulo) } + JsonPrimitive("id")) })
         n.escribir(id, listOf("Resumen!A1:F14" to resumen(anio)), formulas = true)
         n.actualizar(id, formatosHoja())
-        return HojaEntity(anio, id, null).also { sync.guardarHoja(it) }
     }
 
     private suspend fun anioSync(n: Nube, carpeta: String, anio: Int, conocida: HojaEntity?, forzar: Boolean, avisos: MutableList<String>): Int {
@@ -152,6 +162,10 @@ class Sincronizador(
         sync.guardarMeta(MetaEntity(Meta.CAMBIOS_DESDE_COPIA, "1"))
 
         val id = hoja.spreadsheetId
+        // Hoja nunca sincronizada (recién creada o descubierta): se comprueba que esté completa.
+        if (hoja.modificado == null && n.pestanas(id).keys.let { t -> !t.containsAll(listOf("Resumen") + Pestana.entries.map { it.nombre }) }) {
+            configurarHoja(n, id, anio)
+        }
         val valores = n.leer(id, Pestana.entries.map { "${it.nombre}!A:${it.letraFinal}" })
         var conflictos = 0
         val escrituras = ArrayList<Pair<String, List<List<JsonElement>>>>()
@@ -311,21 +325,21 @@ class Sincronizador(
             return filas
         }
 
-        private fun peticionesHojaNueva(): JsonArray = buildJsonArray {
+        private fun peticionesHojaNueva(existentes: Map<String, Int>): JsonArray = buildJsonArray {
             add(buildJsonObject {
                 putJsonObject("updateSpreadsheetProperties") {
                     putJsonObject("properties") { put("locale", "es_ES"); put("timeZone", "Europe/Madrid") }
                     put("fields", "locale,timeZone")
                 }
             })
-            add(buildJsonObject {
+            if ("Resumen" !in existentes && 0 in existentes.values) add(buildJsonObject {
                 putJsonObject("updateSheetProperties") {
                     putJsonObject("properties") { put("sheetId", 0); put("title", "Resumen"); putJsonObject("gridProperties") { put("frozenRowCount", 1) } }
                     put("fields", "title,gridProperties.frozenRowCount")
                 }
             })
             Pestana.entries.forEachIndexed { i, p ->
-                add(buildJsonObject {
+                if (p.nombre !in existentes) add(buildJsonObject {
                     putJsonObject("addSheet") {
                         putJsonObject("properties") { put("sheetId", i + 1); put("title", p.nombre); putJsonObject("gridProperties") { put("frozenRowCount", 1) } }
                     }

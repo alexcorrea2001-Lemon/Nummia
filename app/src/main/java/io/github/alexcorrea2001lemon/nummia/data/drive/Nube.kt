@@ -15,5 +15,7 @@ interface Nube {
     suspend fun pestanas(id: String): Map<String, Int>
     suspend fun actualizar(id: String, peticiones: JsonArray)
     suspend fun leer(id: String, rangos: List<String>): List<List<List<JsonElement>>>
+    /** Correo de la cuenta de Google (no hace falta permiso extra). */
+    suspend fun correo(): String? = null
     suspend fun escribir(id: String, datos: List<Pair<String, List<List<JsonElement>>>>, formulas: Boolean = false)
 }

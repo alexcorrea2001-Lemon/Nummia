@@ -197,4 +197,26 @@ class SincronizadorTest {
         assertEquals(1, nube.archivos.values.count { it.nombre == hoja })
         db2.close(); sync2.close()
     }
+
+    @Test fun hojaAMedioCrearSeTerminaLaSiguienteVez() = runBlocking {
+        repo.guardarGasto(gasto(275))
+        nube.fallarActualizar = true // p. ej. la API de Sheets aún sin activar
+        assertTrue(s.sincronizar() is ResultadoSync.Fallo)
+        nube.fallarActualizar = false
+        hecho()
+        assertEquals(1, nube.archivos.values.count { it.nombre == hoja })
+        assertEquals(listOf("Resumen", "Gastos", "Ingresos", "Reembolsos"), nube.hoja(hoja).pestanas.values.toList())
+        assertEquals(listOf("G-0001"), gastos().map { texto(it, 0) })
+    }
+
+    @Test fun hojaAMedioCrearDescubiertaEnOtroMovilSeTermina() = runBlocking {
+        repo.guardarGasto(gasto(275))
+        nube.fallarActualizar = true
+        s.sincronizar()
+        nube.fallarActualizar = false
+        syncDb.sync().vaciarHojas() // como si se hubiera perdido el registro: se descubre en Drive
+        hecho()
+        assertEquals(1, nube.archivos.values.count { it.nombre == hoja })
+        assertEquals(listOf("G-0001"), gastos().map { texto(it, 0) })
+    }
 }

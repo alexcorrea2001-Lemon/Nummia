@@ -18,6 +18,7 @@ class FakeNube : Nube {
 
     val archivos = LinkedHashMap<String, Archivo>()
     var fallarEscrituras = false
+    var fallarActualizar = false
     private var siguiente = 0
 
     fun hoja(nombre: String) = archivos.values.first { it.nombre == nombre && it.mime == ApiGoogle.HOJA }
@@ -77,6 +78,7 @@ class FakeNube : Nube {
     override suspend fun pestanas(id: String): Map<String, Int> = archivos.getValue(id).pestanas.entries.associate { it.value to it.key }
 
     override suspend fun actualizar(id: String, peticiones: JsonArray) {
+        if (fallarActualizar) throw java.io.IOException("sin red")
         val a = archivos.getValue(id)
         for (p in peticiones.map { it.jsonObject }) {
             p["addSheet"]?.let { val pr = it.jsonObject.getValue("properties").jsonObject; a.pestanas[pr.getValue("sheetId").jsonPrimitive.int] = pr.texto("title") }

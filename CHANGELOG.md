@@ -2,6 +2,13 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [1.2.2] - 2026-11-21
+
+### Arreglado
+- Si la hoja del año se quedó a medio crear (sin conexión o con una API de Google sin activar), se termina de preparar sola en la siguiente sincronización.
+- En «Tu Drive» se ve el correo de tu cuenta de Google en lugar de «Google».
+- Los errores de configuración de Google Cloud más habituales se explican en español y dicen qué hacer.
+
 ## [1.2.1] - 2026-11-21
 
 ### Arreglado

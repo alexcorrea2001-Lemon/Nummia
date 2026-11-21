@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo se comparten los informes que tú generas. -->
+<paths>
+    <files-path name="informes" path="informes/" />
+</paths>

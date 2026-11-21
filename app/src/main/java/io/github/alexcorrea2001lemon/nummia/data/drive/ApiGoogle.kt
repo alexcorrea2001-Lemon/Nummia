@@ -110,11 +110,11 @@ class ApiGoogle(
         if (e.codigo == 404) null else throw e
     }
 
-    override suspend fun subir(nombre: String, padre: String, bytes: ByteArray): String {
+    override suspend fun subir(nombre: String, padre: String, bytes: ByteArray, mime: String): String {
         val meta = buildJsonObject { put("name", nombre); putJsonArray("parents") { add(kotlinx.serialization.json.JsonPrimitive(padre)) } }
         val partes = MultipartBody.Builder().setType("multipart/related".toMediaType())
             .addPart(meta.toString().toRequestBody(tipoJson))
-            .addPart(bytes.toRequestBody("application/octet-stream".toMediaType()))
+            .addPart(bytes.toRequestBody(mime.toMediaType()))
             .build()
         return obj(llamar { it.url("${drive}upload/drive/v3/files?uploadType=multipart&fields=id").post(partes) })["id"]!!.jsonPrimitive.content
     }

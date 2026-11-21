@@ -298,9 +298,20 @@ class Sincronizador(
 
     suspend fun datosVacios(): Boolean = datos.vacia()
 
+    /** Guarda un informe en Nummia_Datos/Informes. Devuelve false si Drive no está conectado. */
+    suspend fun subirInforme(nombre: String, bytes: ByteArray, mime: String): Boolean {
+        val correo = correo() ?: return false
+        val n = nube(correo)
+        val carpeta = carpeta(n)
+        val dir = n.buscar(CARPETA_INFORMES, carpeta, ApiGoogle.CARPETA).firstOrNull()?.id ?: n.crear(CARPETA_INFORMES, ApiGoogle.CARPETA, carpeta)
+        n.subir(nombre, dir, bytes, mime)
+        return true
+    }
+
     companion object {
         const val CARPETA = "Nummia_Datos"
         const val CARPETA_COPIAS = "Copias_de_seguridad"
+        const val CARPETA_INFORMES = "Informes"
         private val MESES = listOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")
 
         /** Pestaña Resumen con fórmulas (hoja en español: argumentos separados por «;»). */

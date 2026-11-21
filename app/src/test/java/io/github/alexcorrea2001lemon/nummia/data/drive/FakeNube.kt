@@ -65,7 +65,7 @@ class FakeNube : Nube {
 
     override suspend fun modificado(id: String): String? = archivos[id]?.version?.toString()
 
-    override suspend fun subir(nombre: String, padre: String, bytes: ByteArray): String {
+    override suspend fun subir(nombre: String, padre: String, bytes: ByteArray, mime: String): String {
         val id = crear(nombre, "application/octet-stream", padre)
         archivos.getValue(id).bytes = bytes
         return id

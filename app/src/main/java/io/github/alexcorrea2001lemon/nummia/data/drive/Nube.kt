@@ -9,7 +9,7 @@ interface Nube {
     suspend fun listar(q: String, orden: String = "name"): List<ArchivoDrive>
     suspend fun crear(nombre: String, mime: String, padre: String?): String
     suspend fun modificado(id: String): String?
-    suspend fun subir(nombre: String, padre: String, bytes: ByteArray): String
+    suspend fun subir(nombre: String, padre: String, bytes: ByteArray, mime: String = "application/octet-stream"): String
     suspend fun descargar(id: String): ByteArray
     suspend fun borrar(id: String)
     suspend fun pestanas(id: String): Map<String, Int>

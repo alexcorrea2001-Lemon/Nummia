@@ -180,7 +180,9 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
         )
     }
     pantalla(Rutas.ESTADISTICAS) { EstadisticasScreen(hiltViewModel(), ::abrirGasto, { nav.navigate(Rutas.AJUSTES) }, relleno) }
-    pantalla(Rutas.INFORMES) { Proximamente(Iconos.Informes, "Informes", relleno, version = "1.3.0") }
+    pantalla(Rutas.INFORMES) {
+        io.github.alexcorrea2001lemon.nummia.ui.informes.InformesScreen(hiltViewModel(), snackbar, { nav.navigate(Rutas.AJUSTES) }, relleno)
+    }
 
     pantalla(Rutas.DETALLE, listOf(navArgument("id") { type = NavType.StringType })) {
         DetalleScreen(
@@ -271,12 +273,6 @@ private fun NavGraphBuilder.pantalla(
     }
 }
 
-@Composable
-private fun Proximamente(icono: ImageVector, titulo: String, relleno: PaddingValues, version: String = "1.1.0") {
-    Box(Modifier.fillMaxSize().padding(relleno), contentAlignment = Alignment.Center) {
-        EstadoVacio(icono, titulo, "Esta sección llega en la versión $version. Nummia te avisará cuando esté lista.")
-    }
-}
 
 @Composable
 private fun MenuAnadir(abierto: Boolean, alAlternar: () -> Unit, alElegir: (String) -> Unit) {

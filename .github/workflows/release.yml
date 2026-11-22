@@ -22,6 +22,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Robolectric descarga su Android de pruebas de Maven en cada ejecución: si la descarga falla, fallan las pruebas.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Versión de la app

@@ -2,6 +2,12 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.2.1] - 2026-11-22
+
+### Arreglado
+- **Calendario**: el botón «Semana» se apretaba junto a «Hoy» y salía en vertical. Ahora está arriba, junto a Ajustes, y la fila del mes queda despejada.
+- Los días cuyo saldo redondea a 0 € muestran «0» en lugar de «+0».
+
 ## [2.2.0] - 2026-11-22
 
 ### Nuevo

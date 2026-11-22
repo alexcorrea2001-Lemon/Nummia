@@ -107,7 +107,7 @@ fun ChipHoy(visible: Boolean, alPulsar: () -> Unit) {
     ) {
         androidx.compose.material3.AssistChip(
             onClick = alPulsar,
-            label = { androidx.compose.material3.Text("Hoy") },
+            label = { androidx.compose.material3.Text("Hoy", maxLines = 1, softWrap = false) },
             modifier = androidx.compose.ui.Modifier.semantics { contentDescription = "Volver al mes actual" },
         )
     }

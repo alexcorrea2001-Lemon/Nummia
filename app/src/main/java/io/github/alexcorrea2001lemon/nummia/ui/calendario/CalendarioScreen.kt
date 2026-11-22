@@ -2,7 +2,6 @@ package io.github.alexcorrea2001lemon.nummia.ui.calendario
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -112,6 +111,12 @@ fun CalendarioScreen(
         item {
             Row(Modifier.statusBarsPadding().padding(start = Espacio.xs, top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
                 Text("Calendario", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                // Ver por semanas: arriba, junto a Ajustes, para que la fila del mes no se apriete.
+                FilterChip(
+                    selected = e.semana, onClick = vm::alternarVista,
+                    label = { Text("Semana", maxLines = 1, softWrap = false) },
+                    leadingIcon = if (e.semana) { { Icon(Iconos.Check, null, Modifier.size(16.dp)) } } else null,
+                )
                 IconButton(onClick = alAjustes) { Icon(Iconos.Ajustes, "Ajustes") }
             }
         }
@@ -119,7 +124,7 @@ fun CalendarioScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { if (e.semana) vm.anterior() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage - 1) } }) { Icon(Iconos.ChevronIzq, if (e.semana) "Semana anterior" else "Mes anterior") }
                 // Tocar el mes abre «Ir a…» para saltar a cualquier mes y año.
-                TextButton(onClick = { eligiendoMes = true }) {
+                TextButton(onClick = { eligiendoMes = true }, modifier = Modifier.weight(1f, fill = false)) {
                     // El nombre del mes entra por el lado hacia el que avanzas.
                     AnimatedContent(
                         targetState = mesVisible,
@@ -130,14 +135,12 @@ fun CalendarioScreen(
                         },
                         label = "mes",
                     ) { mes ->
-                        Text(nombreMes(mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(nombreMes(mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, softWrap = false)
                     }
                 }
                 IconButton(onClick = { if (e.semana) vm.siguiente() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage + 1) } }) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
                 Spacer(Modifier.weight(1f))
                 io.github.alexcorrea2001lemon.nummia.ui.comun.ChipHoy(mesVisible != vm.hoy() || (e.semana && e.elegido != vm.hoyDia())) { vm.irAHoy() }
-                Spacer(Modifier.width(Espacio.s))
-                FilterChip(selected = e.semana, onClick = vm::alternarVista, label = { Text("Semana") })
             }
         }
         item {
@@ -271,7 +274,7 @@ private fun CeldaDia(celda: Celda, discreto: Boolean, modifier: Modifier, alPuls
             val neto = dia.ingreso - dia.gasto
             if (dia.gasto != 0L || dia.ingreso != 0L) {
                 Text(
-                    if (discreto) "••" else (if (neto < 0) "−" else "+") + compacto(neto),
+                    if (discreto) "••" else compacto(neto).let { if (it == "0") it else (if (neto < 0) "−" else "+") + it },
                     fontSize = 10.sp, lineHeight = 11.sp, maxLines = 1,
                     color = if (sobre) esquema.onPrimary else if (neto < 0) c.gasto else c.ingreso,
                 )

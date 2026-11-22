@@ -83,7 +83,7 @@ import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun MovimientosScreen(
     vm: MovimientosViewModel,
@@ -122,12 +122,14 @@ fun MovimientosScreen(
 
     Box(Modifier.fillMaxSize()) {
         LazyColumn(
+            // La lista empieza bajo la barra de estado: así la cabecera fija del día no queda debajo de la hora.
+            Modifier.statusBarsPadding(),
             contentPadding = PaddingValues(bottom = relleno.calculateBottomPadding() + 96.dp),
             // Separación mínima: los movimientos de un mismo día forman un solo bloque.
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             item {
-                Column(Modifier.statusBarsPadding().padding(horizontal = Espacio.l, vertical = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                Column(Modifier.padding(horizontal = Espacio.l, vertical = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
                     if (seleccionando) {
                         // Barra de selección: mantén pulsado un movimiento para elegir varios
                         Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(28.dp)) {
@@ -167,6 +169,8 @@ fun MovimientosScreen(
                                 io.github.alexcorrea2001lemon.nummia.ui.comun.TextoMes(e.mes, MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), MaterialTheme.colorScheme.onSurface)
                             }
                             IconButton(onClick = vm::mesSiguiente) { Icon(Iconos.ChevronDer, "Mes siguiente") }
+                            Spacer(Modifier.weight(1f))
+                            io.github.alexcorrea2001lemon.nummia.ui.comun.ChipHoy(e.mes != java.time.YearMonth.from(e.hoy)) { vm.irAMes(vm.hoyMes()) }
                         }
                     }
                     // 2) Buscar y filtrar
@@ -182,7 +186,7 @@ fun MovimientosScreen(
                                 focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh, unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             ),
-                            modifier = Modifier.weight(1f).semantics { contentDescription = "Buscar por nombre, tienda, importe o fecha" },
+                            modifier = Modifier.weight(1f).semantics { contentDescription = "Buscar por nombre, tienda, fecha o importe; por ejemplo, más de 50 euros escribiendo mayor que 50" },
                         )
                         BadgedBox(badge = { if (e.filtros.avanzados > 0) Badge { Text("${e.filtros.avanzados}") } }) {
                             IconButton(onClick = { verFiltros = true }) { Icon(Iconos.Filtro, "Filtros y orden") }
@@ -231,7 +235,7 @@ fun MovimientosScreen(
             if (e.grupos.all { it.filas.isEmpty() } && !e.cargando) {
                 item {
                     if (e.filtros.texto.isNotBlank() || e.filtros.avanzados > 0) {
-                        EstadoVacio(Iconos.Buscar, "Sin resultados", "Prueba con otra palabra, otro importe o quita algún filtro.")
+                        EstadoVacio(Iconos.Buscar, "Sin resultados", "Prueba con otra palabra, una fecha, un importe (>50, <10 o 20-30) o quita algún filtro.")
                     } else {
                         EstadoVacio(Iconos.Bolsa, "Nada apuntado en ${nombreMesMinuscula(e.mes)}", "Cuando añadas gastos o ingresos aparecerán aquí, agrupados por día.", accion = "Añadir gasto", alPulsar = alAnadirGasto)
                     }
@@ -240,10 +244,17 @@ fun MovimientosScreen(
 
             e.grupos.forEach { g ->
                 if (g.fecha != LocalDate.MIN) {
-                    item(key = "d" + g.fecha) {
-                        Row(Modifier.padding(start = Espacio.l + Espacio.s, end = Espacio.l + Espacio.s, top = Espacio.l, bottom = Espacio.xs)) {
+                    // La cabecera del día se queda fija arriba mientras ves sus movimientos.
+                    stickyHeader(key = "d" + g.fecha) {
+                        Row(
+                            Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
+                                .padding(start = Espacio.l + Espacio.s, end = Espacio.l + Espacio.s, top = Espacio.l, bottom = Espacio.xs),
+                        ) {
                             Text(fechaCabecera(g.fecha, e.hoy, conAnio = e.buscandoEnTodo || g.fecha.year != e.hoy.year), style = MaterialTheme.typography.labelLarge, color = c.textoSuave, modifier = Modifier.weight(1f))
-                            Text("Total del día ${formatearEuros(g.total, conSigno = true, discreto = e.discreto)}", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
+                            // Con un solo movimiento, el total sería el mismo importe: no se repite.
+                            if (g.filas.size > 1) {
+                                Text("Total del día ${formatearEuros(g.total, conSigno = true, discreto = e.discreto)}", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
+                            }
                         }
                     }
                 }
@@ -411,11 +422,11 @@ private fun HojaFiltros(
         if (categorias.isNotEmpty()) FilaOpciones("Categoría", categorias, categoria) { categoria = it }
         if (tiendas.isNotEmpty()) FilaOpciones("Tienda", tiendas.map { it to it }, tienda) { tienda = it }
         if (personas.isNotEmpty()) FilaOpciones("Persona", personas, persona) { persona = it }
-        Text("Reembolsos", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text("Devoluciones", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
             FilterChip(selected = conReembolso == null, onClick = { conReembolso = null }, label = { Text("Todos") })
-            FilterChip(selected = conReembolso == true, onClick = { conReembolso = true }, label = { Text("Con reembolso") })
-            FilterChip(selected = conReembolso == false, onClick = { conReembolso = false }, label = { Text("Sin reembolso") })
+            FilterChip(selected = conReembolso == true, onClick = { conReembolso = true }, label = { Text("Con devolución") })
+            FilterChip(selected = conReembolso == false, onClick = { conReembolso = false }, label = { Text("Sin devolución") })
         }
         Text("Importe", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {

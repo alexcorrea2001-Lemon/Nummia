@@ -2,6 +2,7 @@ package io.github.alexcorrea2001lemon.nummia.ui.calendario
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -21,7 +22,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -135,6 +135,8 @@ fun CalendarioScreen(
                 }
                 IconButton(onClick = { if (e.semana) vm.siguiente() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage + 1) } }) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
                 Spacer(Modifier.weight(1f))
+                io.github.alexcorrea2001lemon.nummia.ui.comun.ChipHoy(mesVisible != vm.hoy() || (e.semana && e.elegido != vm.hoyDia())) { vm.irAHoy() }
+                Spacer(Modifier.width(Espacio.s))
                 FilterChip(selected = e.semana, onClick = vm::alternarVista, label = { Text("Semana") })
             }
         }
@@ -244,31 +246,35 @@ private fun CeldaDia(celda: Celda, discreto: Boolean, modifier: Modifier, alPuls
         if (dia != null && dia.gasto != 0L) append(", gasto ${formatearEuros(dia.gasto)}")
         if (dia != null && dia.ingreso != 0L) append(", ingresos ${formatearEuros(dia.ingreso)}")
         if (dia?.previsto == true) append(", con movimientos previstos")
+        if (celda.esHoy) append(", hoy")
     }
     Column(
         modifier
             .aspectRatio(0.78f)
             .clip(RoundedCornerShape(12.dp))
             .background(fondo)
-            .then(if (celda.esHoy && !celda.elegido) Modifier.border(BorderStroke(1.5.dp, esquema.primary), RoundedCornerShape(12.dp)) else Modifier)
             .clickable(onClick = alPulsar)
             .semantics { contentDescription = descripcion }
             .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Text("${celda.fecha.dayOfMonth}", style = MaterialTheme.typography.bodyMedium, fontWeight = if (celda.esHoy) FontWeight.Bold else FontWeight.Medium, color = texto)
+        Text(
+            "${celda.fecha.dayOfMonth}", style = MaterialTheme.typography.bodyMedium, fontWeight = if (celda.esHoy) FontWeight.Bold else FontWeight.Medium,
+            color = if (celda.esHoy && !celda.elegido) esquema.primary else texto,
+        )
+        // Hoy: un punto bajo el número.
+        if (celda.esHoy) Box(Modifier.size(4.dp).background(if (celda.elegido) esquema.onPrimary else esquema.primary, CircleShape))
         if (dia != null && celda.delMes) {
             val sobre = celda.elegido
-            if (dia.gasto != 0L) {
+            // Un solo importe por día: lo que entró menos lo que gastaste, en verde o en rojo.
+            val neto = dia.ingreso - dia.gasto
+            if (dia.gasto != 0L || dia.ingreso != 0L) {
                 Text(
-                    if (discreto) "••" else (if (dia.gasto > 0) "−" else "+") + compacto(dia.gasto),
+                    if (discreto) "••" else (if (neto < 0) "−" else "+") + compacto(neto),
                     fontSize = 10.sp, lineHeight = 11.sp, maxLines = 1,
-                    color = if (sobre) esquema.onPrimary else if (dia.gasto > 0) c.gasto else c.ingreso,
+                    color = if (sobre) esquema.onPrimary else if (neto < 0) c.gasto else c.ingreso,
                 )
-            }
-            if (dia.ingreso != 0L) {
-                Text(if (discreto) "••" else "+" + compacto(dia.ingreso), fontSize = 10.sp, lineHeight = 11.sp, maxLines = 1, color = if (sobre) esquema.onPrimary else c.ingreso)
             }
             if (dia.previsto) {
                 Box(Modifier.size(6.dp).border(1.2.dp, if (sobre) esquema.onPrimary else c.textoSuave, CircleShape))

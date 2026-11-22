@@ -29,8 +29,36 @@ data class GrupoDia(val fecha: LocalDate, val total: Long, val filas: List<FilaM
 fun normalizar(s: String): String =
     Normalizer.normalize(s, Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "").lowercase()
 
+private val NUM = """\d+(?:[.,]\d{1,2})?"""
+private val MAYOR_MENOR = Regex("^([<>])\\s*($NUM)$")
+private val RANGO = Regex("^($NUM)\\s*-\\s*($NUM)$")
+
+private fun centimos(s: String): Long? = io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte(s).getOrNull()
+
+/**
+ * Buscar por importe: «>50» (más de 50 €), «<10» (menos de 10 €) o «20-30» (entre 20 y 30 €, ambos incluidos).
+ * «15-03» se deja como fecha: si el segundo número podría ser un mes (1–12) y no lleva decimales, es una fecha.
+ */
+fun rangoImporte(texto: String): LongRange? {
+    val t = texto.replace("€", "").replace('\u00A0', ' ').trim()
+    MAYOR_MENOR.find(t)?.let { m ->
+        val v = centimos(m.groupValues[2]) ?: return null
+        return if (m.groupValues[1] == ">") (v + 1)..Long.MAX_VALUE else 0L..(v - 1).coerceAtLeast(0)
+    }
+    RANGO.find(t)?.let { m ->
+        val (x, y) = m.groupValues[1] to m.groupValues[2]
+        val pareceFecha = x.all { it.isDigit() } && y.all { it.isDigit() } && x.toInt() in 1..31 && y.toInt() in 1..12
+        if (pareceFecha) return null
+        val a = centimos(x) ?: return null
+        val b = centimos(y) ?: return null
+        return minOf(a, b)..maxOf(a, b)
+    }
+    return null
+}
+
 fun aplicar(filas: List<FilaMov>, f: Filtros): List<FilaMov> {
-    val q = normalizar(f.texto.trim())
+    val rango = rangoImporte(f.texto)
+    val q = if (rango != null) "" else normalizar(f.texto.trim())
     val tienda = f.tienda?.let { normalizar(it.trim()) }
     return filas.asSequence()
         .filter {
@@ -46,6 +74,7 @@ fun aplicar(filas: List<FilaMov>, f: Filtros): List<FilaMov> {
                 normalizar(it.subtitulo).contains(q) || coincideImporte(it, q) || coincideFecha(it.fecha, q)
         }
         .filter { f.conReembolso == null || (it.esGasto && (it.pagado != null || it.etiqueta is EtiquetaMov.AFavor) == f.conReembolso) }
+        .filter { rango == null || kotlin.math.abs(it.importe) in rango }
         .filter { f.minimo == null || kotlin.math.abs(it.importe) >= f.minimo }
         .filter { f.maximo == null || kotlin.math.abs(it.importe) <= f.maximo }
         .filter { f.categoria == null || it.categoriaId == f.categoria }

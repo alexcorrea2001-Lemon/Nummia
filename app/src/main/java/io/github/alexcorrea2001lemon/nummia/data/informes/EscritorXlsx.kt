@@ -197,7 +197,7 @@ fun hojasDeInforme(inf: Informe): List<HojaXlsx> {
             "Resumen",
             encabezado + listOf(
                 cab("Concepto", "Importe"),
-                listOf(t("Ingresos"), e(r.ingresos)), listOf(t("Pagado"), e(r.pagado)), listOf(t("Reembolsos"), e(r.reembolsos)),
+                listOf(t("Ingresos"), e(r.ingresos)), listOf(t("Pagado"), e(r.pagado)), listOf(t("Devoluciones"), e(r.reembolsos)),
                 listOf(t("Gasto real", Estilo.NEGRITA), Valor.Euros(r.gastoReal)),
                 listOf(t("Balance", Estilo.TOTAL), e(r.balance, true)),
                 emptyList(),
@@ -209,7 +209,7 @@ fun hojasDeInforme(inf: Informe): List<HojaXlsx> {
     if (Contenido.MESES in inf.contenidos && inf.meses.isNotEmpty()) {
         res += HojaXlsx(
             "Mes a mes",
-            encabezado + listOf(cab("Mes", "Ingresos", "Pagado", "Reembolsos", "Gasto real", "Balance")) +
+            encabezado + listOf(cab("Mes", "Ingresos", "Pagado", "Devoluciones", "Gasto real", "Balance")) +
                 inf.meses.map { (m, r: Resumen) -> listOf(t(m), e(r.ingresos), e(r.pagado), e(r.reembolsos), e(r.gastoReal), e(r.balance)) } +
                 listOf(listOf(t("Total", Estilo.TOTAL), e(inf.resumen.ingresos, true), e(inf.resumen.pagado, true), e(inf.resumen.reembolsos, true), e(inf.resumen.gastoReal, true), e(inf.resumen.balance, true))),
             listOf(20, 15, 15, 15, 15, 15), primeraFila,

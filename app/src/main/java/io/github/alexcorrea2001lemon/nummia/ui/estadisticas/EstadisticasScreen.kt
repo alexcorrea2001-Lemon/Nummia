@@ -147,12 +147,12 @@ private fun LazyListScope.pestanaMes(e: EstadoEst, vm: EstadisticasViewModel) {
             Linea("Sueldo", m.sueldo, e.discreto)
             Linea("Otros ingresos", m.otros, e.discreto)
             Linea("Pagado", m.resumen.pagado, e.discreto)
-            Linea("Reembolsos", m.resumen.reembolsos, e.discreto)
+            Linea("Devoluciones", m.resumen.reembolsos, e.discreto)
             Linea("Gasto real", m.resumen.gastoReal, e.discreto, LocalColoresNummia.current.gasto)
             HorizontalDivider(color = LocalColoresNummia.current.borde)
             Linea("Balance", m.resumen.balance, e.discreto, if (m.resumen.balance >= 0) LocalColoresNummia.current.ingreso else LocalColoresNummia.current.gasto, signo = true, fuerte = true)
             LineaTexto("Ahorrado", formatearPorMil(m.resumen.ahorroPorMil))
-            m.tardio?.let { Text("Actualizado: reembolso recibido el ${fechaLarga(it).lowercase()}", style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave) }
+            m.tardio?.let { Text("Actualizado: devolución recibida el ${fechaLarga(it).lowercase()}", style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave) }
         }
     }
     item {

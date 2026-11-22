@@ -58,6 +58,7 @@ class DetalleViewModel @Inject constructor(
     estadoGuardado: SavedStateHandle,
     private val repo: MovimientosRepo,
     ajustesRepo: AjustesRepo,
+    private val reloj: io.github.alexcorrea2001lemon.nummia.domain.reloj.Reloj,
 ) : ViewModel() {
     val id: String = checkNotNull(estadoGuardado["id"])
 
@@ -83,7 +84,12 @@ class DetalleViewModel @Inject constructor(
     fun borrarReembolso(rid: String) = viewModelScope.launch { repo.borrarReembolso(rid) }
     fun editarReembolso(rid: String, importe: Long, fecha: LocalDate?, personaId: String?, nota: String) =
         viewModelScope.launch { repo.editarReembolso(rid, importe, fecha, personaId, nota) }
-    fun duplicar(alTerminar: (String) -> Unit) = viewModelScope.launch { alTerminar(repo.duplicarGasto(id)) }
+    /** Apunta hoy otro gasto igual y lo abre. */
+    fun repetirHoy(alTerminar: (String) -> Unit) = viewModelScope.launch {
+        val nuevo = repo.repetirGasto(id, reloj.hoy())
+        io.github.alexcorrea2001lemon.nummia.ui.comun.Hecho.avisar("Apuntado otra vez hoy")
+        alTerminar(nuevo)
+    }
     fun borrar(alTerminar: () -> Unit) = viewModelScope.launch { repo.borrarGasto(id); alTerminar() }
     fun deshacerBorrado() = viewModelScope.launch { repo.deshacerBorradoGasto(id) }
 }

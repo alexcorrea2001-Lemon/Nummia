@@ -516,7 +516,7 @@ fun AcercaScreen(vm: AjustesViewModel, act: ActualizarViewModel, alVolver: () ->
     }
 }
 
-private val TEXTO_PRIVACIDAD = "Privacidad" to """Nummia guarda solo lo que tú escribes: gastos, ingresos, reembolsos, personas y ajustes.
+private val TEXTO_PRIVACIDAD = "Privacidad" to """Nummia guarda solo lo que tú escribes: gastos, ingresos, devoluciones, personas y ajustes.
 
 • Tus datos están en tu móvil, en una base de datos cifrada.
 • No hay servidores propios: tus datos nunca pasan por el desarrollador.

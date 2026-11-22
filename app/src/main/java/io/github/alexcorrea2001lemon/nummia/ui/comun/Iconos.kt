@@ -39,6 +39,7 @@ object Iconos {
     val Persona by lazy { trazo("persona", "M12 11a4 4 0 1 0 0-8a4 4 0 1 0 0 8zM4 21a8 8 0 0 1 16 0") }
     val FlechaAbajo by lazy { trazo("flecha_abajo", "M12 5v14M5 12l7 7 7-7", grosor = 2f) }
     val Arrastrar by lazy { trazo("arrastrar", "M5 9h14M5 15h14", grosor = 2f) }
+    val Nota by lazy { trazo("nota", "M5 4h14v11l-5 5H5zM14 20v-5h5M8 9h8M8 13h5") }
     val Lapiz by lazy { trazo("lapiz", "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4") }
     val Papelera by lazy { trazo("papelera", "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3") }
     val Mas by lazy { trazo("mas", "M12 5v14M5 12h14", grosor = 2.4f) }

@@ -147,7 +147,7 @@ fun FormularioReembolsoScreen(vm: FormularioReembolsoViewModel, alCerrar: () -> 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(if (f.gasto == null) "¿Qué te han devuelto?" else "Nuevo reembolso") },
+                title = { Text(if (f.gasto == null) "¿Qué te han devuelto?" else "Nueva devolución") },
                 navigationIcon = { IconButton(onClick = alCerrar) { Icon(Iconos.Cerrar, "Cerrar") } },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
@@ -156,7 +156,7 @@ fun FormularioReembolsoScreen(vm: FormularioReembolsoViewModel, alCerrar: () -> 
             if (f.gasto != null) {
                 Surface(color = MaterialTheme.colorScheme.background, border = BorderStroke(1.dp, c.borde)) {
                     Button(onClick = vm::guardar, enabled = !f.guardando, modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(Espacio.l)) {
-                        Text("Guardar reembolso", fontWeight = FontWeight.Bold)
+                        Text("Guardar devolución", fontWeight = FontWeight.Bold)
                     }
                 }
             }

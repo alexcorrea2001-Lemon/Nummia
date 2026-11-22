@@ -96,3 +96,19 @@ fun SelectorMes(actual: YearMonth, hoy: YearMonth, alCerrar: () -> Unit, alElegi
         dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },
     )
 }
+
+/** Chip «Hoy»: solo aparece cuando no estás en el mes actual y te devuelve a él con un toque. */
+@androidx.compose.runtime.Composable
+fun ChipHoy(visible: Boolean, alPulsar: () -> Unit) {
+    androidx.compose.animation.AnimatedVisibility(
+        visible,
+        enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f),
+        exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(targetScale = 0.8f),
+    ) {
+        androidx.compose.material3.AssistChip(
+            onClick = alPulsar,
+            label = { androidx.compose.material3.Text("Hoy") },
+            modifier = androidx.compose.ui.Modifier.semantics { contentDescription = "Volver al mes actual" },
+        )
+    }
+}

@@ -116,7 +116,7 @@ fun InicioScreen(
         horizontalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
         item(span = todaLaFila) {
-            Cabecera(e, vm::mesAnterior, vm::mesSiguiente, { eligiendoMes = true }, alBuscar, alAjustes) {
+            Cabecera(e, vm::mesAnterior, vm::mesSiguiente, { eligiendoMes = true }, alBuscar, alAjustes, vm::irAHoy) {
                 io.github.alexcorrea2001lemon.nummia.ui.drive.IconoEstadoDrive(alDrive)
             }
         }
@@ -271,7 +271,7 @@ fun InicioScreen(
 }
 
 @Composable
-private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Unit, hoy: () -> Unit, buscar: () -> Unit, ajustes: () -> Unit, estadoDrive: @Composable () -> Unit) {
+private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Unit, hoy: () -> Unit, buscar: () -> Unit, ajustes: () -> Unit, irAHoy: () -> Unit, estadoDrive: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
         // El mes ocupa el espacio que sobra: los iconos de la derecha siempre tienen el mismo tamaño.
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -283,6 +283,7 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
             }
             IconButton(onClick = siguiente, modifier = Modifier.size(40.dp)) { Icon(Iconos.ChevronDer, "Mes siguiente") }
         }
+        io.github.alexcorrea2001lemon.nummia.ui.comun.ChipHoy(e.mes != java.time.YearMonth.now(), irAHoy)
         estadoDrive()
         IconButton(onClick = ajustes) { Icon(Iconos.Ajustes, "Ajustes") }
     }
@@ -350,7 +351,7 @@ private fun Indicadores(e: InicioEstado, alPulsar: () -> Unit) {
         }
         HorizontalDivider(color = c.borde)
         Row(Modifier.height(IntrinsicSize.Min)) {
-            Indicador("Reembolsos", e.resumen.reembolsos, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
+            Indicador("Devoluciones", e.resumen.reembolsos, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
             VerticalDivider(color = c.borde)
             Indicador("Gasto real", e.resumen.gastoReal, c.gasto, e.discreto, Modifier.weight(1f))
         }

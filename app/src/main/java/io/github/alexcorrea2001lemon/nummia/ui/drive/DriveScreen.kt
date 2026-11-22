@@ -78,7 +78,7 @@ private fun describir(pestana: String, firma: String?): String {
         when (Pestana.valueOf(pestana)) {
             Pestana.GASTOS -> "${c[3]} · ${euros(c[4])} · ${fecha(c[1])}"
             Pestana.INGRESOS -> "${c[2]} · ${euros(c[4])} · ${fecha(c[1])}"
-            Pestana.REEMBOLSOS -> "Reembolso de ${c[1]} · ${euros(c[3])}"
+            Pestana.REEMBOLSOS -> "Devolución de ${c[1]} · ${euros(c[3])}"
         }
     }.getOrDefault("—")
 }

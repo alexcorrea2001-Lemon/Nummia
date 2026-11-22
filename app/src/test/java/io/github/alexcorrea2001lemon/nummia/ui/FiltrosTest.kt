@@ -7,6 +7,8 @@ import io.github.alexcorrea2001lemon.nummia.ui.movimientos.Orden
 import io.github.alexcorrea2001lemon.nummia.ui.movimientos.Pestana
 import io.github.alexcorrea2001lemon.nummia.ui.movimientos.agrupar
 import io.github.alexcorrea2001lemon.nummia.ui.movimientos.aplicar
+import io.github.alexcorrea2001lemon.nummia.ui.movimientos.rangoImporte
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.LocalDate
@@ -35,6 +37,23 @@ class FiltrosTest {
         assertEquals(4, aplicar(filas, Filtros(texto = "enero de 2030")).size)
         assertEquals(0, aplicar(filas, Filtros(texto = "febrero")).size)
         assertEquals(4, aplicar(filas, Filtros(texto = "2030")).size)
+    }
+
+    @Test fun buscarConMayorMenorORango() {
+        assertEquals(listOf("2", "3", "4"), aplicar(filas, Filtros(texto = ">50")).map { it.id })
+        assertEquals(listOf("1"), aplicar(filas, Filtros(texto = "< 10 €")).map { it.id })
+        assertEquals(listOf("2", "3"), aplicar(filas, Filtros(texto = "100-400")).map { it.id })
+        assertEquals(listOf("1"), aplicar(filas, Filtros(texto = "2,50 - 3")).map { it.id })
+    }
+
+    @Test fun queEsUnRangoDeImportes() {
+        assertEquals(5001L..Long.MAX_VALUE, rangoImporte(">50"))
+        assertEquals(0L..999L, rangoImporte("<10"))
+        assertEquals(2000L..3000L, rangoImporte("20-30"))
+        assertEquals(2000L..3000L, rangoImporte("30-20")) // al revés también
+        assertNull(rangoImporte("15-03")) // es una fecha (15 de marzo)
+        assertNull(rangoImporte("café"))
+        assertNull(rangoImporte("50"))
     }
 
     @Test fun buscaPorImporte() {

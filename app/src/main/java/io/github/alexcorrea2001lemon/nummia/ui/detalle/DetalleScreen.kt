@@ -194,15 +194,15 @@ fun DetalleScreen(
                         Cifra("Devuelto", formatearEuros(e.devuelto, discreto = e.discreto), Modifier.weight(1f), c.ingreso)
                         Cifra("Falta", if (gasto.meLoDevuelven) formatearEuros(e.falta, discreto = e.discreto) else "—", Modifier.weight(1f), if (e.falta > 0) c.aviso else Color.Unspecified)
                     }
-                    e.tardio?.let { Text("Actualizado: reembolso recibido el ${fechaCorta(it)}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave) }
+                    e.tardio?.let { Text("Actualizado: devolución recibida el ${fechaCorta(it)}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave) }
                 }
             }
 
             item {
                 Tarjeta(relleno = false) {
-                    Text("Reembolsos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = Espacio.l, top = Espacio.l))
+                    Text("Devoluciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = Espacio.l, top = Espacio.l))
                     if (g.activos.isEmpty()) {
-                        Text("Aún no hay reembolsos.", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.padding(horizontal = Espacio.l))
+                        Text("Aún no hay devoluciones.", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.padding(horizontal = Espacio.l))
                     }
                     g.activos.sortedBy { it.createdAt }.forEach { r ->
                         Row(Modifier.fillMaxWidth().padding(horizontal = Espacio.l, vertical = Espacio.s), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
@@ -212,11 +212,11 @@ fun DetalleScreen(
                                 Text(r.fecha?.let(::fechaCorta) ?: "Sin fecha", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
                             }
                             Text(formatearEuros(r.importe, conSigno = true, discreto = e.discreto), color = c.ingreso, fontWeight = FontWeight.SemiBold)
-                            IconButton(onClick = { borrandoReembolso = r }) { Icon(Iconos.Papelera, "Borrar reembolso ${r.codigo}", tint = c.textoSuave) }
+                            IconButton(onClick = { borrandoReembolso = r }) { Icon(Iconos.Papelera, "Borrar devolución ${r.codigo}", tint = c.textoSuave) }
                         }
                     }
                     Row(Modifier.fillMaxWidth().padding(Espacio.l), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                        Button(onClick = { alAnadirReembolso(gasto.id) }, modifier = Modifier.weight(1f)) { Text("Añadir reembolso") }
+                        Button(onClick = { alAnadirReembolso(gasto.id) }, modifier = Modifier.weight(1f)) { Text("Añadir devolución") }
                         val hayPendiente = if (gasto.meLoDevuelven) e.falta > 0 else e.real > 0
                         OutlinedButton(onClick = vm::devueltoEntero, enabled = hayPendiente, modifier = Modifier.weight(1f)) { Text("Devuelto entero") }
                     }
@@ -267,8 +267,8 @@ fun DetalleScreen(
 
             item {
                 Row(Modifier.fillMaxWidth().navigationBarsPadding(), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                    OutlinedButton(onClick = { vm.duplicar { nuevo -> alAbrirGasto(nuevo) } }, modifier = Modifier.weight(1f)) {
-                        Icon(Iconos.Duplicar, null, Modifier.size(18.dp)); Text("  Duplicar")
+                    OutlinedButton(onClick = { haptica(); vm.repetirHoy { nuevo -> alAbrirGasto(nuevo) } }, modifier = Modifier.weight(1f)) {
+                        Icon(Iconos.Duplicar, null, Modifier.size(18.dp)); Text("  Repetir hoy")
                     }
                     OutlinedButton(
                         onClick = {
@@ -290,7 +290,7 @@ fun DetalleScreen(
     borrandoReembolso?.let { r ->
         AlertDialog(
             onDismissRequest = { borrandoReembolso = null },
-            title = { Text("¿Borrar el reembolso ${r.codigo}?") },
+            title = { Text("¿Borrar la devolución ${r.codigo}?") },
             text = { Text("El gasto real volverá a subir ${formatearEuros(r.importe)}.") },
             confirmButton = { TextButton(onClick = { vm.borrarReembolso(r.id); borrandoReembolso = null }) { Text("Borrar") } },
             dismissButton = { TextButton(onClick = { borrandoReembolso = null }) { Text("Cancelar") } },
@@ -302,8 +302,8 @@ private fun textoHistorial(campo: String, antes: String?, despues: String?): Str
     "creado" -> "Creado${despues?.let { " ($it)" }.orEmpty()}"
     "borrado" -> "Borrado"
     "restaurado" -> "Restaurado"
-    "reembolso" -> "Reembolso añadido: ${despues.orEmpty()}"
-    "reembolso borrado" -> "Reembolso borrado: ${antes.orEmpty()}"
+    "reembolso" -> "Devolución añadida: ${despues.orEmpty()}"
+    "reembolso borrado" -> "Devolución borrada: ${antes.orEmpty()}"
     else -> "${campo.replaceFirstChar { it.uppercase() }}: ${antes ?: "—"} → ${despues ?: "—"}"
 }
 

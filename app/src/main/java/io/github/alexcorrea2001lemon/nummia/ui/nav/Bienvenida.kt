@@ -73,7 +73,7 @@ fun Bienvenida(alTerminar: (Long?, String?) -> Unit) {
                     ImagenLogo(Logo.A, Acento.VIOLETA, Modifier.size(80.dp))
                     Text("Bienvenido a Nummia", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     Text("Apunta lo que gastas y lo que ganas. Nummia hace las cuentas por ti.", style = MaterialTheme.typography.bodyLarge, color = LocalColoresNummia.current.textoSuave)
-                    Punto(Iconos.Bolsa, "Gastos y reembolsos", "Aunque te devuelvan el dinero en varias veces o redondeen hacia arriba.")
+                    Punto(Iconos.Bolsa, "Gastos y devoluciones", "Aunque te devuelvan el dinero en varias veces o redondeen hacia arriba.")
                     Punto(Iconos.Persona, "Lo que te deben", "Si pagas algo por otra persona, Nummia te recuerda cuánto falta.")
                     Punto(Iconos.Escudo, "Tus datos son tuyos", "Se guardan cifrados en tu móvil. Sin anuncios ni rastreo.")
                     OutlinedTextField(

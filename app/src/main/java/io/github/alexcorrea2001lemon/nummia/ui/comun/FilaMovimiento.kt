@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import io.github.alexcorrea2001lemon.nummia.data.db.GastoConReembolsos
 import io.github.alexcorrea2001lemon.nummia.data.db.IngresoEntity
 import io.github.alexcorrea2001lemon.nummia.data.repo.devuelto
@@ -54,6 +55,8 @@ data class FilaMov(
     val creado: Long,
     val categoriaId: String? = null,
     val personaId: String? = null,
+    /** Tiene notas escritas (se marca con un icono pequeño). */
+    val conNotas: Boolean = false,
 )
 
 private val nombresTipo = mapOf(
@@ -77,12 +80,12 @@ fun GastoConReembolsos.aFila(personas: Map<String, String>, categorias: Map<Stri
         g.tienda.takeIf { it.isNotBlank() && !it.equals(g.concepto, ignoreCase = true) },
         g.categoriaId?.let(categorias::get),
     ).joinToString(" · ").ifEmpty { g.codigo }
-    return FilaMov(g.id, true, g.concepto, sub, real, g.importe.takeIf { devuelto > 0 }, g.fecha, g.tienda, etiqueta, g.createdAt, g.categoriaId, g.personaId)
+    return FilaMov(g.id, true, g.concepto, sub, real, g.importe.takeIf { devuelto > 0 }, g.fecha, g.tienda, etiqueta, g.createdAt, g.categoriaId, g.personaId, g.notas.isNotBlank())
 }
 
 fun IngresoEntity.aFila(): FilaMov = FilaMov(
     id, false, concepto, "Ingreso · ${nombreTipo(tipo).lowercase()}", importe, null, fecha, "",
-    if (estado == Estado.PREVISTO) EtiquetaMov.Previsto else null, createdAt,
+    if (estado == Estado.PREVISTO) EtiquetaMov.Previsto else null, createdAt, conNotas = notas.isNotBlank(),
 )
 
 @Composable
@@ -91,7 +94,7 @@ fun EtiquetaDe(e: EtiquetaMov) {
     val esquema = MaterialTheme.colorScheme
     when (e) {
         EtiquetaMov.DevueltoTotal -> Etiqueta("Devuelto 100 %", c.ingresoFondo, c.ingreso)
-        is EtiquetaMov.Parcial -> Etiqueta("Parcial ${formatearEuros(e.devuelto)}", c.avisoFondo, c.aviso)
+        is EtiquetaMov.Parcial -> Etiqueta("Te devolvieron ${formatearEuros(e.devuelto)}", c.avisoFondo, c.aviso)
         is EtiquetaMov.TeDeben -> Etiqueta(e.persona?.let { "Te deben · $it" } ?: "Te deben", c.avisoFondo, c.aviso)
         EtiquetaMov.Previsto -> Etiqueta("Previsto", esquema.surfaceVariant, c.textoSuave)
         is EtiquetaMov.AFavor -> Etiqueta("+${formatearEuros(e.cantidad)} a tu favor", c.ingresoFondo, c.ingreso)
@@ -115,7 +118,10 @@ fun FilaMovimiento(
     ) {
         if (seleccionado) Avatar("", MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary, Iconos.Check) else AvatarMov(f)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(f.titulo, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                Text(f.titulo, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (f.conNotas) androidx.compose.material3.Icon(Iconos.Nota, "Tiene notas", Modifier.size(14.dp), tint = c.textoSuave)
+            }
             Text(f.subtitulo, style = MaterialTheme.typography.bodySmall, color = c.textoSuave, maxLines = 1, overflow = TextOverflow.Ellipsis)
             f.etiqueta?.let { EtiquetaDe(it) }
         }

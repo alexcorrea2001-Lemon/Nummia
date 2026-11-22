@@ -351,7 +351,7 @@ private fun MenuAnadir(abierto: Boolean, alAlternar: () -> Unit, alElegir: (Stri
         val opciones = listOf(
             Triple("Gasto", Iconos.Bolsa, Rutas.gasto()),
             Triple("Ingreso", Iconos.Euro, Rutas.ingreso()),
-            Triple("Reembolso", Iconos.FlechaAbajo, Rutas.reembolso()),
+            Triple("Devolución", Iconos.FlechaAbajo, Rutas.reembolso()),
             Triple("Pago para otra persona", Iconos.Persona, Rutas.gasto(paraOtro = true)),
         )
         opciones.forEachIndexed { i, (texto, icono, destino) ->

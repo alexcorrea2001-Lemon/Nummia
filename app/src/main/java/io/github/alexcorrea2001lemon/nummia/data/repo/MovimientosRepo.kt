@@ -614,6 +614,17 @@ class MovimientosRepo @Inject constructor(
     }
 
     /** Guarda el orden elegido arrastrando (el de los chips del formulario y las listas). */
+    /** «Repetir hoy»: un gasto nuevo igual (concepto, tienda, categoría, importe y a quién), sin notas ni devoluciones. */
+    suspend fun repetirGasto(id: String, fecha: LocalDate): String {
+        val g = requireNotNull(db.gastos().obtener(id))
+        return guardarGasto(
+            GastoInput(
+                fecha = fecha, concepto = g.concepto, tienda = g.tienda, categoriaId = g.categoriaId, importe = g.importe,
+                meLoDevuelven = g.meLoDevuelven, personaId = g.personaId, esperado = g.importeEsperado,
+            ),
+        )
+    }
+
     suspend fun ordenarCategorias(ids: List<String>) = db.withTransaction {
         val todas = db.categorias().volcar().associateBy { it.id }
         ids.forEachIndexed { n, id -> todas[id]?.takeIf { it.orden != n }?.let { db.categorias().guardar(it.copy(orden = n)) } }

@@ -82,7 +82,7 @@ fun ImportarScreen(vm: ImportarViewModel, alVolver: () -> Unit, alTerminar: () -
                     is EstadoImportar.Hecho -> Tarjeta {
                         EstadoVacio(
                             Iconos.Check, "¡Importado!",
-                            "${s.r.gastos} gastos, ${s.r.reembolsos} reembolsos y ${s.r.ingresos} ingresos de ${s.anio}. Ya los tienes en Movimientos y en Estadísticas.",
+                            "${s.r.gastos} gastos, ${s.r.reembolsos} devoluciones y ${s.r.ingresos} ingresos de ${s.anio}. Ya los tienes en Movimientos y en Estadísticas.",
                             accion = "Listo", alPulsar = alTerminar,
                         )
                     }
@@ -111,7 +111,7 @@ private fun Vista(v: EstadoImportar.Vista, personas: List<PersonaEntity>, vm: Im
             Text("${a.anio}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             IconButton(onClick = { vm.cambiarAnio(a.anio + 1) }) { Icon(Iconos.ChevronDer, "Año siguiente") }
         }
-        Text("${a.gastos.size} gastos · ${a.reembolsos} reembolsos · ${a.ingresos.size} ingresos", fontWeight = FontWeight.SemiBold)
+        Text("${a.gastos.size} gastos · ${a.reembolsos} devoluciones · ${a.ingresos.size} ingresos", fontWeight = FontWeight.SemiBold)
         Text("Pagado ${formatearEuros(a.gastos.sumOf { it.importe })} · Ingresos ${formatearEuros(a.ingresos.sumOf { it.importe })}", color = c.textoSuave)
     }
 
@@ -152,7 +152,7 @@ private fun Vista(v: EstadoImportar.Vista, personas: List<PersonaEntity>, vm: Im
     // Pagos por otras personas
     Text("¿Pagaste algo por otra persona?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
     Text(
-        "Márcalo y elige quién te lo devuelve: aparecerá en «Te deben». Te enseño primero los que tienen reembolso.",
+        "Márcalo y elige quién te lo devuelve: aparecerá en «Te deben». Te enseño primero los que tienen devolución.",
         style = MaterialTheme.typography.bodyMedium, color = c.textoSuave,
     )
     val candidatos = a.gastos.withIndex().filter { verTodos || it.value.reembolso != null || it.index in v.porOtros }
@@ -179,10 +179,10 @@ private fun Vista(v: EstadoImportar.Vista, personas: List<PersonaEntity>, vm: Im
                 }
             }
         }
-        if (candidatos.isEmpty()) Text("Ningún gasto tiene reembolso.", modifier = Modifier.padding(Espacio.l), color = c.textoSuave)
+        if (candidatos.isEmpty()) Text("Ningún gasto tiene devolución.", modifier = Modifier.padding(Espacio.l), color = c.textoSuave)
         HorizontalDivider(color = c.borde)
         TextButton(onClick = { verTodos = !verTodos }, modifier = Modifier.padding(horizontal = Espacio.s)) {
-            Text(if (verTodos) "Ver solo los que tienen reembolso" else "Ver todos los gastos (${a.gastos.size})")
+            Text(if (verTodos) "Ver solo los que tienen devolución" else "Ver todos los gastos (${a.gastos.size})")
         }
     }
 

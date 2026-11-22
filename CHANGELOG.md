@@ -2,6 +2,22 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.2.0] - 2026-11-22
+
+### Nuevo
+- **Buscar por importe**: en Movimientos escribe `>50` (más de 50 €), `<10` (menos de 10 €) o `20-30` (entre 20 y 30 €).
+- **Botón «Hoy»** en Inicio, Movimientos y Calendario: aparece cuando no estás en el mes actual y te devuelve a él con un toque.
+- **«Repetir hoy»** en el detalle de un gasto: apunta hoy otro igual (mismo concepto, tienda, categoría e importe) y lo abre por si quieres cambiar algo. Sustituye a «Duplicar».
+- **Movimientos con notas** llevan un icono pequeño junto al nombre.
+- **La fecha de cada día se queda fija arriba** en Movimientos mientras bajas por sus movimientos.
+
+### Cambiado
+- **«Devolución» en toda la app** en lugar de «reembolso» (en informes también). La hoja de tu Drive no cambia.
+- La etiqueta **«Parcial 7,00 €» ahora dice «Te devolvieron 7,00 €»**.
+- **Sin «Total del día» repetido**: si un día tiene un solo movimiento, ya no se muestra (era el mismo importe).
+- **Calendario más claro**: cada día muestra un solo importe (lo que entró menos lo que gastaste) en verde o rojo, y hoy se marca con un punto.
+- Estadísticas: la pestaña «Dónde gasto» se llama **«Tiendas»**, así caben las cuatro en pantallas estrechas.
+
 ## [2.1.3] - 2026-11-22
 
 ### Cambiado

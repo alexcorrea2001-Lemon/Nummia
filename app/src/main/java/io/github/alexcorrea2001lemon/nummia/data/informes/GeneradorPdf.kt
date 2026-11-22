@@ -47,7 +47,7 @@ class GeneradorPdf(private val acento: Int = 0xFF7C5CD6.toInt()) {
         if (Contenido.RESUMEN in inf.contenidos) resumen(inf)
         if (Contenido.MESES in inf.contenidos && inf.meses.isNotEmpty()) {
             tabla(
-                "Mes a mes", listOf("Mes", "Ingresos", "Pagado", "Reembolsos", "Gasto real", "Balance"), listOf(0.24f, 0.152f, 0.152f, 0.152f, 0.152f, 0.152f),
+                "Mes a mes", listOf("Mes", "Ingresos", "Pagado", "Devoluciones", "Gasto real", "Balance"), listOf(0.24f, 0.152f, 0.152f, 0.152f, 0.152f, 0.152f),
                 inf.meses.map { (m, r) -> listOf(m, e(r.ingresos), e(r.pagado), e(r.reembolsos), e(r.gastoReal), e(r.balance)) },
                 total = listOf("Total", e(inf.resumen.ingresos), e(inf.resumen.pagado), e(inf.resumen.reembolsos), e(inf.resumen.gastoReal), e(inf.resumen.balance)),
             )
@@ -113,7 +113,7 @@ class GeneradorPdf(private val acento: Int = 0xFF7C5CD6.toInt()) {
         y += 22
         val r = inf.resumen
         val datos = listOf(
-            "Ingresos" to e(r.ingresos), "Pagado" to e(r.pagado), "Reembolsos" to e(r.reembolsos),
+            "Ingresos" to e(r.ingresos), "Pagado" to e(r.pagado), "Devoluciones" to e(r.reembolsos),
             "Gasto real" to e(r.gastoReal), "Balance" to e(r.balance), "Ahorro" to formatearPorMil(r.ahorroPorMil),
         )
         val w = util / 3

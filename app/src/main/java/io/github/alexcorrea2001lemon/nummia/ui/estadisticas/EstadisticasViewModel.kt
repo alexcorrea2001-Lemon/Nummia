@@ -38,7 +38,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
 
-enum class PestanaEst(val nombre: String) { MES("Mes"), ANIO("Año"), COMPARAR("Comparar"), DONDE("Dónde gasto") }
+enum class PestanaEst(val nombre: String) { MES("Mes"), ANIO("Año"), COMPARAR("Comparar"), DONDE("Tiendas") }
 enum class Periodo(val nombre: String) { MES("Este mes"), ANIO("Este año"), SIEMPRE("Desde siempre") }
 
 data class Seleccion(

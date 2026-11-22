@@ -401,9 +401,9 @@ private fun ElegirAnio(actual: Int, anios: List<Int>, alElegir: (Int) -> Unit, p
     var abierto by remember { mutableStateOf(false) }
     Box {
         if (principal) {
-            androidx.compose.material3.Button(onClick = { abierto = true }) { Text("$actual", fontWeight = FontWeight.Bold); Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp)) }
+            androidx.compose.material3.Button(onClick = { abierto = true }) { Text("$actual", fontWeight = FontWeight.Bold) }
         } else {
-            OutlinedButton(onClick = { abierto = true }) { Text("$actual"); Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp)) }
+            OutlinedButton(onClick = { abierto = true }) { Text("$actual") }
         }
         DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
             anios.forEach { a -> DropdownMenuItem(text = { Text("$a") }, onClick = { alElegir(a); abierto = false }) }

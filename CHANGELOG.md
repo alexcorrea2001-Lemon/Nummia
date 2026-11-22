@@ -2,6 +2,11 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.1.3] - 2026-11-22
+
+### Cambiado
+- Fuera la flecha morada junto al mes del Calendario y a los años de Comparar: se sigue tocando igual para elegir.
+
 ## [2.1.2] - 2026-11-22
 
 ### Mejorado

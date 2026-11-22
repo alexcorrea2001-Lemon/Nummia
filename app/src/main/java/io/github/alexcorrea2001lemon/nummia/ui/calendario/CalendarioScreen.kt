@@ -132,7 +132,6 @@ fun CalendarioScreen(
                     ) { mes ->
                         Text(nombreMes(mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                     }
-                    Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp))
                 }
                 IconButton(onClick = { if (e.semana) vm.siguiente() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage + 1) } }) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
                 Spacer(Modifier.weight(1f))

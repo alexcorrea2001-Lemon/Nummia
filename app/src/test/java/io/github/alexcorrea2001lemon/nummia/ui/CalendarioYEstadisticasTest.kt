@@ -13,6 +13,7 @@ import io.github.alexcorrea2001lemon.nummia.data.repo.MovimientosRepo
 import io.github.alexcorrea2001lemon.nummia.ui.calendario.CalendarioViewModel
 import io.github.alexcorrea2001lemon.nummia.ui.calendario.compacto
 import io.github.alexcorrea2001lemon.nummia.ui.calendario.semanasDelMes
+import io.github.alexcorrea2001lemon.nummia.ui.calendario.seisSemanas
 import io.github.alexcorrea2001lemon.nummia.ui.estadisticas.EstadisticasViewModel
 import io.github.alexcorrea2001lemon.nummia.ui.estadisticas.Periodo
 import io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst
@@ -106,5 +107,17 @@ class CalendarioYEstadisticasTest {
         vm.periodo(Periodo.SIEMPRE)
         val siempre = withTimeout(5_000) { vm.estado.first { it.sel.periodo == Periodo.SIEMPRE } }
         assertEquals(1500L, siempre.ranking.first { it.nombre == "Cafetería" }.total)
+    }
+
+    @Test fun laRejillaDelMesSiempreTieneSeisSemanas() {
+        // Así, al deslizar de un mes a otro, nada salta de sitio.
+        for (ym in listOf(YearMonth.of(2027, 2), YearMonth.of(2030, 1), YearMonth.of(2030, 3), YearMonth.of(2026, 8))) {
+            val s = seisSemanas(ym)
+            assertEquals(6, s.size)
+            assertTrue(s.all { it.size == 7 })
+            assertEquals(java.time.DayOfWeek.MONDAY, s.first().first().dayOfWeek)
+            assertEquals(semanasDelMes(ym).first().first(), s.first().first())
+            assertTrue(s.flatten().containsAll((1..ym.lengthOfMonth()).map { ym.atDay(it) }))
+        }
     }
 }

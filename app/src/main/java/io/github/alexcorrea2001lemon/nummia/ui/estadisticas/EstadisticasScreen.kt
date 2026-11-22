@@ -388,7 +388,7 @@ private fun TarjetaComparar(titulo: String, anioA: Int, anioB: Int, a: Long, b: 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
                 Text("$anio", style = MaterialTheme.typography.bodyMedium, color = if (i == 1) MaterialTheme.colorScheme.onSurface else col.textoSuave, modifier = Modifier.width(44.dp))
                 Box(Modifier.weight(1f).height(10.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(5.dp))) {
-                    Box(Modifier.fillMaxWidth(fraccion).fillMaxHeight().background(if (i == 1) MaterialTheme.colorScheme.primary else col.textoSuave.copy(alpha = 0.5f), RoundedCornerShape(5.dp)))
+                    Box(Modifier.fillMaxWidth(fraccion).fillMaxHeight().background(if (i == 1) MaterialTheme.colorScheme.primary else col.textoSuave, RoundedCornerShape(5.dp)))
                 }
                 Text(formatearEuros(v, discreto = discreto), style = MaterialTheme.typography.bodyMedium, fontWeight = if (i == 1) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.widthIn(min = 92.dp), textAlign = TextAlign.End, maxLines = 1)
             }

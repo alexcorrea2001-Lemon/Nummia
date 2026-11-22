@@ -2,6 +2,13 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.1.2] - 2026-11-22
+
+### Mejorado
+- **Calendario: pasar de mes es mucho más cómodo.** Los meses están uno al lado del otro y siguen al dedo, como el calendario del móvil. Puedes deslizar despacio o rápido, cambiar de idea a mitad y los días del mes de al lado ya se ven mientras deslizas. Todos los meses tienen ahora el mismo alto, así que lo de abajo ya no salta. Las flechas también deslizan.
+- **Movimientos: cada día dice de qué año es** cuando buscas en todos los meses o cuando no es de este año («Viernes 12 dic 2025»).
+- **Estadísticas → Comparar**: la barra del otro año se ve bien (antes era un gris muy apagado).
+
 ## [2.1.1] - 2026-11-22
 
 ### Arreglado

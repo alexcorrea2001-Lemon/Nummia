@@ -37,6 +37,12 @@ fun semanasDelMes(ym: YearMonth): List<List<LocalDate>> {
     return generateSequence(inicio) { it.plusDays(1) }.takeWhile { !it.isAfter(fin) }.toList().chunked(7)
 }
 
+/** Rejilla fija de 6 semanas desde el lunes de la semana del día 1 (todos los meses miden lo mismo). */
+fun seisSemanas(ym: YearMonth): List<List<LocalDate>> {
+    val inicio = ym.atDay(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    return (0 until 42).map { inicio.plusDays(it.toLong()) }.chunked(7)
+}
+
 /** Importe corto para una celda: «12», «1.520», «12k». Sin signo. */
 fun compacto(centimos: Long): String {
     val euros = (abs(centimos) / 100.0).roundToLong()
@@ -56,6 +62,8 @@ data class EstadoCalendario(
     val elegido: LocalDate,
     val semana: Boolean = false,
     val filas: List<List<Celda>> = emptyList(),
+    /** Rejillas de 6 semanas del mes anterior, este y el siguiente (para deslizar entre meses). */
+    val rejillas: Map<YearMonth, List<List<Celda>>> = emptyMap(),
     val movimientosDia: List<FilaMov> = emptyList(),
     val totalDia: DiaCalendario? = null,
     val gastoMes: Long = 0,
@@ -74,9 +82,9 @@ class CalendarioViewModel @Inject constructor(
     private val elegido = MutableStateFlow(reloj.hoy())
     private val semana = MutableStateFlow(false)
 
+    // Se cargan también el mes anterior y el siguiente: al deslizar ya están dibujados.
     private val datos = mes.flatMapLatest { ym ->
-        val s = semanasDelMes(ym)
-        repo.periodo(s.first().first(), s.last().last())
+        repo.periodo(seisSemanas(ym.minusMonths(1)).first().first(), seisSemanas(ym.plusMonths(1)).last().last())
     }
 
     val estado: StateFlow<EstadoCalendario> = combine(
@@ -85,12 +93,14 @@ class CalendarioViewModel @Inject constructor(
         val dias = porDia(d.movGastos, d.movReembolsos, d.movIngresos)
         val hoy = reloj.hoy()
         val semanas = semanasDelMes(ym).map { sem -> sem.map { f -> Celda(f, YearMonth.from(f) == ym, dias[f], f == hoy, f == sel) } }
+        fun rejilla(m: YearMonth) = seisSemanas(m).map { sem -> sem.map { f -> Celda(f, YearMonth.from(f) == m, dias[f], f == hoy, m == ym && f == sel) } }
+        val rejillas = listOf(ym.minusMonths(1), ym, ym.plusMonths(1)).associateWith(::rejilla)
         val filas = if (vistaSemana) semanas.filter { s -> s.any { it.fecha == sel } }.ifEmpty { listOf(semanas.first()) } else semanas
         val pm = personas.associate { it.id to it.nombre }
         val cm = categorias.associate { it.id to it.nombre }
         val r = resumen(ym.atDay(1), ym.atEndOfMonth(), d.movGastos, d.movReembolsos, d.movIngresos)
         EstadoCalendario(
-            mes = ym, elegido = sel, semana = vistaSemana, filas = filas,
+            mes = ym, elegido = sel, semana = vistaSemana, filas = filas, rejillas = rejillas,
             movimientosDia = (d.gastos.filter { it.gasto.fecha == sel }.map { it.aFila(pm, cm) } + d.ingresos.filter { it.fecha == sel }.map { it.aFila() })
                 .sortedByDescending { it.creado },
             totalDia = dias[sel], gastoMes = r.gastoReal, ingresoMes = r.ingresos, discreto = ajustes.modoDiscreto,
@@ -115,5 +125,8 @@ class CalendarioViewModel @Inject constructor(
     fun irAHoy() = elegir(reloj.hoy())
     fun irAMes(ym: YearMonth) = elegir(if (YearMonth.from(reloj.hoy()) == ym) reloj.hoy() else ym.atDay(1))
     fun hoy(): YearMonth = YearMonth.from(reloj.hoy())
+    fun hoyDia(): LocalDate = reloj.hoy()
+    /** El calendario se ha quedado en [ym] tras deslizar. */
+    fun alPasarA(ym: YearMonth) { if (ym != mes.value) irAMes(ym) }
     fun alternarVista() = semana.update { !it }
 }

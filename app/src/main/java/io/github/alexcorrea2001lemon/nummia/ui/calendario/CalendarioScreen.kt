@@ -1,16 +1,19 @@
 package io.github.alexcorrea2001lemon.nummia.ui.calendario
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.drop
+import java.time.YearMonth
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.launch
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
@@ -87,6 +90,20 @@ fun CalendarioScreen(
     var eligiendoMes by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     val e by vm.estado.collectAsStateWithLifecycle()
     val c = LocalColoresNummia.current
+    val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
+    // Vista de mes: un carrusel de meses que sigue al dedo (como el calendario del sistema).
+    val paginador = rememberPagerState(initialPage = paginaDe(e.mes)) { PAGINAS }
+    LaunchedEffect(paginador) {
+        snapshotFlow { paginador.settledPage }.drop(1).collect { haptica(); vm.alPasarA(mesDe(it)) }
+    }
+    LaunchedEffect(e.mes) {
+        val p = paginaDe(e.mes)
+        if (paginador.settledPage != p && !paginador.isScrollInProgress) {
+            if (kotlin.math.abs(p - paginador.currentPage) <= 2) paginador.animateScrollToPage(p) else paginador.scrollToPage(p)
+        }
+    }
+    val alcanceMes = rememberCoroutineScope()
+    val mesVisible = if (e.semana) e.mes else mesDe(paginador.currentPage)
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = Espacio.l, end = Espacio.l, bottom = relleno.calculateBottomPadding() + 96.dp),
@@ -100,12 +117,12 @@ fun CalendarioScreen(
         }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = vm::anterior) { Icon(Iconos.ChevronIzq, if (e.semana) "Semana anterior" else "Mes anterior") }
+                IconButton(onClick = { if (e.semana) vm.anterior() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage - 1) } }) { Icon(Iconos.ChevronIzq, if (e.semana) "Semana anterior" else "Mes anterior") }
                 // Tocar el mes abre «Ir a…» para saltar a cualquier mes y año.
                 TextButton(onClick = { eligiendoMes = true }) {
                     // El nombre del mes entra por el lado hacia el que avanzas.
                     AnimatedContent(
-                        targetState = e.mes,
+                        targetState = mesVisible,
                         transitionSpec = {
                             val dir = if (targetState > initialState) 1 else -1
                             (slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { it * dir } + fadeIn()) togetherWith
@@ -117,7 +134,7 @@ fun CalendarioScreen(
                     }
                     Icon(Iconos.FlechaAbajo, null, Modifier.size(16.dp))
                 }
-                IconButton(onClick = vm::siguiente) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
+                IconButton(onClick = { if (e.semana) vm.siguiente() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage + 1) } }) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
                 Spacer(Modifier.weight(1f))
                 FilterChip(selected = e.semana, onClick = vm::alternarVista, label = { Text("Semana") })
             }
@@ -128,58 +145,45 @@ fun CalendarioScreen(
                 Text("Ingresos ${formatearEuros(e.ingresoMes, discreto = e.discreto)}", style = MaterialTheme.typography.bodySmall, color = c.ingreso)
             }
         }
-        item {
-            // Deslizar: la cuadrícula sigue al dedo y, al soltar, pasa de mes con efecto muelle (o vuelve a su sitio).
-            val alcance = rememberCoroutineScope()
-            val arrastre = remember { Animatable(0f) }
-            val umbral = with(LocalDensity.current) { 64.dp.toPx() }
-            val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
-            Column(
-                Modifier.pointerInput(e.semana) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            val d = arrastre.value
-                            if (d > umbral) { haptica(); vm.anterior() } else if (d < -umbral) { haptica(); vm.siguiente() }
-                            alcance.launch { arrastre.animateTo(0f, spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)) }
-                        },
-                        onDragCancel = { alcance.launch { arrastre.animateTo(0f, spring()) } },
-                        onHorizontalDrag = { cambio, d -> cambio.consume(); alcance.launch { arrastre.snapTo(arrastre.value + d * 0.5f) } },
-                    )
-                },
-            ) {
-                Row(Modifier.fillMaxWidth()) {
-                    DIAS.forEach { Text(it, style = MaterialTheme.typography.labelMedium, color = c.textoSuave, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)) }
+        item { Column {
+            Row(Modifier.fillMaxWidth()) {
+                DIAS.forEach { Text(it, style = MaterialTheme.typography.labelMedium, color = c.textoSuave, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)) }
+            }
+            Spacer(Modifier.height(Espacio.xs))
+            if (!e.semana) {
+                val hoy = remember { vm.hoyDia() }
+                HorizontalPager(paginador, beyondViewportPageCount = 1, pageSpacing = Espacio.l, key = { it }) { p ->
+                    val ym = mesDe(p)
+                    // Si aún no han llegado los datos de ese mes, se dibuja la rejilla vacía (mismo tamaño).
+                    val filas = e.rejillas[ym] ?: remember(ym) {
+                        seisSemanas(ym).map { s -> s.map { Celda(it, YearMonth.from(it) == ym, null, it == hoy, false) } }
+                    }
+                    Rejilla(filas, e.discreto) { vm.elegir(it) }
                 }
-                Spacer(Modifier.height(Espacio.xs))
+            } else {
                 AnimatedContent(
                     targetState = e.filas,
-                    modifier = Modifier.graphicsLayer {
-                        translationX = arrastre.value
-                        alpha = 1f - (kotlin.math.abs(arrastre.value) / (umbral * 6)).coerceAtMost(0.3f)
+                    modifier = Modifier.pointerInput(Unit) {
+                        var arrastre = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { arrastre = 0f },
+                            onDragEnd = { if (arrastre > 120f) { haptica(); vm.anterior() } else if (arrastre < -120f) { haptica(); vm.siguiente() } },
+                            onHorizontalDrag = { _, d -> arrastre += d },
+                        )
                     },
                     transitionSpec = {
-                        // Hacia delante entra por la derecha; hacia atrás, por la izquierda.
                         val antes = initialState.firstOrNull()?.firstOrNull()?.fecha
                         val ahora = targetState.firstOrNull()?.firstOrNull()?.fecha
                         val dir = if (antes == null || ahora == null || ahora > antes) 1 else -1
                         val muelle = spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)
-                        ((slideInHorizontally(muelle) { it * dir / 2 } + fadeIn(tween(220))) togetherWith
-                            (slideOutHorizontally(muelle) { -it * dir / 2 } + fadeOut(tween(160))))
-                            .using(SizeTransform(clip = true))
+                        ((slideInHorizontally(muelle) { it * dir } + fadeIn(tween(200))) togetherWith
+                            (slideOutHorizontally(muelle) { -it * dir } + fadeOut(tween(150)))).using(SizeTransform(clip = true))
                     },
-                    label = "cuadricula",
+                    label = "semana",
                     contentKey = { filas -> filas.firstOrNull()?.firstOrNull()?.fecha },
-                ) { filas ->
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        filas.forEach { semana ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                semana.forEach { celda -> CeldaDia(celda, e.discreto, Modifier.weight(1f)) { vm.elegir(celda.fecha) } }
-                            }
-                        }
-                    }
-                }
+                ) { filas -> Rejilla(filas, e.discreto) { vm.elegir(it) } }
             }
-        }
+        } }
         item {
             Tarjeta {
                 Text(fechaLarga(e.elegido), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -206,6 +210,22 @@ fun CalendarioScreen(
     }
     if (eligiendoMes) {
         io.github.alexcorrea2001lemon.nummia.ui.comun.SelectorMes(e.mes, vm.hoy(), alCerrar = { eligiendoMes = false }) { vm.irAMes(it); eligiendoMes = false }
+    }
+}
+
+private val ORIGEN = YearMonth.of(2000, 1)
+private const val PAGINAS = 101 * 12 // de 2000 a 2100
+private fun paginaDe(ym: YearMonth) = ((ym.year - ORIGEN.year) * 12 + ym.monthValue - 1).coerceIn(0, PAGINAS - 1)
+private fun mesDe(p: Int): YearMonth = ORIGEN.plusMonths(p.toLong())
+
+@Composable
+private fun Rejilla(filas: List<List<Celda>>, discreto: Boolean, alElegir: (LocalDate) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        filas.forEach { semana ->
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                semana.forEach { celda -> CeldaDia(celda, discreto, Modifier.weight(1f)) { alElegir(celda.fecha) } }
+            }
+        }
     }
 }
 

@@ -242,7 +242,7 @@ fun MovimientosScreen(
                 if (g.fecha != LocalDate.MIN) {
                     item(key = "d" + g.fecha) {
                         Row(Modifier.padding(start = Espacio.l + Espacio.s, end = Espacio.l + Espacio.s, top = Espacio.l, bottom = Espacio.xs)) {
-                            Text(fechaCabecera(g.fecha, e.hoy), style = MaterialTheme.typography.labelLarge, color = c.textoSuave, modifier = Modifier.weight(1f))
+                            Text(fechaCabecera(g.fecha, e.hoy, conAnio = e.buscandoEnTodo || g.fecha.year != e.hoy.year), style = MaterialTheme.typography.labelLarge, color = c.textoSuave, modifier = Modifier.weight(1f))
                             Text("Total del día ${formatearEuros(g.total, conSigno = true, discreto = e.discreto)}", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
                         }
                     }

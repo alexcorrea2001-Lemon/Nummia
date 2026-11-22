@@ -16,10 +16,10 @@ fun nombreMes(ym: YearMonth): String = "${ym.month.getDisplayName(TextStyle.FULL
 fun nombreMesMinuscula(ym: YearMonth): String = ym.month.getDisplayName(TextStyle.FULL_STANDALONE, ES).lowercase(ES)
 
 /** «Jueves 15 oct» */
-fun fechaCabecera(f: LocalDate, hoy: LocalDate): String = when (f) {
+fun fechaCabecera(f: LocalDate, hoy: LocalDate, conAnio: Boolean = f.year != hoy.year): String = when (f) {
     hoy -> "Hoy"
     hoy.minusDays(1) -> "Ayer"
-    else -> DateTimeFormatter.ofPattern("EEEE d MMM", ES).format(f).mayuscula().removeSuffix(".")
+    else -> DateTimeFormatter.ofPattern("EEEE d MMM", ES).format(f).mayuscula().removeSuffix(".") + if (conAnio) " ${f.year}" else ""
 }
 
 /** «15 ene 2026» */

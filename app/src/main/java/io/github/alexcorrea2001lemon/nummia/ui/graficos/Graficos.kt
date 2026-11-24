@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -138,7 +139,7 @@ fun GraficoLineas(
                     val izq = margen.toPx()
                     return (((x - izq) / (size.width - izq)) * (n - 1)).let { kotlin.math.round(it).toInt() }.coerceIn(0, n - 1)
                 }
-                androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                detectHorizontalDragGestures(
                     onDragStart = { sel = indice(it.x) },
                 ) { cambio, _ -> cambio.consume(); sel = indice(cambio.position.x) }
             }

@@ -54,7 +54,7 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 data class Deuda(val gastoId: String, val concepto: String, val fecha: LocalDate, val esperado: Long, val devuelto: Long, val falta: Long)
-data class PersonaDeuda(val personaId: String?, val nombre: String, val deudas: List<Deuda>) {
+data class PersonaDeuda(val personaId: String?, val nombre: String, val deudas: List<Deuda>, val diasDevolucion: Int? = null) {
     val total get() = deudas.sumOf { it.falta }
 }
 
@@ -62,12 +62,19 @@ data class PersonaDeuda(val personaId: String?, val nombre: String, val deudas: 
 class DebenViewModel @Inject constructor(private val repo: MovimientosRepo) : ViewModel() {
     val personas: StateFlow<List<PersonaDeuda>?> = combine(repo.conDevolucion(), repo.personas()) { gastos, ps ->
         val nombres = ps.associate { it.id to it.nombre }
+        // Lo que ya te devolvió cada persona antes: cuántos días suele tardar.
+        val tiempos = gastos.filter { it.gasto.estado == Estado.CONFIRMADO }.groupBy { it.gasto.personaId }.mapValues { (_, gs) ->
+            io.github.alexcorrea2001lemon.nummia.domain.calculo.diasMediosDevolucion(
+                gs.flatMap { g -> g.activos.mapNotNull { r -> r.fecha?.let { g.gasto.fecha to it } } },
+            )
+        }
         gastos.filter { it.gasto.estado == Estado.CONFIRMADO && it.falta > 0 }
             .groupBy { it.gasto.personaId }
             .map { (pid, gs) ->
                 PersonaDeuda(
                     pid, pid?.let(nombres::get) ?: "Sin persona",
                     gs.sortedBy { it.gasto.fecha }.map { Deuda(it.gasto.id, it.gasto.concepto, it.gasto.fecha, it.gasto.importeEsperado ?: it.gasto.importe, it.devuelto, it.falta) },
+                    tiempos[pid],
                 )
             }
             .sortedByDescending { it.total }
@@ -109,6 +116,7 @@ fun DebenScreen(vm: DebenViewModel, snackbar: SnackbarHostState, alAbrirGasto: (
                         Column(Modifier.weight(1f)) {
                             Text(p.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(if (p.deudas.size == 1) "1 cosa pendiente" else "${p.deudas.size} cosas pendientes", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                            p.diasDevolucion?.let { Text(io.github.alexcorrea2001lemon.nummia.domain.calculo.textoDevolucion(it), style = MaterialTheme.typography.bodySmall, color = c.textoSuave) }
                         }
                         Text(formatearEuros(p.total), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = c.aviso)
                     }

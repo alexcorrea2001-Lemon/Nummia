@@ -60,7 +60,12 @@ import javax.inject.Inject
 data class Ficha(
     val nombre: String, val total: Long, val veces: Int, val primera: LocalDate?, val ultima: LocalDate?,
     val categoria: CategoriaEntity?, val ultimos12: List<Long>, val etiquetas12: List<String>, val filas: List<FilaMov>,
+    /** Precio medio de cada compra mes a mes (últimos 12). */
+    val precio12: List<Long> = emptyList(),
+    val meses12: List<YearMonth> = emptyList(),
 ) {
+    /** Cuánto ha cambiado el precio por compra entre el primer y el último mes del gráfico (‰). */
+    val cambioPrecioPorMil: Long? get() = if (precio12.size < 2 || precio12.first() == 0L) null else (precio12.last() - precio12.first()) * 1000 / precio12.first()
     val media get() = if (veces == 0) 0 else total / veces
 }
 
@@ -80,6 +85,8 @@ class FichaTiendaViewModel @Inject constructor(guardado: SavedStateHandle, priva
             categoria = gs.mapNotNull { it.gasto.categoriaId }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key?.let(porCat::get),
             ultimos12 = meses.map { porMes[it] ?: 0L },
             etiquetas12 = meses.map { it.month.getDisplayName(java.time.format.TextStyle.NARROW_STANDALONE, io.github.alexcorrea2001lemon.nummia.ui.comun.ES).uppercase() },
+            precio12 = io.github.alexcorrea2001lemon.nummia.domain.calculo.precioMedioPorMes(meses, gs.map { YearMonth.from(it.gasto.fecha) to it.real }),
+            meses12 = meses,
             filas = gs.sortedByDescending { it.gasto.fecha }.take(50).map { it.aFila(ps.associate { p -> p.id to p.nombre }, cats.associate { c -> c.id to c.nombre }) },
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -124,7 +131,36 @@ fun FichaTiendaScreen(vm: FichaTiendaViewModel, alAbrirGasto: (String) -> Unit, 
         }
         Tarjeta {
             Text("Últimos 12 meses", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            GraficoBarras(ficha.ultimos12.map { listOf(it) }, listOf(MaterialTheme.colorScheme.primary), ficha.etiquetas12, "Gasto en ${ficha.nombre} en los últimos 12 meses")
+            var mesSel by remember { mutableStateOf<Int?>(null) }
+            Text(
+                mesSel?.let { i -> "${io.github.alexcorrea2001lemon.nummia.ui.comun.nombreMes(ficha.meses12[i])}: ${formatearEuros(ficha.ultimos12[i])}" } ?: "Toca un mes para ver cuánto gastaste",
+                style = MaterialTheme.typography.bodySmall, color = if (mesSel == null) c.textoSuave else MaterialTheme.colorScheme.onSurface,
+            )
+            GraficoBarras(
+                ficha.ultimos12.map { listOf(it) }, listOf(MaterialTheme.colorScheme.primary), ficha.etiquetas12, "Gasto en ${ficha.nombre} en los últimos 12 meses",
+                seleccionado = mesSel, alPulsar = { mesSel = if (mesSel == it) null else it },
+            )
+        }
+        // ¿Sube de precio? Lo que cuesta cada compra, mes a mes.
+        if (ficha.precio12.isNotEmpty() && ficha.veces >= 2) {
+            Tarjeta {
+                Text("Lo que cuesta cada compra", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                ficha.cambioPrecioPorMil?.takeIf { kotlin.math.abs(it) >= 10 }?.let { pm ->
+                    val sube = pm > 0
+                    Text(
+                        "${if (sube) "Ha subido" else "Ha bajado"} un ${kotlin.math.abs(pm) / 10},${kotlin.math.abs(pm) % 10} % en el último año",
+                        style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                        color = if (sube) c.gasto else c.ingreso,
+                    )
+                }
+                io.github.alexcorrea2001lemon.nummia.ui.graficos.GraficoLineas(
+                    listOf(io.github.alexcorrea2001lemon.nummia.ui.graficos.SerieLinea(ficha.precio12, MaterialTheme.colorScheme.primary)),
+                    listOf(ficha.etiquetas12.first(), ficha.etiquetas12[6], ficha.etiquetas12.last()),
+                    "Precio medio de cada compra en ${ficha.nombre}, mes a mes",
+                    ejeY = true, nombres = listOf("Media por compra"),
+                    etiquetaPunto = { io.github.alexcorrea2001lemon.nummia.ui.comun.nombreMes(ficha.meses12[it]) },
+                )
+            }
         }
         Tarjeta(relleno = false) {
             Row(Modifier.fillMaxWidth().clickable { eligiendo = true }.padding(Espacio.l), verticalAlignment = Alignment.CenterVertically) {

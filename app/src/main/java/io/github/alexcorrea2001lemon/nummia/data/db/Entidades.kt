@@ -151,4 +151,6 @@ data class PresupuestoEntity(
     val limite: Long,
     val createdAt: Long,
     val updatedAt: Long,
+    /** 0 = mensual, 1 = semanal, 2 = anual (ver Periodo). */
+    @ColumnInfo(defaultValue = "0") val periodo: Int = 0,
 )

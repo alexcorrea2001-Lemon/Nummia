@@ -55,12 +55,12 @@ fun avisosPendientes(
     if (pref.presupuestos) {
         presupuestos.forEach { (nombre, e) ->
             val umbral = umbralesCruzados(e).maxOrNull() ?: return@forEach
-            val clave = "presupuesto-${e.limite.id}-$ym-$umbral"
+            val clave = "presupuesto-${e.limite.id}-${io.github.alexcorrea2001lemon.nummia.domain.calculo.clavePeriodo(e.limite.periodo, ym, hoy)}-$umbral"
             // Si ya se ha pasado del 100 %, no se avisa además del 80 %.
             res += if (umbral >= 1000) {
-                Aviso(clave, "Te has pasado: $nombre", "Llevas ${formatearEuros(e.gastado)} de ${formatearEuros(e.limite.limite)} este mes.")
+                Aviso(clave, "Te has pasado: $nombre", "Llevas ${formatearEuros(e.gastado)} de ${formatearEuros(e.limite.limite)} ${e.limite.periodo.este}.")
             } else {
-                Aviso(clave, "Llevas el 80 %: $nombre", "Te quedan ${formatearEuros(e.queda)} de ${formatearEuros(e.limite.limite)} este mes.")
+                Aviso(clave, "Llevas el 80 %: $nombre", "Te quedan ${formatearEuros(e.queda)} de ${formatearEuros(e.limite.limite)} ${e.limite.periodo.este}.")
             }
         }
     }

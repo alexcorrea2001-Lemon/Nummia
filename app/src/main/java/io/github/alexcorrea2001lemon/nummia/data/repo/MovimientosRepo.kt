@@ -72,7 +72,10 @@ fun claveTienda(s: String): String = claveTexto(s).replace(Regex("[^a-z0-9ñ]"),
 
 data class TiendaResumen(val nombre: String, val veces: Int, val total: Long)
 
-fun PresupuestoEntity.aLimite() = Limite(id, runCatching { Ambito.valueOf(ambito) }.getOrDefault(Ambito.TOTAL), ref, limite)
+fun PresupuestoEntity.aLimite() = Limite(
+    id, runCatching { Ambito.valueOf(ambito) }.getOrDefault(Ambito.TOTAL), ref, limite,
+    io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.de(periodo),
+)
 
 /** Avisa de que algo ha cambiado (para sincronizar con Drive al poco rato). */
 fun interface AvisoCambios {
@@ -679,13 +682,19 @@ class MovimientosRepo @Inject constructor(
     suspend fun guardarPresupuesto(p: PresupuestoEntity) = db.presupuestos().guardar(p.copy(updatedAt = reloj.ahoraMs()))
     suspend fun borrarPresupuesto(id: String) = db.presupuestos().borrar(id)
 
-    /** Cómo va cada presupuesto en el mes [ym]. */
-    fun estadoPresupuestos(ym: YearMonth): Flow<List<EstadoPresupuesto>> = combine(presupuestos(), mes(ym)) { ps, d ->
-        estadoPresupuestos(
-            ps.map { it.aLimite() },
-            d.gastos.map { GastoDePresupuesto(it.aMov(), it.gasto.tienda, it.gasto.categoriaId) },
-            d.movReembolsos,
-        )
+    /** Cómo va cada presupuesto viendo el mes [ym] (los semanales, su semana; los anuales, el año de [ym]). */
+    fun estadoPresupuestos(ym: YearMonth): Flow<List<EstadoPresupuesto>> {
+        val hoy = reloj.hoy()
+        val semana = io.github.alexcorrea2001lemon.nummia.domain.calculo.rangoPresupuesto(io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.SEMANA, ym, hoy)
+        val desde = minOf(LocalDate.of(ym.year, 1, 1), semana.start)
+        val hasta = maxOf(LocalDate.of(ym.year, 12, 31), semana.endInclusive)
+        return combine(presupuestos(), periodo(desde, hasta)) { ps, d ->
+            estadoPresupuestos(
+                ps.map { it.aLimite() },
+                d.gastos.map { GastoDePresupuesto(it.aMov(), it.gasto.tienda, it.gasto.categoriaId) },
+                d.movReembolsos, ym, hoy,
+            )
+        }
     }
 
     suspend fun estadoPresupuestosAhora(ym: YearMonth): List<EstadoPresupuesto> = estadoPresupuestos(ym).first()

@@ -2,6 +2,18 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.6.0] - 2026-11-24
+
+### Arreglado
+- **Calendario**: el nombre del mes se cortaba («Septiemb…», «Octubre 2…») y no se veía el año. Ahora siempre se ve entero, o abreviado si no cabe («Sept 2026»).
+
+### Nuevo
+- **Ficha de cada tienda**:
+  - Toca un mes de la gráfica para ver cuánto gastaste.
+  - Nueva gráfica **«Lo que cuesta cada compra»** mes a mes, con aviso de si ha subido o bajado en el último año.
+- **Presupuestos semanales y anuales**, además de los mensuales. Se agrupan en «Esta semana», «Este mes» y «Este año». Los avisos del 80 % y el 100 % funcionan con cada uno.
+- **Te deben**: debajo de cada persona, cuánto suele tardar en devolverte («Suele devolverte en unos 5 días»).
+
 ## [2.5.1] - 2026-11-24
 
 ### Arreglado

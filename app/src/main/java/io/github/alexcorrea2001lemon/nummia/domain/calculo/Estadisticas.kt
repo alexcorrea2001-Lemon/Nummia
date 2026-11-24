@@ -192,3 +192,30 @@ fun previsionFinDeMes(
         ritmo = ritmo,
     )
 }
+
+/**
+ * Precio medio de cada compra, mes a mes (para ver si una tienda sube). Un mes sin compras repite el
+ * anterior; los meses antes de la primera compra toman esa primera. Sin compras, lista vacía.
+ */
+fun precioMedioPorMes(meses: List<YearMonth>, compras: List<Pair<YearMonth, Long>>): List<Long> {
+    val porMes = compras.groupBy({ it.first }, { it.second }).mapValues { (_, l) -> Math.round(l.average()) }
+    val primero = meses.firstNotNullOfOrNull { porMes[it] } ?: return emptyList()
+    var ultimo = primero
+    return meses.map { m -> porMes[m]?.also { ultimo = it } ?: ultimo }
+}
+
+/** Días que suele tardar alguien en devolver (mediana de gasto → devolución; nunca negativo). Sin datos, null. */
+fun diasMediosDevolucion(pares: List<Pair<LocalDate, LocalDate>>): Int? {
+    if (pares.isEmpty()) return null
+    val dias = pares.map { (g, d) -> java.time.temporal.ChronoUnit.DAYS.between(g, d).coerceAtLeast(0) }.sorted()
+    val n = dias.size
+    return if (n % 2 == 1) dias[n / 2].toInt() else Math.round((dias[n / 2 - 1] + dias[n / 2]) / 2.0).toInt()
+}
+
+fun textoDevolucion(dias: Int): String = "Suele devolverte " + when {
+    dias <= 0 -> "el mismo día"
+    dias == 1 -> "en 1 día"
+    dias < 14 -> "en unos $dias días"
+    dias < 60 -> "en unas ${Math.round(dias / 7.0)} semanas"
+    else -> "en unos ${Math.round(dias / 30.0)} meses"
+}

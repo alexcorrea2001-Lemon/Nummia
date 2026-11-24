@@ -124,7 +124,8 @@ fun CalendarioScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { if (e.semana) vm.anterior() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage - 1) } }) { Icon(Iconos.ChevronIzq, if (e.semana) "Semana anterior" else "Mes anterior") }
                 // Tocar el mes abre «Ir a…» para saltar a cualquier mes y año.
-                TextButton(onClick = { eligiendoMes = true }, modifier = Modifier.weight(1f, fill = false)) {
+                // Ocupa todo el hueco libre: el mes y el año siempre se ven (si no cabe el nombre largo, «Sept 2026»).
+                TextButton(onClick = { eligiendoMes = true }, modifier = Modifier.weight(1f)) {
                     // El nombre del mes entra por el lado hacia el que avanzas.
                     AnimatedContent(
                         targetState = mesVisible,
@@ -135,11 +136,12 @@ fun CalendarioScreen(
                         },
                         label = "mes",
                     ) { mes ->
-                        Text(nombreMes(mes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, softWrap = false)
+                        io.github.alexcorrea2001lemon.nummia.ui.comun.TextoMes(
+                            mes, MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 }
                 IconButton(onClick = { if (e.semana) vm.siguiente() else alcanceMes.launch { paginador.animateScrollToPage(paginador.currentPage + 1) } }) { Icon(Iconos.ChevronDer, if (e.semana) "Semana siguiente" else "Mes siguiente") }
-                Spacer(Modifier.weight(1f))
                 io.github.alexcorrea2001lemon.nummia.ui.comun.ChipHoy(mesVisible != vm.hoy() || (e.semana && e.elegido != vm.hoyDia())) { vm.irAHoy() }
             }
         }

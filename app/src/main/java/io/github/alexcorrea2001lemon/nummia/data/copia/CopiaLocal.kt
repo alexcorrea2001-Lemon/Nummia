@@ -36,7 +36,7 @@ class CopiaInvalida(motivo: String) : Exception(motivo)
     val activo: Boolean, val createdAt: Long, val updatedAt: Long, val deletedAt: Long?,
     val cadaMeses: Int = 1, val desde: String? = null,
 )
-@Serializable data class PresupuestoDto(val id: String, val ambito: String, val ref: String?, val limite: Long, val createdAt: Long, val updatedAt: Long)
+@Serializable data class PresupuestoDto(val id: String, val ambito: String, val ref: String?, val limite: Long, val createdAt: Long, val updatedAt: Long, val periodo: Int = 0)
 @Serializable data class ReembolsoDto(
     val id: String, val codigo: String, val gastoId: String, val fecha: Long?, val importe: Long, val personaId: String?,
     val nota: String, val createdAt: Long, val updatedAt: Long, val deletedAt: Long?,
@@ -87,7 +87,7 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
             personas = db.personas().volcar().map { PersonaDto(it.id, it.nombre, it.createdAt, it.deletedAt) },
             categorias = db.categorias().volcar().map { CategoriaDto(it.id, it.nombre, it.icono, it.color, it.predefinida, it.orden) },
             historial = db.historial().volcar().map { HistorialDto(it.entidad, it.entidadId, it.campo, it.antes, it.despues, it.origen.name, it.fecha) },
-            presupuestos = db.presupuestos().volcar().map { PresupuestoDto(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt) },
+            presupuestos = db.presupuestos().volcar().map { PresupuestoDto(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt, it.periodo) },
             ingresosFijos = db.ingresosFijos().volcar().map { IngresoFijoDto(it.id, it.concepto, it.tipo.name, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt) },
             pagos = db.pagos().volcar().map { PagoDto(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt, it.cadaMeses, it.desde) },
         )
@@ -118,7 +118,7 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
     suspend fun restaurar(c: Copia) = db.withTransaction {
         db.vaciar().apply { gastos(); reembolsos(); ingresos(); personas(); categorias(); historial(); pagos(); presupuestos(); ingresosFijos() }
         c.ingresosFijos.forEach { db.ingresosFijos().guardar(IngresoFijoEntity(it.id, it.concepto, TipoIngreso.valueOf(it.tipo), it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt)) }
-        c.presupuestos.forEach { db.presupuestos().guardar(PresupuestoEntity(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt)) }
+        c.presupuestos.forEach { db.presupuestos().guardar(PresupuestoEntity(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt, it.periodo)) }
         c.pagos.forEach { db.pagos().guardar(PagoMensualEntity(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt, it.cadaMeses, it.desde)) }
         c.personas.forEach { db.personas().guardar(PersonaEntity(it.id, it.nombre, it.createdAt, it.deletedAt)) }
         c.categorias.forEach { db.categorias().guardar(CategoriaEntity(it.id, it.nombre, it.icono, it.color, it.predefinida, it.orden)) }

@@ -49,6 +49,7 @@ class MigracionTest {
                     when {
                         tabla == "gastos" && version < 2 -> sql.replace(Regex(""",\s*`pagoMensualId` TEXT"""), "")
                         tabla == "ingresos" && version < 4 -> sql.replace(Regex(""",\s*`ingresoFijoId` TEXT"""), "")
+                        tabla == "presupuestos" && version < 6 -> sql.replace(Regex(""",\s*`periodo` INTEGER NOT NULL DEFAULT 0"""), "")
                         tabla == "pagos_mensuales" && version < 5 ->
                             sql.replace(Regex(""",\s*`cadaMeses` INTEGER NOT NULL DEFAULT 1"""), "").replace(Regex(""",\s*`desde` TEXT"""), "")
                         else -> sql
@@ -78,6 +79,12 @@ class MigracionTest {
         assertTrue(esquemaActual().any { it.first == "gastos" && "pagoMensualId" in it.second })
         crearAntigua("v1.db", 1)
         comprobar("v1.db")
+    }
+
+    @Test fun desdeLaVersion5() {
+        assertTrue(esquemaActual().any { it.first == "presupuestos" && "periodo" in it.second })
+        crearAntigua("v5.db", 5)
+        comprobar("v5.db")
     }
 
     @Test fun desdeLaVersion4() {

@@ -25,6 +25,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,7 +74,7 @@ import javax.inject.Inject
 
 /** Nombre legible del presupuesto. */
 fun nombrePresupuesto(e: EstadoPresupuesto, categorias: Map<String, String>): String = when (e.limite.ambito) {
-    Ambito.TOTAL -> "Todo el mes"
+    Ambito.TOTAL -> when (e.limite.periodo) { io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.SEMANA -> "Toda la semana"; io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.ANIO -> "Todo el año"; else -> "Todo el mes" }
     Ambito.CATEGORIA -> categorias[e.limite.ref] ?: "Categoría"
     Ambito.TIENDA -> e.limite.ref ?: "Tienda"
 }
@@ -97,7 +100,10 @@ fun BarraPresupuesto(e: EstadoPresupuesto, nombre: String, discreto: Boolean = f
         Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surfaceVariant)) {
             Box(Modifier.fillMaxHeight().fillMaxWidth(fraccion).clip(RoundedCornerShape(50)).background(color))
         }
-        Text(texto, style = MaterialTheme.typography.bodySmall, color = if (e.nivel == Nivel.BIEN) c.textoSuave else color)
+        Text(
+            texto + if (e.limite.periodo != io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.MES) " ${e.limite.periodo.este}" else "",
+            style = MaterialTheme.typography.bodySmall, color = if (e.nivel == Nivel.BIEN) c.textoSuave else color,
+        )
     }
 }
 
@@ -108,9 +114,9 @@ class PresupuestosViewModel @Inject constructor(private val repo: MovimientosRep
     val categorias: StateFlow<List<CategoriaEntity>> = repo.categorias().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     suspend fun tiendas(): List<String> = db.gastos().tiendasRecientes()
 
-    fun guardar(id: String?, ambito: Ambito, ref: String?, limite: Long) = viewModelScope.launch {
+    fun guardar(id: String?, ambito: Ambito, ref: String?, limite: Long, periodo: io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo = io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.MES) = viewModelScope.launch {
         val ahora = reloj.ahoraMs()
-        repo.guardarPresupuesto(PresupuestoEntity(id ?: UUID.randomUUID().toString(), ambito.name, ref?.trim(), limite, ahora, ahora))
+        repo.guardarPresupuesto(PresupuestoEntity(id ?: UUID.randomUUID().toString(), ambito.name, ref?.trim(), limite, ahora, ahora, periodo.codigo))
     }
 
     fun borrar(id: String) = viewModelScope.launch { repo.borrarPresupuesto(id) }
@@ -131,17 +137,22 @@ fun PresupuestosScreen(vm: PresupuestosViewModel, alVolver: () -> Unit) {
             Tarjeta {
                 EstadoVacio(
                     Iconos.Euro, "Ponte un límite",
-                    "Elige cuánto quieres gastar al mes en total, en una categoría o en una tienda. Verás cómo vas en Inicio y te avisaremos al llegar al 80 % y al 100 %.",
+                    "Elige cuánto quieres gastar a la semana, al mes o al año, en total, en una categoría o en una tienda. Verás cómo vas en Inicio y te avisaremos al llegar al 80 % y al 100 %.",
                     accion = "Crear presupuesto", alPulsar = { creando = true },
                 )
             }
         } else if (l.isNotEmpty()) {
-            Text("Este mes", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Tarjeta(relleno = false) {
-                l.forEachIndexed { n, e ->
-                    if (n > 0) HorizontalDivider(color = c.borde)
-                    Box(Modifier.fillMaxWidth().clickable { editando = e }.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
-                        BarraPresupuesto(e, nombrePresupuesto(e, nombres))
+            // Agrupados: esta semana, este mes y este año.
+            listOf(io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.SEMANA, io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.MES, io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.ANIO).forEach { per ->
+                val grupo = l.filter { it.limite.periodo == per }
+                if (grupo.isEmpty()) return@forEach
+                Text(per.este.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Tarjeta(relleno = false) {
+                    grupo.forEachIndexed { n, e ->
+                        if (n > 0) HorizontalDivider(color = c.borde)
+                        Box(Modifier.fillMaxWidth().clickable { editando = e }.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
+                            BarraPresupuesto(e, nombrePresupuesto(e, nombres))
+                        }
                     }
                 }
             }
@@ -153,10 +164,11 @@ fun PresupuestosScreen(vm: PresupuestosViewModel, alVolver: () -> Unit) {
     editando?.let { e -> DialogoPresupuesto(e, categorias, vm, alCerrar = { editando = null }) }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun DialogoPresupuesto(e: EstadoPresupuesto?, categorias: List<CategoriaEntity>, vm: PresupuestosViewModel, alCerrar: () -> Unit) {
     var ambito by remember { mutableStateOf(e?.limite?.ambito ?: Ambito.TOTAL) }
+    var periodo by remember { mutableStateOf(e?.limite?.periodo ?: io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.MES) }
     var ref by remember { mutableStateOf(e?.limite?.ref) }
     var importe by remember { mutableStateOf(e?.limite?.limite?.let { formatearEuros(it).removeSuffix("€").trim() }.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -165,16 +177,29 @@ private fun DialogoPresupuesto(e: EstadoPresupuesto?, categorias: List<Categoria
 
     DialogoNummia(
         onDismissRequest = alCerrar,
+        icon = { androidx.compose.material3.Icon(Iconos.Euro, null) },
         title = { Text(if (e == null) "Nuevo presupuesto" else "Editar presupuesto") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                Text("¿Cada cuánto?", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    val opciones = listOf(io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.SEMANA, io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.MES, io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.ANIO)
+                    opciones.forEachIndexed { k, per ->
+                        SegmentedButton(
+                            selected = periodo == per, onClick = { periodo = per },
+                            shape = SegmentedButtonDefaults.itemShape(k, opciones.size),
+                            label = { Text(per.nombre, maxLines = 1, softWrap = false) },
+                        )
+                    }
+                }
+                Text("¿En qué?", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
                 Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
                     listOf(Ambito.TOTAL to "Total", Ambito.CATEGORIA to "Categoría", Ambito.TIENDA to "Tienda").forEach { (a, t) ->
                         FilterChip(selected = ambito == a, onClick = { if (ambito != a) { ambito = a; ref = null; error = null } }, label = { Text(t) })
                     }
                 }
                 when (ambito) {
-                    Ambito.TOTAL -> Text("Todo lo que gastes en el mes.", style = MaterialTheme.typography.bodySmall)
+                    Ambito.TOTAL -> Text("Todo lo que gastes ${periodo.este}.", style = MaterialTheme.typography.bodySmall)
                     Ambito.CATEGORIA -> FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
                         categorias.forEach { cat -> FilterChip(selected = ref == cat.id, onClick = { ref = cat.id; error = null }, label = { Text(cat.nombre) }) }
                     }
@@ -189,7 +214,8 @@ private fun DialogoPresupuesto(e: EstadoPresupuesto?, categorias: List<Categoria
                     }
                 }
                 OutlinedTextField(
-                    importe, { importe = it; error = null }, label = { Text("Límite al mes") }, suffix = { Text("€") }, singleLine = true,
+                    importe, { importe = it; error = null }, label = { Text(when (periodo) { io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.SEMANA -> "Límite a la semana"; io.github.alexcorrea2001lemon.nummia.domain.calculo.Periodo.ANIO -> "Límite al año"; else -> "Límite al mes" }) },
+                    suffix = { Text("€") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 )
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
@@ -204,7 +230,7 @@ private fun DialogoPresupuesto(e: EstadoPresupuesto?, categorias: List<Categoria
                     l == null || l <= 0 -> "Escribe un límite válido"
                     else -> null
                 }
-                if (error == null) { vm.guardar(e?.limite?.id, ambito, ref, l!!); alCerrar() }
+                if (error == null) { vm.guardar(e?.limite?.id, ambito, ref, l!!, periodo); alCerrar() }
             }) { Text("Guardar") }
         },
         dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },

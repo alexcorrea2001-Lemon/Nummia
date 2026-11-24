@@ -18,7 +18,8 @@ import io.github.alexcorrea2001lemon.nummia.domain.calculo.ResumenAnual
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.TipoIngreso
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.acumuladoDiario
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.claveTexto
-import io.github.alexcorrea2001lemon.nummia.domain.calculo.diaMasGasto
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.CifrasMes
+import io.github.alexcorrea2001lemon.nummia.domain.calculo.cifrasMes
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.porCategoria
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.porTienda
 import io.github.alexcorrea2001lemon.nummia.domain.calculo.resumen
@@ -60,7 +61,7 @@ data class EstadoMes(
     val acumulado: List<Long> = emptyList(),
     val acumuladoAnterior: List<Long> = emptyList(),
     val reparto: List<GrupoGasto> = emptyList(),
-    val diaMas: Pair<LocalDate, Long>? = null,
+    val cifras: CifrasMes? = null,
     val tardio: LocalDate? = null,
     val vacio: Boolean = true,
 )
@@ -116,7 +117,7 @@ class EstadisticasViewModel @Inject constructor(
             acumulado = acumuladoDiario(ym, gastos, reembolsos),
             acumuladoAnterior = acumuladoDiario(ym.minusMonths(1), gastos, reembolsos),
             reparto = if (s.porCategoria) porCategoria(etiquetadosMes, reembolsos, nombreCategoria) else porTienda(etiquetadosMes, reembolsos),
-            diaMas = diaMasGasto(delMes.map { it.aMov() }, reembolsos),
+            cifras = cifrasMes(ym, reloj.hoy(), delMes.map { it.aMov() }, reembolsos),
             tardio = delMes.mapNotNull { it.reembolsoTardio }.maxOrNull(),
             vacio = delMes.none { it.gasto.estado == Estado.CONFIRMADO } && ingresosMes.isEmpty(),
         )

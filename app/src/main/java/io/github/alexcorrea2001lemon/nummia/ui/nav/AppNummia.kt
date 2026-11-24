@@ -51,6 +51,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -198,9 +200,10 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
         }
         }
         }
-        if (menuAbierto) {
+        // Con el menú + abierto, lo de detrás se oscurece bastante: así las opciones se leen bien.
+        AnimatedVisibility(menuAbierto, enter = fadeIn(tween(180)), exit = fadeOut(tween(150))) {
             Box(
-                Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f))
+                Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.72f))
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { menuAbierto = false },
             )
         }
@@ -361,10 +364,19 @@ private fun MenuAnadir(abierto: Boolean, alAlternar: () -> Unit, alElegir: (Stri
                 exit = fadeOut(tween(120)) + slideOutVertically { it / 2 },
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                    Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 2.dp) {
-                        Text(texto, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = Espacio.m, vertical = Espacio.s))
+                    // Etiqueta en color inverso (clara sobre fondo oscuro y al revés): máximo contraste.
+                    Surface(
+                        onClick = { alElegir(destino) }, shape = MaterialTheme.shapes.small,
+                        // TalkBack ya lee el botón redondo de al lado: la etiqueta no se repite.
+                        modifier = Modifier.clearAndSetSemantics {},
+                        color = MaterialTheme.colorScheme.inverseSurface, contentColor = MaterialTheme.colorScheme.inverseOnSurface, shadowElevation = 4.dp,
+                    ) {
+                        Text(texto, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = Espacio.m, vertical = Espacio.s))
                     }
-                    SmallFloatingActionButton(onClick = { alElegir(destino) }, containerColor = MaterialTheme.colorScheme.secondaryContainer) {
+                    SmallFloatingActionButton(
+                        onClick = { alElegir(destino) },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ) {
                         Icon(icono, texto)
                     }
                 }

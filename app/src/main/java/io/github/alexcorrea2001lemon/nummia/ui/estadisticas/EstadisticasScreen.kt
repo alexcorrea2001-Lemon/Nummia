@@ -51,6 +51,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -164,6 +166,7 @@ private fun LazyListScope.pestanaMes(e: EstadoEst, vm: EstadisticasViewModel) {
                 listOf(SerieLinea(m.acumuladoAnterior, anterior.copy(alpha = 0.6f), discontinua = true), SerieLinea(m.acumulado, actual)),
                 listOf("1", "${(m.acumulado.size + 1) / 2}", "${m.acumulado.size}"),
                 "Gasto acumulado: ${formatearEuros(m.acumulado.lastOrNull() ?: 0)} este mes y ${formatearEuros(m.acumuladoAnterior.lastOrNull() ?: 0)} el mes anterior",
+                ejeY = true, discreto = e.discreto,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) {
                 Leyenda(actual, nombreMes(e.sel.mes))
@@ -172,14 +175,7 @@ private fun LazyListScope.pestanaMes(e: EstadoEst, vm: EstadisticasViewModel) {
         }
     }
     if (m.reparto.isNotEmpty()) item { Reparto(m.reparto, e.sel.porCategoria, e.discreto, vm::agruparPorCategoria) }
-    m.diaMas?.let { (dia, importe) ->
-        item {
-            Tarjeta {
-                Text("Día de más gasto", style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
-                Text("${fechaLarga(dia)} · ${formatearEuros(importe, discreto = e.discreto)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            }
-        }
-    }
+    m.cifras?.takeIf { it.dias > 0 || it.gastos > 0 }?.let { cf -> item { CifrasDelMes(cf, e.discreto) } }
 }
 
 @Composable
@@ -359,9 +355,46 @@ private fun LazyListScope.pestanaComparar(e: EstadoEst, vm: EstadisticasViewMode
                 listOf(SerieLinea(c.a.meses.map { it.gastoReal }, suave.copy(alpha = 0.6f), discontinua = true), SerieLinea(c.b.meses.map { it.gastoReal }, principal)),
                 listOf("Ene", "Jun", "Dic"),
                 "Gasto real de cada mes en ${c.a.anio} y ${c.b.anio}",
+                ejeY = true, discreto = e.discreto,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) { Leyenda(principal, "${c.b.anio}"); Leyenda(suave, "${c.a.anio} (discontinua)") }
         }
+    }
+}
+
+/** «El mes en cifras»: media al día, a qué ritmo vas, cuántas compras y días sin gastar. */
+@Composable
+private fun CifrasDelMes(cf: io.github.alexcorrea2001lemon.nummia.domain.calculo.CifrasMes, discreto: Boolean) {
+    val c = LocalColoresNummia.current
+    Tarjeta {
+        Text("El mes en cifras", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        cf.prevision?.let { p ->
+            Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+                Column(Modifier.fillMaxWidth().padding(Espacio.m)) {
+                    Text("Si sigues a este ritmo", style = MaterialTheme.typography.bodySmall)
+                    Text("acabarás el mes en ${formatearEuros(p, discreto = discreto)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+            Cifra("Media al día", formatearEuros(cf.mediaDia, discreto = discreto), Modifier.weight(1f))
+            Cifra("Gasto medio", cf.gastoMedio?.let { formatearEuros(it, discreto = discreto) } ?: "—", Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+            Cifra("Gastos apuntados", "${cf.gastos}", Modifier.weight(1f))
+            Cifra(
+                "Días sin gastar", if (cf.dias > 0) "${cf.diasSinGastar} de ${cf.dias}" else "—", Modifier.weight(1f),
+                color = if (cf.dias > 0 && cf.diasSinGastar * 2 >= cf.dias) c.ingreso else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Cifra(titulo: String, valor: String, modifier: Modifier = Modifier, color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
+    Column(modifier.semantics(mergeDescendants = true) {}) {
+        Text(titulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
+        Text(valor, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = color, maxLines = 1)
     }
 }
 

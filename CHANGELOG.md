@@ -2,6 +2,19 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.3.0] - 2026-11-24
+
+### Nuevo
+- **«El mes en cifras»** en Estadísticas → Mes (sustituye a «Día de más gasto»):
+  - Si sigues a este ritmo, cuánto acabarás gastando el mes (solo en el mes en curso).
+  - Media al día y gasto medio de cada compra.
+  - Gastos apuntados.
+  - Días sin gastar.
+- **Importes en el lateral** de las gráficas «Gasto acumulado» y «Gasto de cada mes» (0 €, 250 €, 500 €…), con números redondos. En modo discreto se ocultan.
+
+### Mejorado
+- **Menú del botón +**: el fondo se oscurece bastante más y las opciones (Gasto, Ingreso, Devolución…) tienen más contraste. Ahora también puedes tocar el texto, no solo el icono.
+
 ## [2.2.3] - 2026-11-24
 
 ### Arreglado

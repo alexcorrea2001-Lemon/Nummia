@@ -129,3 +129,35 @@ fun parteGastada(gasto: Long, ingresos: Long): Float? =
 /** Porcentaje redondeado de lo que entró que se gastó (puede pasar de 100); null si no entró nada. */
 fun porcentajeGastado(gasto: Long, ingresos: Long): Int? =
     if (ingresos <= 0) null else Math.round(gasto.coerceAtLeast(0).toDouble() * 100 / ingresos).toInt()
+
+/** El mes en cifras. [dias]: días ya vividos del mes (todos si ya pasó; 0 si aún no ha llegado). */
+data class CifrasMes(
+    val dias: Int,
+    val mediaDia: Long,
+    val gastos: Int,
+    val gastoMedio: Long?,
+    val diasSinGastar: Int,
+    /** Solo en el mes en curso y a partir del día 3: a qué ritmo acabará el mes si sigues así. */
+    val prevision: Long?,
+)
+
+fun cifrasMes(ym: YearMonth, hoy: LocalDate, gastos: List<MovGasto>, reembolsos: List<MovReembolso>): CifrasMes {
+    val devuelto = reembolsos.groupBy { it.gastoId }.mapValues { (_, r) -> r.sumOf { it.importe } }
+    val delMes = gastos.filter { confirmado(it) && YearMonth.from(it.fecha) == ym }
+    val dias = when {
+        ym == YearMonth.from(hoy) -> hoy.dayOfMonth
+        ym.isBefore(YearMonth.from(hoy)) -> ym.lengthOfMonth()
+        else -> 0
+    }
+    val total = delMes.sumOf { it.importe - (devuelto[it.id] ?: 0) }
+    val conGasto = delMes.filter { it.fecha.dayOfMonth <= dias }.map { it.fecha }.toSet().size
+    val enCurso = ym == YearMonth.from(hoy)
+    return CifrasMes(
+        dias = dias,
+        mediaDia = if (dias > 0) Math.round(total.toDouble() / dias) else 0L,
+        gastos = delMes.size,
+        gastoMedio = if (delMes.isEmpty()) null else Math.round(total.toDouble() / delMes.size),
+        diasSinGastar = (dias - conGasto).coerceAtLeast(0),
+        prevision = if (enCurso && dias >= 3) Math.round(total.toDouble() * ym.lengthOfMonth() / dias) else null,
+    )
+}

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -47,32 +49,88 @@ private fun progreso(clave: Any?): Float {
     return p.value
 }
 
+/**
+ * Marcas del eje vertical (en céntimos): pasos «redondos» (1, 2, 2,5 o 5 × 10ⁿ) que empiezan en 0
+ * (o por debajo, si hay negativos) y cubren el valor más alto. Suelen salir 3 o 4 tramos.
+ */
+fun ejeBonito(min: Long, max: Long, tramos: Int = 3): List<Long> {
+    val lo0 = minOf(0L, min)
+    val hi0 = maxOf(max, lo0 + 100)
+    val bruto = (hi0 - lo0).toDouble() / tramos
+    val potencia = Math.pow(10.0, Math.floor(Math.log10(bruto)))
+    val paso = listOf(1.0, 2.0, 2.5, 5.0, 10.0).map { it * potencia }.first { it >= bruto }.toLong().coerceAtLeast(1)
+    val lo = Math.floorDiv(lo0, paso) * paso
+    val hi = -Math.floorDiv(-hi0, paso) * paso
+    return generateSequence(lo) { it + paso }.takeWhile { it <= hi }.toList()
+}
+
+/** «1.500 €», «250 €», «2,5 €»: corto, sin céntimos salvo que hagan falta. */
+fun textoEje(c: Long): String {
+    val signo = if (c < 0) "−" else ""
+    val a = kotlin.math.abs(c)
+    val euros = a / 100
+    val miles = euros.toString().reversed().chunked(3).joinToString(".").reversed()
+    val resto = a % 100
+    val dec = when {
+        resto == 0L -> ""
+        resto % 10 == 0L -> ",${resto / 10}"
+        else -> ",${resto.toString().padStart(2, '0')}"
+    }
+    return "$signo$miles$dec €"
+}
+
 data class SerieLinea(val valores: List<Long>, val color: Color, val discontinua: Boolean = false)
 
-/** Gráfico de líneas que se traza de izquierda a derecha. */
+/**
+ * Gráfico de líneas que se traza de izquierda a derecha. Con [ejeY], a la izquierda se ven los importes
+ * de cada línea de la rejilla (con [discreto], ocultos).
+ */
 @Composable
-fun GraficoLineas(series: List<SerieLinea>, etiquetas: List<String>, descripcion: String, modifier: Modifier = Modifier, alto: Dp = 180.dp) {
+fun GraficoLineas(
+    series: List<SerieLinea>, etiquetas: List<String>, descripcion: String, modifier: Modifier = Modifier, alto: Dp = 180.dp,
+    ejeY: Boolean = false, discreto: Boolean = false,
+) {
     val p = progreso(series.map { it.valores })
     val rejilla = LocalColoresNummia.current.borde
+    val todos = series.flatMap { it.valores }
+    val marcas = if (ejeY && todos.isNotEmpty()) ejeBonito(todos.min(), todos.max()) else emptyList()
+    val estiloEje = MaterialTheme.typography.labelSmall.copy(color = LocalColoresNummia.current.textoSuave)
+    val medidor = androidx.compose.ui.text.rememberTextMeasurer()
+    val textos = marcas.map { if (discreto) "••" else textoEje(it) }
+    val densidad = androidx.compose.ui.platform.LocalDensity.current
+    // Hueco a la izquierda para el texto más ancho.
+    val margen = if (textos.isEmpty()) 0.dp else with(densidad) {
+        (textos.maxOf { medidor.measure(it, estiloEje).size.width }).toDp() + 8.dp
+    }
     Column(modifier.fillMaxWidth()) {
         Canvas(Modifier.fillMaxWidth().height(alto).semantics { contentDescription = descripcion }) {
-            val todos = series.flatMap { it.valores }
             if (todos.isEmpty()) return@Canvas
-            val min = minOf(0L, todos.min()).toFloat()
-            val max = maxOf(todos.max().toFloat(), min + 1f)
+            val izq = margen.toPx()
+            val ancho = size.width - izq
+            val min = if (marcas.isNotEmpty()) marcas.first().toFloat() else minOf(0L, todos.min()).toFloat()
+            val max = if (marcas.isNotEmpty()) marcas.last().toFloat() else maxOf(todos.max().toFloat(), min + 1f)
             val pad = 6.dp.toPx()
             val h = size.height - pad * 2
             fun y(v: Long) = pad + h - (v - min) / (max - min) * h
-            for (i in 0..3) {
-                val yy = pad + h * i / 3f
-                drawLine(rejilla, Offset(0f, yy), Offset(size.width, yy), strokeWidth = 1.dp.toPx())
+            if (marcas.isNotEmpty()) {
+                marcas.forEachIndexed { i, m ->
+                    val yy = y(m)
+                    drawLine(rejilla, Offset(izq, yy), Offset(size.width, yy), strokeWidth = if (m == 0L) 1.5.dp.toPx() else 1.dp.toPx())
+                    val t = medidor.measure(textos[i], estiloEje)
+                    drawText(t, topLeft = Offset(izq - 8.dp.toPx() - t.size.width, yy - t.size.height / 2f))
+                }
+            } else {
+                for (i in 0..3) {
+                    val yy = pad + h * i / 3f
+                    drawLine(rejilla, Offset(0f, yy), Offset(size.width, yy), strokeWidth = 1.dp.toPx())
+                }
+                if (min < 0) drawLine(rejilla.copy(alpha = 1f), Offset(0f, y(0)), Offset(size.width, y(0)), strokeWidth = 1.5.dp.toPx())
             }
-            if (min < 0) drawLine(rejilla.copy(alpha = 1f), Offset(0f, y(0)), Offset(size.width, y(0)), strokeWidth = 1.5.dp.toPx())
             series.forEach { s ->
                 if (s.valores.isEmpty()) return@forEach
-                val paso = if (s.valores.size > 1) size.width / (s.valores.size - 1) else 0f
+                val paso = if (s.valores.size > 1) ancho / (s.valores.size - 1) else 0f
                 val camino = Path().apply {
-                    s.valores.forEachIndexed { i, v -> if (i == 0) moveTo(0f, y(v)) else lineTo(i * paso, y(v)) }
+                    s.valores.forEachIndexed { i, v -> if (i == 0) moveTo(izq, y(v)) else lineTo(izq + i * paso, y(v)) }
                 }
                 val medida = PathMeasure().apply { setPath(camino, false) }
                 val parcial = Path()
@@ -86,7 +144,7 @@ fun GraficoLineas(series: List<SerieLinea>, etiquetas: List<String>, descripcion
                 )
             }
         }
-        if (etiquetas.isNotEmpty()) EtiquetasEje(etiquetas)
+        if (etiquetas.isNotEmpty()) androidx.compose.foundation.layout.Box(Modifier.padding(start = margen)) { EtiquetasEje(etiquetas) }
     }
 }
 

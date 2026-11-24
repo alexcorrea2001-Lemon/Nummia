@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         PersonaEntity::class, CategoriaEntity::class, HistorialEntity::class, PagoMensualEntity::class,
         PresupuestoEntity::class, IngresoFijoEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Conversores::class)
@@ -49,7 +49,14 @@ abstract class NummiaDb : RoomDatabase() {
                 )
             }
         }
-        val MIGRACIONES: Array<Migration> get() = arrayOf(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4)
+        /** v2.4.0: pagos trimestrales y anuales. Solo añade. */
+        val MIGRACION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `pagos_mensuales` ADD COLUMN `cadaMeses` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE `pagos_mensuales` ADD COLUMN `desde` TEXT")
+            }
+        }
+        val MIGRACIONES: Array<Migration> get() = arrayOf(MIGRACION_1_2, MIGRACION_2_3, MIGRACION_3_4, MIGRACION_4_5)
 
         /** v1.3.0: pagos mensuales. Solo añade: no toca ningún dato existente. */
         val MIGRACION_1_2 = object : Migration(1, 2) {

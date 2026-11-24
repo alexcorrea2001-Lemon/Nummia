@@ -91,6 +91,17 @@ class PagosMensualesTest {
         assertEquals(false, repo.confirmarPagoDesdeAviso("no-existe", 100))
     }
 
+    @Test fun unPagoAnualSoloApareceEnSuMes() = runBlocking {
+        val id = gimnasioDesdeGasto()
+        repo.guardarPago(db.pagos().obtener(id)!!.copy(cadaMeses = 12, desde = "2030-03"))
+        reloj.fecha = LocalDate.of(2030, 4, 6)
+        repo.asegurarPagosPrevistos(reloj.hoy())
+        assertTrue(previstos().isEmpty())
+        reloj.fecha = LocalDate.of(2031, 3, 2)
+        repo.asegurarPagosPrevistos(reloj.hoy())
+        assertEquals(1, previstos().size)
+    }
+
     @Test fun esteMesNoNoVuelveAAparecer() = runBlocking {
         gimnasioDesdeGasto()
         reloj.fecha = LocalDate.of(2030, 4, 6)

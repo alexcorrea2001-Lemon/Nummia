@@ -69,7 +69,18 @@ class TrabajoAvisos @AssistedInject constructor(
         val primero = db.gastos().volcar().filter { it.deletedAt == null }.minOfOrNull { it.fecha }
         val copia = avisoCopia(hoy, sinc.correo() != null, ajustes.ultimaCopiaLocal()?.let(java.time.LocalDate::ofEpochDay), primero)
             ?.takeIf { it.clave !in hechos }
-        val nuevos = avisosPendientes(hoy, sueldo, pagos, presupuestos, hechos, PreferenciasAvisos(a.avisoSueldo, a.avisoPagos, a.avisoPresupuestos), previsto?.id, previsto?.importe ?: 0) +
+        // Trimestrales y anuales: aviso 3 días antes del cobro.
+        val antes = if (!a.avisoPagos) emptyList() else io.github.alexcorrea2001lemon.nummia.domain.calculo.avisosAntesDelCobro(
+            hoy,
+            db.pagos().activos().map {
+                io.github.alexcorrea2001lemon.nummia.domain.calculo.PagoProximo(
+                    it.id, it.concepto, it.importe,
+                    io.github.alexcorrea2001lemon.nummia.domain.calculo.proximoCobro(it.dia, it.cadaMeses, it.mesDesde, hoy.plusDays(1)),
+                    it.cadaMeses,
+                )
+            },
+        ).filter { it.clave !in hechos }
+        val nuevos = antes + avisosPendientes(hoy, sueldo, pagos, presupuestos, hechos, PreferenciasAvisos(a.avisoSueldo, a.avisoPagos, a.avisoPresupuestos), previsto?.id, previsto?.importe ?: 0) +
             listOfNotNull(copia)
         nuevos.forEach { mostrar(context, it) }
         if (nuevos.isNotEmpty()) ajustes.anotarAvisos(nuevos.map { it.clave })

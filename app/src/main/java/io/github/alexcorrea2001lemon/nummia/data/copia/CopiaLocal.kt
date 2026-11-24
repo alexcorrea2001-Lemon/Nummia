@@ -76,7 +76,8 @@ data class Copia(
 class CopiaLocal @Inject constructor(private val db: NummiaDb) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    suspend fun exportar(ahora: Long): ByteArray {
+    /** Con [contrasena], la copia sale cifrada (ver [CifradoCopia]). */
+    suspend fun exportar(ahora: Long, contrasena: String? = null): ByteArray {
         val c = Copia(
             creada = ahora,
             gastos = db.gastos().volcar().map { it.dto() },
@@ -87,16 +88,22 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
             historial = db.historial().volcar().map { HistorialDto(it.entidad, it.entidadId, it.campo, it.antes, it.despues, it.origen.name, it.fecha) },
             presupuestos = db.presupuestos().volcar().map { PresupuestoDto(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt) },
             ingresosFijos = db.ingresosFijos().volcar().map { IngresoFijoDto(it.id, it.concepto, it.tipo.name, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt) },
-            pagos = db.pagos().volcar().map { PagoDto(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt) },
+            pagos = db.pagos().volcar().map { PagoDto(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt, it.cadaMeses, it.desde) },
         )
         val salida = ByteArrayOutputStream()
         GZIPOutputStream(salida).use { it.write(json.encodeToString(Copia.serializer(), c).toByteArray(Charsets.UTF_8)) }
-        return salida.toByteArray()
+        val plano = salida.toByteArray()
+        return if (contrasena.isNullOrEmpty()) plano else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { CifradoCopia.cifrar(plano, contrasena) }
     }
 
-    fun leer(bytes: ByteArray): Copia {
+    /** Lanza [CopiaCifrada] si hace falta contraseña y no se ha dado; [CopiaInvalida] si es incorrecta o está dañada. */
+    fun leer(bytes: ByteArray, contrasena: String? = null): Copia {
+        val gz = if (CifradoCopia.estaCifrada(bytes)) {
+            if (contrasena.isNullOrEmpty()) throw CopiaCifrada()
+            CifradoCopia.descifrar(bytes, contrasena)
+        } else bytes
         val texto = try {
-            GZIPInputStream(ByteArrayInputStream(bytes)).use { it.readBytes().toString(Charsets.UTF_8) }
+            GZIPInputStream(ByteArrayInputStream(gz)).use { it.readBytes().toString(Charsets.UTF_8) }
         } catch (e: Exception) {
             throw CopiaInvalida("El archivo no es una copia de Nummia.")
         }
@@ -111,7 +118,7 @@ class CopiaLocal @Inject constructor(private val db: NummiaDb) {
         db.vaciar().apply { gastos(); reembolsos(); ingresos(); personas(); categorias(); historial(); pagos(); presupuestos(); ingresosFijos() }
         c.ingresosFijos.forEach { db.ingresosFijos().guardar(IngresoFijoEntity(it.id, it.concepto, TipoIngreso.valueOf(it.tipo), it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt)) }
         c.presupuestos.forEach { db.presupuestos().guardar(PresupuestoEntity(it.id, it.ambito, it.ref, it.limite, it.createdAt, it.updatedAt)) }
-        c.pagos.forEach { db.pagos().guardar(PagoMensualEntity(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt)) }
+        c.pagos.forEach { db.pagos().guardar(PagoMensualEntity(it.id, it.concepto, it.tienda, it.categoriaId, it.importe, it.dia, it.activo, it.createdAt, it.updatedAt, it.deletedAt, it.cadaMeses, it.desde)) }
         c.personas.forEach { db.personas().guardar(PersonaEntity(it.id, it.nombre, it.createdAt, it.deletedAt)) }
         c.categorias.forEach { db.categorias().guardar(CategoriaEntity(it.id, it.nombre, it.icono, it.color, it.predefinida, it.orden)) }
         c.gastos.forEach { db.gastos().guardar(it.entidad()) }

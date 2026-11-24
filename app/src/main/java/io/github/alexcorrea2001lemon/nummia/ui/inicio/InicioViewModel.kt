@@ -64,6 +64,8 @@ data class InicioEstado(
     val discreto: Boolean = false,
     val vacio: Boolean = true,
     val esMesActual: Boolean = true,
+    /** «A fin de mes te quedarán…» (solo el mes en curso). */
+    val prevision: io.github.alexcorrea2001lemon.nummia.domain.calculo.PrevisionMes? = null,
     val cargando: Boolean = true,
 )
 
@@ -155,6 +157,10 @@ class InicioViewModel @Inject constructor(
             discreto = discreto,
             vacio = actual.gastos.isEmpty() && actual.ingresos.isEmpty(),
             esMesActual = ym == YearMonth.from(hoy),
+            prevision = io.github.alexcorrea2001lemon.nummia.domain.calculo.previsionFinDeMes(
+                ym, hoy, actual.movGastos, actual.movReembolsos, actual.movIngresos,
+                fijos = actual.gastos.filter { it.gasto.pagoMensualId != null }.map { it.gasto.id }.toSet(),
+            ),
             cargando = false,
         )
     }

@@ -507,8 +507,11 @@ class MovimientosRepo @Inject constructor(
         // Los previstos aún sin confirmar se ajustan al nuevo precio y día (o desaparecen si se pausa).
         db.pagos().previstosDe(p.id).forEach { gid ->
             val g = db.gastos().obtener(gid) ?: return@forEach
-            if (!p.activo) { db.gastos().eliminar(listOf(gid)); db.historial().eliminarDe(listOf(gid)); return@forEach }
             val ym = YearMonth.from(g.fecha)
+            // En pausa, o ese mes ya no le toca (pasó a trimestral o anual): el previsto desaparece.
+            if (!p.activo || !io.github.alexcorrea2001lemon.nummia.domain.calculo.tocaEnMes(p.cadaMeses, p.mesDesde, ym)) {
+                db.gastos().eliminar(listOf(gid)); db.historial().eliminarDe(listOf(gid)); return@forEach
+            }
             db.gastos().guardar(
                 g.copy(
                     importe = p.importe, concepto = p.concepto, tienda = p.tienda, categoriaId = p.categoriaId,
@@ -535,6 +538,8 @@ class MovimientosRepo @Inject constructor(
     suspend fun asegurarPagosPrevistos(hoy: LocalDate) = db.withTransaction {
         val ym = YearMonth.from(hoy)
         for (p in db.pagos().activos()) {
+            // Trimestrales y anuales: solo en sus meses.
+            if (!io.github.alexcorrea2001lemon.nummia.domain.calculo.tocaEnMes(p.cadaMeses, p.mesDesde, ym)) continue
             if (db.pagos().gastosEnMes(p.id, ym.atDay(1), ym.atEndOfMonth()) > 0) continue
             val ahora = reloj.ahoraMs()
             val g = GastoEntity(

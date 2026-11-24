@@ -372,16 +372,20 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
     val ctx = LocalContext.current
     val alcance = rememberCoroutineScope()
     var pendiente by remember { mutableStateOf<ByteArray?>(null) }
+    var protegiendo by remember { mutableStateOf(false) }
+    var claveCopia by remember { mutableStateOf<String?>(null) }
     val nombre = remember { "Nummia_copia_${SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())}.nummia" }
 
     val guardar = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri: Uri? ->
         if (uri != null) alcance.launch {
+            val clave = claveCopia
+            claveCopia = null
             val ok = runCatching {
-                val datos = vm.exportar()
+                val datos = vm.exportar(clave)
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { ctx.contentResolver.openOutputStream(uri)!!.use { it.write(datos) } }
                 vm.copiaGuardada()
             }.isSuccess
-            snackbar.showSnackbar(if (ok) "Copia guardada" else "No se pudo guardar la copia")
+            snackbar.showSnackbar(if (!ok) "No se pudo guardar la copia" else if (clave != null) "Copia guardada con contraseña" else "Copia guardada")
         }
     }
     val nombreCsv = remember { "Nummia_${SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())}_csv.zip" }
@@ -416,7 +420,7 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
             style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
         )
         Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Descargar, "Guardar copia", "Crea un archivo con todo") { guardar.launch(nombre) }
+            OpcionAjuste(Iconos.Descargar, "Guardar copia", "Crea un archivo con todo, con contraseña si quieres") { protegiendo = true }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
             OpcionAjuste(Iconos.Subir, "Restaurar copia", "Sustituye tus datos por los del archivo") { abrir.launch(arrayOf("*/*")) }
         }
@@ -431,23 +435,94 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
         }
     }
 
-    pendiente?.let { bytes ->
-        AlertDialog(
-            onDismissRequest = { pendiente = null },
-            title = { Text("¿Restaurar esta copia?") },
-            text = { Text("Tus datos actuales se sustituirán por los del archivo. Antes, Nummia guardará una copia de lo que tienes ahora en el móvil.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    pendiente = null
-                    alcance.launch {
-                        val r = vm.importar(bytes)
-                        snackbar.showSnackbar(r.fold({ "Copia restaurada: $it movimientos" }, { it.message ?: "No se pudo restaurar" }))
-                    }
-                }) { Text("Restaurar") }
-            },
-            dismissButton = { TextButton(onClick = { pendiente = null }) { Text("Cancelar") } },
+    if (protegiendo) {
+        DialogoContrasenaCopia(
+            alCerrar = { protegiendo = false },
+            alElegir = { clave -> protegiendo = false; claveCopia = clave; guardar.launch(nombre) },
         )
     }
+
+    pendiente?.let { bytes ->
+        val cifrada = remember(bytes) { io.github.alexcorrea2001lemon.nummia.data.copia.CifradoCopia.estaCifrada(bytes) }
+        var clave by remember(bytes) { mutableStateOf("") }
+        var error by remember(bytes) { mutableStateOf<String?>(null) }
+        var restaurando by remember(bytes) { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { if (!restaurando) pendiente = null },
+            title = { Text("¿Restaurar esta copia?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                    Text("Tus datos actuales se sustituirán por los del archivo. Antes, Nummia guardará una copia de lo que tienes ahora en el móvil.")
+                    if (cifrada) {
+                        CampoContrasena(clave, { clave = it; error = null }, "Contraseña de la copia", error)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !restaurando && (!cifrada || clave.isNotEmpty()), onClick = {
+                    restaurando = true
+                    alcance.launch {
+                        val r = vm.importar(bytes, clave.takeIf { cifrada })
+                        restaurando = false
+                        val fallo = r.exceptionOrNull()
+                        if (cifrada && fallo is io.github.alexcorrea2001lemon.nummia.data.copia.CopiaInvalida && fallo.message?.startsWith("Contraseña") == true) {
+                            error = fallo.message // se queda abierto para volver a intentarlo
+                        } else {
+                            pendiente = null
+                            snackbar.showSnackbar(r.fold({ "Copia restaurada: $it movimientos" }, { it.message ?: "No se pudo restaurar" }))
+                        }
+                    }
+                }) { Text(if (restaurando) "Restaurando…" else "Restaurar") }
+            },
+            dismissButton = { TextButton(enabled = !restaurando, onClick = { pendiente = null }) { Text("Cancelar") } },
+        )
+    }
+}
+
+/** Antes de guardar la copia: protegerla con una contraseña (recomendado) o guardarla sin ella. */
+@Composable
+private fun DialogoContrasenaCopia(alCerrar: () -> Unit, alElegir: (String?) -> Unit) {
+    var clave by remember { mutableStateOf("") }
+    var repetir by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        title = { Text("Proteger la copia") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                Text(
+                    "Con contraseña, nadie puede ver tus datos aunque encuentre el archivo. Apúntala bien: sin ella la copia no se puede abrir.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                CampoContrasena(clave, { clave = it; error = null }, "Contraseña (mínimo 6)", null)
+                CampoContrasena(repetir, { repetir = it; error = null }, "Repítela", error)
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                error = when {
+                    clave.length < 6 -> "Usa al menos 6 caracteres"
+                    clave != repetir -> "Las dos contraseñas no coinciden"
+                    else -> null
+                }
+                if (error == null) alElegir(clave)
+            }) { Text("Proteger y guardar") }
+        },
+        dismissButton = { TextButton(onClick = { alElegir(null) }) { Text("Sin contraseña") } },
+    )
+}
+
+@Composable
+private fun CampoContrasena(valor: String, alCambiar: (String) -> Unit, etiqueta: String, error: String?) {
+    var ver by remember { mutableStateOf(false) }
+    androidx.compose.material3.OutlinedTextField(
+        valor, alCambiar, label = { Text(etiqueta) }, singleLine = true, isError = error != null,
+        supportingText = error?.let { { Text(it) } },
+        visualTransformation = if (ver) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password),
+        trailingIcon = { TextButton(onClick = { ver = !ver }) { Text(if (ver) "Ocultar" else "Ver") } },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 // ------------------------------------------------------------------ Acerca de y actualizaciones

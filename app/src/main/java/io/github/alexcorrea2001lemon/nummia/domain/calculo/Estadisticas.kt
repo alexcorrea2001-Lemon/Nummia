@@ -161,3 +161,34 @@ fun cifrasMes(ym: YearMonth, hoy: LocalDate, gastos: List<MovGasto>, reembolsos:
         prevision = if (enCurso && dias >= 3) Math.round(total.toDouble() * ym.lengthOfMonth() / dias) else null,
     )
 }
+
+/**
+ * Lo que te quedará a fin de mes: [ahora] (ingresado − gastado de verdad) + [porCobrar] (ingresos previstos)
+ * − [porPagar] (pagos previstos) − [ritmo] (gasto normal, sin pagos fijos, al ritmo de este mes por los días
+ * que quedan; desde el día 3).
+ */
+data class PrevisionMes(val ahora: Long, val porCobrar: Long, val porPagar: Long, val ritmo: Long) {
+    val quedara: Long get() = ahora + porCobrar - porPagar - ritmo
+}
+
+fun previsionFinDeMes(
+    ym: YearMonth, hoy: LocalDate, gastos: List<MovGasto>, reembolsos: List<MovReembolso>, ingresos: List<MovIngreso>, fijos: Set<String>,
+): PrevisionMes? {
+    if (ym != YearMonth.from(hoy)) return null
+    val devuelto = reembolsos.groupBy { it.gastoId }.mapValues { (_, r) -> r.sumOf { it.importe } }
+    val delMes = gastos.filter { YearMonth.from(it.fecha) == ym }
+    val hechos = delMes.filter(::confirmado)
+    fun real(g: MovGasto) = g.importe - (devuelto[g.id] ?: 0)
+    val ingMes = ingresos.filter { YearMonth.from(it.fecha) == ym }
+    val ahora = ingMes.filter { it.estado == Estado.CONFIRMADO }.sumOf { it.importe } - hechos.sumOf(::real)
+    val normal = hechos.filter { it.id !in fijos }.sumOf(::real)
+    val dia = hoy.dayOfMonth
+    val quedan = ym.lengthOfMonth() - dia
+    val ritmo = if (dia >= 3 && quedan > 0) Math.round(normal.toDouble() / dia * quedan).coerceAtLeast(0) else 0L
+    return PrevisionMes(
+        ahora = ahora,
+        porCobrar = ingMes.filter { it.estado == Estado.PREVISTO }.sumOf { it.importe },
+        porPagar = delMes.filter { it.estado == Estado.PREVISTO }.sumOf { it.importe },
+        ritmo = ritmo,
+    )
+}

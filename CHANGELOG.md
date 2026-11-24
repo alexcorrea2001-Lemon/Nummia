@@ -2,6 +2,13 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.4.0] - 2026-11-24
+
+### Nuevo
+- **Copias con contraseña**: al guardar una copia en archivo, Nummia te ofrece protegerla con una contraseña. Va cifrada (AES-256) y, si alguien la modifica o se daña, no se restaura. Para restaurarla se pide la contraseña. Las copias sin contraseña de antes se siguen pudiendo restaurar.
+- **Suscripciones**: los pagos fijos pueden ser **cada mes, cada 3 meses o cada año**. Cada uno muestra la **próxima fecha de cobro** y lo que te cuesta **al año**, y arriba ves el total al año de todos tus pagos. Los trimestrales y anuales **avisan 3 días antes** (si tienes los avisos de pagos activados).
+- **«A fin de mes te quedarán unos…»** en Inicio (mes en curso): lo que tienes, más el sueldo y los cobros previstos, menos los pagos pendientes y lo que gastarás si sigues a este ritmo. Tócalo para ver el desglose.
+
 ## [2.3.0] - 2026-11-24
 
 ### Nuevo

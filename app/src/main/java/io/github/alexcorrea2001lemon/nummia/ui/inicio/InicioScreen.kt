@@ -133,6 +133,7 @@ fun InicioScreen(
             ) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) }
         }
         item { Indicadores(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) } }
+        e.prevision?.takeIf { !e.vacio }?.let { p -> item("prevision") { TarjetaPrevision(p, e.discreto, Modifier.animateItem()) } }
 
         if (presupuestos.isNotEmpty()) {
             item("presupuestos") {
@@ -336,6 +337,34 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alReve
                 color = if (e.resumen.balance + e.sueldoPrevistoMes >= 0) c.ingreso else c.gasto,
             )
         }
+    }
+}
+
+/** «A fin de mes te quedarán unos X €», con el desglose (se abre al tocar). */
+@Composable
+private fun TarjetaPrevision(p: io.github.alexcorrea2001lemon.nummia.domain.calculo.PrevisionMes, discreto: Boolean, modifier: Modifier = Modifier) {
+    val c = LocalColoresNummia.current
+    var abierta by remember { mutableStateOf(false) }
+    Tarjeta(modifier.clip(MaterialTheme.shapes.medium).clickable(onClickLabel = if (abierta) "Ocultar desglose" else "Ver desglose") { abierta = !abierta }) {
+        Text("A fin de mes te quedarán unos", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+        Text(
+            formatearEuros(p.quedara, conSigno = p.quedara < 0, discreto = discreto),
+            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold,
+            color = if (p.quedara < 0) c.gasto else c.ingreso,
+        )
+        AnimatedVisibility(abierta) {
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs), modifier = Modifier.padding(top = Espacio.s)) {
+                @Composable fun linea(t: String, v: Long, signo: String) = Row {
+                    Text(t, style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.weight(1f))
+                    Text(signo + formatearEuros(kotlin.math.abs(v), discreto = discreto), style = MaterialTheme.typography.bodyMedium)
+                }
+                linea("Lo que tienes este mes", p.ahora, if (p.ahora < 0) "−" else "")
+                if (p.porCobrar > 0) linea("Por cobrar (sueldo y cobros fijos)", p.porCobrar, "+")
+                if (p.porPagar > 0) linea("Pagos fijos pendientes", p.porPagar, "−")
+                if (p.ritmo > 0) linea("Si sigues gastando a este ritmo", p.ritmo, "−")
+            }
+        }
+        if (!abierta) Text("Toca para ver de dónde sale", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
     }
 }
 

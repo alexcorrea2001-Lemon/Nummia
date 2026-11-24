@@ -3,6 +3,8 @@ package io.github.alexcorrea2001lemon.nummia.ui.pagos
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -64,9 +66,13 @@ class PagosViewModel @Inject constructor(private val repo: MovimientosRepo, priv
         repo.asegurarPagosPrevistos(reloj.hoy())
     }
 
-    fun nuevo(concepto: String, importe: Long, dia: Int) = guardar(
-        PagoMensualEntity(UUID.randomUUID().toString(), concepto.trim(), concepto.trim(), null, importe, dia, createdAt = reloj.ahoraMs(), updatedAt = reloj.ahoraMs()),
+    fun nuevo(concepto: String, importe: Long, dia: Int, cadaMeses: Int = 1, desde: java.time.YearMonth? = null) = guardar(
+        PagoMensualEntity(
+            UUID.randomUUID().toString(), concepto.trim(), concepto.trim(), null, importe, dia, createdAt = reloj.ahoraMs(), updatedAt = reloj.ahoraMs(),
+            cadaMeses = cadaMeses, desde = desde?.toString(),
+        ),
     )
+    fun hoy() = reloj.hoy()
 
     fun borrar(p: PagoMensualEntity) = viewModelScope.launch { repo.borrarPago(p.id) }
 
@@ -84,6 +90,9 @@ class PagosViewModel @Inject constructor(private val repo: MovimientosRepo, priv
 }
 
 private val MES = DateTimeFormatter.ofPattern("MM/yyyy")
+private val MES_CORTO = DateTimeFormatter.ofPattern("MMM", java.util.Locale.forLanguageTag("es-ES"))
+private val FECHA_COBRO = DateTimeFormatter.ofPattern("d MMM", java.util.Locale.forLanguageTag("es-ES"))
+private fun frecuencia(n: Int) = when (n) { 1 -> "cada mes"; 3 -> "cada 3 meses"; 12 -> "cada año"; else -> "cada $n meses" }
 
 @Composable
 fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
@@ -98,23 +107,24 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
     var creandoCobro by remember { mutableStateOf(false) }
 
     PantallaAjustes("Pagos y cobros fijos", alVolver) {
-        Text("Pagos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text("Pagos y suscripciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         val lista = pagos.orEmpty()
         if (pagos != null && lista.isEmpty()) {
             Tarjeta {
                 EstadoVacio(
-                    Iconos.Repetir, "Sin pagos mensuales",
-                    "Gimnasio, móvil, suscripciones… Cada mes aparecerán en Inicio para confirmarlos con un toque, aunque el precio cambie.",
+                    Iconos.Repetir, "Sin pagos fijos",
+                    "Gimnasio, móvil, suscripciones, el seguro del coche… Cada mes, cada 3 meses o cada año: aparecerán en Inicio para confirmarlos con un toque, aunque el precio cambie.",
                     accion = "Añadir pago", alPulsar = { creando = true },
                 )
             }
             Text("También puedes activar «Se paga cada mes» al apuntar un gasto.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
         } else if (lista.isNotEmpty()) {
             val activos = lista.filter { it.activo }
+            val alAnio = activos.sumOf { io.github.alexcorrea2001lemon.nummia.domain.calculo.costeAnual(it.importe, it.cadaMeses) }
             Tarjeta {
-                Text("Al mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
-                Text(formatearEuros(activos.sumOf { it.importe }), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Text("${activos.size} pagos activos", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                Text("Te cuestan al año", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+                Text(formatearEuros(alAnio), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Text("${formatearEuros(alAnio / 12)} al mes de media · ${activos.size} pagos activos", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
             }
             Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
                 lista.forEachIndexed { n, p ->
@@ -123,7 +133,14 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = if (p.activo) MaterialTheme.colorScheme.onSurface else c.textoSuave)
-                                Text("${formatearEuros(p.importe)} · día ${p.dia}${if (p.activo) "" else " · en pausa"}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                                val hoy = remember { vm.hoy() }
+                                val proximo = remember(p) { io.github.alexcorrea2001lemon.nummia.domain.calculo.proximoCobro(p.dia, p.cadaMeses, p.mesDesde, hoy) }
+                                Text(
+                                    "${formatearEuros(p.importe)} · ${frecuencia(p.cadaMeses)}" +
+                                        if (p.activo) " · próximo: ${FECHA_COBRO.format(proximo).removeSuffix(".")}${if (proximo.year != hoy.year) " ${proximo.year}" else ""}" else " · en pausa",
+                                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                                )
+                                if (p.cadaMeses > 1) Text("${formatearEuros(io.github.alexcorrea2001lemon.nummia.domain.calculo.costeAnual(p.importe, p.cadaMeses))} al año", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
                             }
                             Switch(checked = p.activo, onCheckedChange = { vm.guardar(p.copy(activo = it)) })
                         }
@@ -214,12 +231,19 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
         }
     }
 
-    if (creando) DialogoPago(null, alCerrar = { creando = false }) { concepto, importe, dia -> vm.nuevo(concepto, importe, dia); creando = false }
+    if (creando) DialogoPago(null, alCerrar = { creando = false }, titulo = "Nuevo pago", conFrecuencia = { concepto, importe, dia, cada, desde ->
+        vm.nuevo(concepto, importe, dia, cada, desde); creando = false
+    })
     editando?.let { p ->
-        DialogoPago(p, alCerrar = { editando = null }) { concepto, importe, dia ->
-            vm.guardar(p.copy(concepto = concepto.trim(), tienda = if (p.tienda == p.concepto) concepto.trim() else p.tienda, importe = importe, dia = dia))
+        DialogoPago(p, alCerrar = { editando = null }, conFrecuencia = { concepto, importe, dia, cada, desde ->
+            vm.guardar(
+                p.copy(
+                    concepto = concepto.trim(), tienda = if (p.tienda == p.concepto) concepto.trim() else p.tienda, importe = importe, dia = dia,
+                    cadaMeses = cada, desde = desde?.toString(),
+                ),
+            )
             editando = null
-        }
+        })
     }
 }
 
@@ -228,8 +252,21 @@ private fun DialogoPago(
     p: PagoMensualEntity?, alCerrar: () -> Unit,
     titulo: String = if (p == null) "Nuevo pago mensual" else "Editar pago",
     inicial: Triple<String, Long, Int>? = p?.let { Triple(it.concepto, it.importe, it.dia) },
-    alGuardar: (String, Long, Int) -> Unit,
+    /** Solo pagos: con esto se elige si es mensual, trimestral o anual (concepto, importe, día, cada cuántos meses, mes del primer cobro). */
+    conFrecuencia: ((String, Long, Int, Int, java.time.YearMonth?) -> Unit)? = null,
+    alGuardar: (String, Long, Int) -> Unit = { _, _, _ -> },
 ) {
+    val esteMes = remember { java.time.YearMonth.now() }
+    var cada by remember { mutableStateOf(p?.cadaMeses ?: 1) }
+    // Para trimestrales y anuales: en qué mes toca el próximo cobro (de los 12 siguientes).
+    var mesCobro by remember {
+        mutableStateOf(
+            p?.takeIf { it.cadaMeses > 1 }?.let {
+                val f = io.github.alexcorrea2001lemon.nummia.domain.calculo.proximoCobro(it.dia, it.cadaMeses, it.mesDesde, java.time.LocalDate.now())
+                java.time.YearMonth.from(f)
+            } ?: esteMes,
+        )
+    }
     var concepto by remember { mutableStateOf(inicial?.first.orEmpty()) }
     var importe by remember { mutableStateOf(inicial?.second?.let { formatearEuros(it).removeSuffix("€").trim() }.orEmpty()) }
     var dia by remember { mutableStateOf(inicial?.third?.toString() ?: "1") }
@@ -248,6 +285,27 @@ private fun DialogoPago(
                     dia, { dia = it.filter(Char::isDigit).take(2); error = null }, label = { Text("Día del mes (1–31)") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
+                if (conFrecuencia != null) {
+                    Text("Se paga", style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                        listOf(1 to "Cada mes", 3 to "Cada 3 meses", 12 to "Cada año").forEach { (n, t) ->
+                            androidx.compose.material3.FilterChip(selected = cada == n, onClick = { cada = n }, label = { Text(t, maxLines = 1) })
+                        }
+                    }
+                    AnimatedVisibility(cada > 1) {
+                        Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                            Text("Próximo cobro en", style = MaterialTheme.typography.labelLarge)
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                                (0L until 12L).map { esteMes.plusMonths(it) }.forEach { ym ->
+                                    androidx.compose.material3.FilterChip(
+                                        selected = mesCobro == ym, onClick = { mesCobro = ym },
+                                        label = { Text(MES_CORTO.format(ym).removeSuffix(".") + if (ym.year != esteMes.year) " ${ym.year % 100}" else "", maxLines = 1) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             }
         },
@@ -261,7 +319,10 @@ private fun DialogoPago(
                     d == null || d !in 1..31 -> "El día tiene que estar entre 1 y 31"
                     else -> null
                 }
-                if (error == null) alGuardar(concepto, i!!, d!!)
+                if (error == null) {
+                    if (conFrecuencia != null) conFrecuencia(concepto, i!!, d!!, cada, if (cada > 1) mesCobro else null)
+                    else alGuardar(concepto, i!!, d!!)
+                }
             }) { Text("Guardar") }
         },
         dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },

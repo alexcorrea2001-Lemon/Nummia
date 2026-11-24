@@ -11,6 +11,8 @@ import io.github.alexcorrea2001lemon.nummia.domain.calculo.TipoIngreso
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,6 +44,33 @@ class CopiaLocalTest {
         assertEquals("Luis", repo2.personas().first().single().nombre)
         assertEquals(origen.categorias().volcar().size, destino.categorias().volcar().size)
         origen.close(); destino.close()
+    }
+
+    @Test fun copiaConContrasenaSoloSeAbreConElla() = runTest {
+        val origen = dbPrueba()
+        val repo = MovimientosRepo(origen, RelojFijo())
+        repo.prepararDatos()
+        repo.guardarGasto(GastoInput(fecha = LocalDate.of(2030, 3, 2), concepto = "Cafetería secreta", tienda = "", importe = 275))
+        val bytes = CopiaLocal(origen).exportar(1L, contrasena = "una frase inventada")
+
+        // No se lee nada sin la contraseña: ni el concepto aparece en el archivo.
+        assertFalse(String(bytes, Charsets.ISO_8859_1).contains("Cafetería"))
+        assertTrue(CifradoCopia.estaCifrada(bytes))
+        val destino = dbPrueba()
+        val copia = CopiaLocal(destino)
+        assertThrows(CopiaCifrada::class.java) { copia.leer(bytes) }
+        assertThrows(CopiaInvalida::class.java) { copia.leer(bytes, "otra") }
+        copia.restaurar(copia.leer(bytes, "una frase inventada"))
+        assertEquals(1, destino.gastos().volcar().count { it.concepto == "Cafetería secreta" })
+        origen.close(); destino.close()
+    }
+
+    @Test fun unaCopiaCifradaModificadaSeRechaza() {
+        val datos = "datos inventados".toByteArray()
+        val c = CifradoCopia.cifrar(datos, "clave")
+        assertEquals("datos inventados", String(CifradoCopia.descifrar(c, "clave")))
+        c[c.size - 5] = (c[c.size - 5].toInt() xor 1).toByte() // un solo bit cambiado
+        assertThrows(CopiaInvalida::class.java) { CifradoCopia.descifrar(c, "clave") }
     }
 
     @Test fun archivoQueNoEsCopiaSeRechaza() {

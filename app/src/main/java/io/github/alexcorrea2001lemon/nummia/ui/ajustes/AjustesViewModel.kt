@@ -68,13 +68,14 @@ class AjustesViewModel @Inject constructor(
     fun renombrar(p: PersonaEntity, n: String) = viewModelScope.launch { repo.renombrarPersona(p, n) }
     fun borrarPersona(p: PersonaEntity) = viewModelScope.launch { repo.borrarPersona(p) }
 
-    suspend fun exportar(): ByteArray = copia.exportar(reloj.ahoraMs())
+    suspend fun exportar(contrasena: String? = null): ByteArray = copia.exportar(reloj.ahoraMs(), contrasena)
     suspend fun copiaGuardada() = ajustesRepo.ultimaCopiaLocal(reloj.hoy().toEpochDay())
     suspend fun exportarCsv(): ByteArray = csv.zip()
 
     /** Antes de restaurar se guarda una copia del estado actual en el móvil. */
-    suspend fun importar(bytes: ByteArray): Result<Int> = runCatching {
-        val c = copia.leer(bytes)
+    suspend fun importar(bytes: ByteArray, contrasena: String? = null): Result<Int> = runCatching {
+        // Descifrar (si tiene contraseña) y leer cuesta un poco: fuera del hilo principal.
+        val c = withContext(Dispatchers.Default) { copia.leer(bytes, contrasena) }
         withContext(Dispatchers.IO) {
             val dir = File(context.filesDir, "copias").apply { mkdirs() }
             File(dir, "antes_de_importar_${reloj.ahoraMs()}.nummia").writeBytes(copia.exportar(reloj.ahoraMs()))
@@ -88,5 +89,5 @@ class AjustesViewModel @Inject constructor(
         repo.prepararDatos()
         repo.asegurarSueldoPrevisto(reloj.hoy(), ajustes.first().sueldoHabitual)
         c.gastos.count { it.deletedAt == null } + c.ingresos.count { it.deletedAt == null }
-    }.recoverCatching { e -> throw if (e is CopiaInvalida) e else CopiaInvalida("No se pudo leer la copia.") }
+    }.recoverCatching { e -> throw if (e is CopiaInvalida || e is io.github.alexcorrea2001lemon.nummia.data.copia.CopiaCifrada) e else CopiaInvalida("No se pudo leer la copia.") }
 }

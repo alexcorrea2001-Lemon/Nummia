@@ -1,5 +1,7 @@
 package io.github.alexcorrea2001lemon.nummia.ui.pagos
 
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
@@ -300,7 +302,7 @@ private fun DialogoPago(
                     androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         val opciones = listOf(1 to "Mensual", 3 to "Trimestral", 12 to "Anual")
                         opciones.forEachIndexed { k, (n, t) ->
-                            androidx.compose.material3.SegmentedButton(
+                            SegmentedButton(
                                 selected = cada == n, onClick = { cada = n },
                                 shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(k, opciones.size),
                                 label = { Text(t, maxLines = 1, softWrap = false) },

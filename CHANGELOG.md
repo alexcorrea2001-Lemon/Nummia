@@ -2,6 +2,11 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.8.2] - 2026-11-24
+
+### Cambiado
+- Inicio: nueva tarjeta de balance. La cabecera va en color con el borde inferior en onda, y debajo están lo que entró, lo gastado y el gasto medio por día, cada cifra con su icono. Sustituye a la curva.
+
 ## [2.8.1] - 2026-11-24
 
 ### Arreglado

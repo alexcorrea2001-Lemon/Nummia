@@ -68,11 +68,8 @@ data class InicioEstado(
     /** «A fin de mes te quedarán…» (solo el mes en curso). */
     val prevision: io.github.alexcorrea2001lemon.nummia.domain.calculo.PrevisionMes? = null,
     val cargando: Boolean = true,
-    /** Gasto real acumulado día a día de este mes y del anterior (para la curva del balance). */
-    val acumulado: List<Long> = emptyList(),
-    val acumuladoAnterior: List<Long> = emptyList(),
-    /** Día del mes hasta el que se dibuja la curva (hoy, o el último si el mes ya pasó). */
-    val diaCurva: Int = 0,
+    /** Gasto medio por día vivido del mes (0 si el mes aún no ha llegado). */
+    val mediaDia: Long = 0,
     /** En qué se va el dinero: categorías más grandes y «Otras». */
     val reparto: List<Pair<String, Long>> = emptyList(),
 )
@@ -170,13 +167,7 @@ class InicioViewModel @Inject constructor(
                 fijos = actual.gastos.filter { it.gasto.pagoMensualId != null }.map { it.gasto.id }.toSet(),
             ),
             cargando = false,
-            acumulado = io.github.alexcorrea2001lemon.nummia.domain.calculo.acumuladoDiario(ym, actual.movGastos, actual.movReembolsos),
-            acumuladoAnterior = io.github.alexcorrea2001lemon.nummia.domain.calculo.acumuladoDiario(prev, anterior.movGastos, anterior.movReembolsos),
-            diaCurva = when {
-                ym < YearMonth.from(hoy) -> ym.lengthOfMonth()
-                ym == YearMonth.from(hoy) -> hoy.dayOfMonth
-                else -> 0
-            },
+            mediaDia = io.github.alexcorrea2001lemon.nummia.domain.calculo.cifrasMes(ym, hoy, actual.movGastos, actual.movReembolsos).mediaDia,
             reparto = io.github.alexcorrea2001lemon.nummia.domain.calculo.repartoConOtras(
                 confirmados.map { (it.gasto.categoriaId?.let(categorias::get) ?: "Sin categoría") to it.real },
                 maximo = 4,

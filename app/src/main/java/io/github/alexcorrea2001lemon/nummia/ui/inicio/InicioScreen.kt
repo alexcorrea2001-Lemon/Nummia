@@ -311,84 +311,73 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
 private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alRevelar: () -> Unit, alPulsar: () -> Unit) {
     val c = LocalColoresNummia.current
     val esquema = MaterialTheme.colorScheme
-    val forma = MaterialTheme.shapes.medium
-    // Degradado del color de acento hacia el fondo de las tarjetas, con un halo en la esquina.
-    val degradado = androidx.compose.ui.graphics.Brush.linearGradient(
-        listOf(esquema.primary.copy(alpha = 0.26f).compositeOver(esquema.surface), c.heroe, esquema.surfaceContainer),
-    )
-    val halo = esquema.primary.copy(alpha = 0.10f)
+    val fondo = esquema.surfaceContainer
+    // Cabecera teñida del color de acento, con el borde de abajo en onda.
+    val cabecera = esquema.primary.copy(alpha = 0.22f).compositeOver(fondo)
+    val tituloCabecera = esquema.primary.copy(alpha = 0.75f).compositeOver(esquema.onSurface)
     Tarjeta(
-        Modifier.clip(forma).background(degradado)
-            .drawBehind { drawCircle(halo, radius = size.width * 0.45f, center = androidx.compose.ui.geometry.Offset(size.width * 0.95f, 0f)) }
-            .combinedClickable(
-                onClick = alPulsar,
-                onLongClick = if (e.discreto) alRevelar else null,
-                onLongClickLabel = if (e.discreto) "Mostrar los importes con tu huella" else null,
-            ),
-        fondo = androidx.compose.ui.graphics.Color.Transparent,
+        Modifier.clip(MaterialTheme.shapes.medium).combinedClickable(
+            onClick = alPulsar,
+            onLongClick = if (e.discreto) alRevelar else null,
+            onLongClickLabel = if (e.discreto) "Mostrar los importes con tu huella" else null,
+        ),
+        fondo = fondo,
+        relleno = false,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Con los importes ocultos, el título dice cómo verlos (sin cambiar el alto de la tarjeta).
-            androidx.compose.animation.Crossfade(e.discreto, Modifier.weight(1f), label = "titulo") { oculto ->
-                Text(
-                    if (oculto) "Mantén pulsado para ver los importes" else "Balance de ${nombreMesMinuscula(e.mes)}",
-                    style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                )
-            }
-            IconButton(onClick = alternarDiscreto) {
-                Icon(if (e.discreto) Iconos.OjoTachado else Iconos.Ojo, if (e.discreto) "Mostrar importes" else "Ocultar importes", tint = c.textoSuave)
-            }
-        }
-        ImporteAnimado(
-            e.resumen.balance,
-            MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-            color = if (e.resumen.balance >= 0) c.ingreso else c.gasto,
-            conSigno = true,
-            discreto = e.discreto,
-        )
-        val v = e.variacion
-        val anterior = nombreMesMinuscula(e.mes.minusMonths(1))
-        // La variación como píldora: ↑ en el color del gasto, ↓ en el del ingreso.
-        AnimatedVisibility(v != null) {
-            val sube = (v ?: 0) > 0
-            val tono = when { v == null || v == 0 -> c.textoSuave; sube -> c.gasto; else -> c.ingreso }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                Text(
-                    when { v == null || v == 0 -> "= igual"; sube -> "↑ ${formatearPorMil(v)}"; else -> "↓ ${formatearPorMil(-v)}" },
-                    style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = tono,
-                    modifier = Modifier.background(tono.copy(alpha = 0.14f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 4.dp),
-                )
-                Text(
-                    when { v == null || v == 0 -> "de gasto que en $anterior"; sube -> "más de gasto que en $anterior"; else -> "menos de gasto que en $anterior" },
-                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
-                )
-            }
-        }
-        // La curva del gasto del mes frente al anterior.
-        val hayCurva = e.diaCurva > 0 && (e.acumulado.getOrNull(e.diaCurva - 1) ?: 0L) > 0L
-        AnimatedVisibility(hayCurva) {
-            val llevas = e.acumulado.getOrNull(e.diaCurva - 1) ?: 0L
-            val antes = e.acumuladoAnterior.getOrNull((e.diaCurva - 1).coerceAtMost(e.acumuladoAnterior.size - 1)) ?: 0L
-            val textoLlevas = if (e.esMesActual) "Llevas gastado" else "Gastaste"
-            Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs), modifier = Modifier.padding(top = Espacio.xs)) {
-                CurvaMes(
-                    e.acumulado, e.acumuladoAnterior, e.diaCurva,
-                    descripcion = "$textoLlevas ${formatearEuros(llevas, discreto = e.discreto)}; en $anterior, a estas alturas, ${formatearEuros(antes, discreto = e.discreto)}",
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    PuntoLeyenda(MaterialTheme.colorScheme.primary)
+        Column(
+            Modifier.fillMaxWidth()
+                .drawBehind {
+                    val onda = 14.dp.toPx()
+                    val base = size.height - onda
+                    val w = size.width
+                    val ruta = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(0f, 0f)
+                        lineTo(w, 0f)
+                        lineTo(w, base - onda * 0.3f)
+                        cubicTo(w * 0.83f, base + onda * 0.9f, w * 0.67f, base - onda * 0.9f, w * 0.5f, base)
+                        cubicTo(w * 0.33f, base + onda * 0.9f, w * 0.17f, base - onda * 0.9f, 0f, base)
+                        close()
+                    }
+                    drawPath(ruta, cabecera)
+                }
+                .padding(start = Espacio.l, end = Espacio.xs, top = Espacio.xs, bottom = Espacio.xxl),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Con los importes ocultos, el título dice cómo verlos (sin cambiar el alto de la tarjeta).
+                androidx.compose.animation.Crossfade(e.discreto, Modifier.weight(1f), label = "titulo") { oculto ->
                     Text(
-                        " $textoLlevas ${formatearEuros(llevas, discreto = e.discreto)}",
-                        style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f),
-                        maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    )
-                    Text("- - ", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-                    Text(
-                        "$anterior: ${formatearEuros(antes, discreto = e.discreto)}",
-                        style = MaterialTheme.typography.bodySmall, color = c.textoSuave, maxLines = 1,
+                        if (oculto) "Mantén pulsado para ver los importes" else "Balance de ${nombreMesMinuscula(e.mes)}",
+                        style = MaterialTheme.typography.bodyMedium, color = tituloCabecera, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
+                IconButton(onClick = alternarDiscreto) {
+                    Icon(if (e.discreto) Iconos.OjoTachado else Iconos.Ojo, if (e.discreto) "Mostrar importes" else "Ocultar importes", tint = tituloCabecera)
+                }
             }
+            ImporteAnimado(
+                e.resumen.balance,
+                MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                color = if (e.resumen.balance >= 0) c.ingreso else c.gasto,
+                conSigno = true,
+                discreto = e.discreto,
+            )
+            val v = e.variacion
+            val anterior = nombreMesMinuscula(e.mes.minusMonths(1))
+            AnimatedVisibility(v != null) {
+                val sube = (v ?: 0) > 0
+                val tono = when { v == null || v == 0 -> c.textoSuave; sube -> c.gasto; else -> c.ingreso }
+                Text(
+                    when { v == null || v == 0 -> "= igual que en $anterior"; sube -> "↑ ${formatearPorMil(v)} que en $anterior"; else -> "↓ ${formatearPorMil(-v)} que en $anterior" },
+                    style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = tono,
+                    modifier = Modifier.padding(top = Espacio.xs).background(tono.copy(alpha = 0.16f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
+        }
+        // Las tres cifras, cada una con su icono de color.
+        Row(Modifier.padding(start = Espacio.m, end = Espacio.m, bottom = Espacio.m), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+            CifraBalance("Entró", e.resumen.ingresos, Iconos.Euro, c.ingreso, c.ingreso, e.discreto, Modifier.weight(1f))
+            CifraBalance("Gastado", e.resumen.gastoReal, Iconos.Bolsa, c.gasto, esquema.onSurface, e.discreto, Modifier.weight(1f))
+            CifraBalance("Al día", e.mediaDia, Iconos.Calendario, esquema.primary, esquema.onSurface, e.discreto, Modifier.weight(1f))
         }
         // Sin el sueldo confirmado el mes parece en negativo: se enseña cómo quedará.
         AnimatedVisibility(e.sueldoPrevistoMes > 0) {
@@ -396,8 +385,26 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alReve
                 "Con el sueldo previsto: ${formatearEuros(e.resumen.balance + e.sueldoPrevistoMes, conSigno = true, discreto = e.discreto)}",
                 style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
                 color = if (e.resumen.balance + e.sueldoPrevistoMes >= 0) c.ingreso else c.gasto,
+                modifier = Modifier.padding(start = Espacio.l, end = Espacio.l, bottom = Espacio.m),
             )
         }
+    }
+}
+
+@Composable
+private fun CifraBalance(
+    titulo: String, valor: Long, icono: androidx.compose.ui.graphics.vector.ImageVector,
+    tono: androidx.compose.ui.graphics.Color, colorValor: androidx.compose.ui.graphics.Color, discreto: Boolean, modifier: Modifier,
+) {
+    Column(
+        modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(14.dp)).padding(Espacio.m),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Box(Modifier.size(28.dp).background(tono.copy(alpha = 0.16f), androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) {
+            Icon(icono, null, tint = tono, modifier = Modifier.size(16.dp))
+        }
+        Text(titulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.padding(top = Espacio.xs))
+        ImporteAnimado(valor, MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = colorValor, discreto = discreto)
     }
 }
 

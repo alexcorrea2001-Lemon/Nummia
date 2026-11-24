@@ -64,48 +64,6 @@ private fun avance(clave: Any?): Float {
     return p.value
 }
 
-/**
- * Curva del gasto acumulado del mes (línea con degradado debajo) frente a la del mes anterior
- * (discontinua). Se dibuja hasta [dia]; un punto marca dónde vas.
- */
-@Composable
-fun CurvaMes(actual: List<Long>, anterior: List<Long>, dia: Int, descripcion: String, modifier: Modifier = Modifier) {
-    val color = MaterialTheme.colorScheme.primary
-    val suave = LocalColoresNummia.current.textoSuave.copy(alpha = 0.55f)
-    val p = avance(actual to anterior)
-    Canvas(modifier.fillMaxWidth().height(76.dp).semantics { contentDescription = descripcion }) {
-        val dias = maxOf(actual.size, anterior.size, 2)
-        val hasta = dia.coerceIn(0, actual.size)
-        val tope = maxOf(actual.take(hasta).maxOrNull() ?: 0L, anterior.maxOrNull() ?: 0L, 1L).toFloat()
-        val margen = 6.dp.toPx()
-        fun x(i: Int) = i / (dias - 1f) * size.width
-        fun y(v: Long) = margen + (1f - v / tope) * (size.height - 2 * margen)
-
-        // El mes anterior, entero y discontinuo: la referencia.
-        if (anterior.isNotEmpty()) {
-            val ruta = Path()
-            anterior.forEachIndexed { i, v -> if (i == 0) ruta.moveTo(x(i), y(v)) else ruta.lineTo(x(i), y(v)) }
-            drawPath(ruta, suave, style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx()))))
-        }
-        if (hasta < 1) return@Canvas
-        // Este mes, hasta hoy, creciendo con la animación.
-        val visibles = maxOf(1, Math.round(hasta * p))
-        val linea = Path()
-        for (i in 0 until visibles) if (i == 0) linea.moveTo(x(i), y(actual[i])) else linea.lineTo(x(i), y(actual[i]))
-        val relleno = Path().apply {
-            addPath(linea)
-            lineTo(x(visibles - 1), size.height)
-            lineTo(x(0), size.height)
-            close()
-        }
-        drawPath(relleno, Brush.verticalGradient(listOf(color.copy(alpha = 0.28f), color.copy(alpha = 0f))))
-        drawPath(linea, color, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
-        val fin = Offset(x(visibles - 1), y(actual[visibles - 1]))
-        drawCircle(color.copy(alpha = 0.22f), 8.dp.toPx() * p, fin)
-        drawCircle(color, 4.dp.toPx(), fin)
-    }
-}
-
 /** Anillo con la parte gastada de lo que entró (0–1) y el porcentaje en el centro. */
 @Composable
 fun AnilloGasto(parte: Float?, porcentaje: Int?, lado: Dp = 104.dp, modifier: Modifier = Modifier) {

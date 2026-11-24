@@ -3,6 +3,9 @@ package io.github.alexcorrea2001lemon.nummia.ui.pagos
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -223,7 +226,7 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
         }
     }
 
-    if (creandoCobro) DialogoPago(null, alCerrar = { creandoCobro = false }, titulo = "Nuevo cobro mensual") { concepto, importe, dia -> vm.nuevoCobro(concepto, importe, dia); creandoCobro = false }
+    if (creandoCobro) DialogoPago(null, alCerrar = { creandoCobro = false }, titulo = "Nuevo cobro") { concepto, importe, dia -> vm.nuevoCobro(concepto, importe, dia); creandoCobro = false }
     editandoCobro?.let { f ->
         DialogoPago(null, alCerrar = { editandoCobro = null }, titulo = "Editar cobro", inicial = Triple(f.concepto, f.importe, f.dia)) { concepto, importe, dia ->
             vm.guardarCobro(f.copy(concepto = concepto.trim(), importe = importe, dia = dia))
@@ -247,6 +250,7 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun DialogoPago(
     p: PagoMensualEntity?, alCerrar: () -> Unit,
@@ -271,36 +275,60 @@ private fun DialogoPago(
     var importe by remember { mutableStateOf(inicial?.second?.let { formatearEuros(it).removeSuffix("€").trim() }.orEmpty()) }
     var dia by remember { mutableStateOf(inicial?.third?.toString() ?: "1") }
     var error by remember { mutableStateOf<String?>(null) }
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
+        icon = { Icon(if (conFrecuencia != null) Iconos.Repetir else Iconos.Euro, null) },
         title = { Text(titulo) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                OutlinedTextField(concepto, { concepto = it; error = null }, label = { Text("Concepto") }, singleLine = true)
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                OutlinedTextField(
+                    concepto, { concepto = it; error = null }, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Iconos.Lapiz, null) },
+                )
                 OutlinedTextField(
                     importe, { importe = it; error = null }, label = { Text("Importe") }, suffix = { Text("€") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Iconos.Euro, null) },
                 )
                 OutlinedTextField(
                     dia, { dia = it.filter(Char::isDigit).take(2); error = null }, label = { Text("Día del mes (1–31)") }, singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Iconos.Calendario, null) },
                 )
                 if (conFrecuencia != null) {
-                    Text("Se paga", style = MaterialTheme.typography.labelLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                        listOf(1 to "Cada mes", 3 to "Cada 3 meses", 12 to "Cada año").forEach { (n, t) ->
-                            androidx.compose.material3.FilterChip(selected = cada == n, onClick = { cada = n }, label = { Text(t, maxLines = 1) })
+                    Text("¿Cada cuánto se paga?", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                    androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        val opciones = listOf(1 to "Mensual", 3 to "Trimestral", 12 to "Anual")
+                        opciones.forEachIndexed { k, (n, t) ->
+                            androidx.compose.material3.SegmentedButton(
+                                selected = cada == n, onClick = { cada = n },
+                                shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(k, opciones.size),
+                                label = { Text(t, maxLines = 1, softWrap = false) },
+                            )
                         }
                     }
                     AnimatedVisibility(cada > 1) {
-                        Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
-                            Text("Próximo cobro en", style = MaterialTheme.typography.labelLarge)
-                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                                (0L until 12L).map { esteMes.plusMonths(it) }.forEach { ym ->
-                                    androidx.compose.material3.FilterChip(
-                                        selected = mesCobro == ym, onClick = { mesCobro = ym },
-                                        label = { Text(MES_CORTO.format(ym).removeSuffix(".") + if (ym.year != esteMes.year) " ${ym.year % 100}" else "", maxLines = 1) },
-                                    )
+                        Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                            Text("¿En qué mes es el próximo cobro?", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                            // Los 12 meses que vienen en una cuadrícula: todo a la vista, sin deslizar.
+                            (0L until 12L).map { esteMes.plusMonths(it) }.chunked(4).forEach { fila ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                                    fila.forEach { ym ->
+                                        val elegido = mesCobro == ym
+                                        androidx.compose.material3.Surface(
+                                            onClick = { mesCobro = ym }, modifier = Modifier.weight(1f).height(44.dp),
+                                            shape = MaterialTheme.shapes.small,
+                                            color = if (elegido) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = if (elegido) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    MES_CORTO.format(ym).removeSuffix(".").replaceFirstChar { it.uppercase() } + if (ym.year != esteMes.year) " ${ym.year % 100}" else "",
+                                                    style = MaterialTheme.typography.labelLarge, maxLines = 1,
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -323,8 +351,8 @@ private fun DialogoPago(
                     if (conFrecuencia != null) conFrecuencia(concepto, i!!, d!!, cada, if (cada > 1) mesCobro else null)
                     else alGuardar(concepto, i!!, d!!)
                 }
-            }) { Text("Guardar") }
+            }, modifier = Modifier.height(48.dp)) { Text("Guardar", fontWeight = FontWeight.SemiBold) }
         },
-        dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },
+        dismissButton = { TextButton(onClick = alCerrar, modifier = Modifier.height(48.dp)) { Text("Cancelar") } },
     )
 }

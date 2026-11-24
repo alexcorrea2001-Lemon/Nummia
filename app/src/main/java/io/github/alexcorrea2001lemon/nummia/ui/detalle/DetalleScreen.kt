@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -288,7 +288,7 @@ fun DetalleScreen(
     }
 
     borrandoReembolso?.let { r ->
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { borrandoReembolso = null },
             title = { Text("¿Borrar la devolución ${r.codigo}?") },
             text = { Text("El gasto real volverá a subir ${formatearEuros(r.importe)}.") },

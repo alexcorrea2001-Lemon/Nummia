@@ -299,11 +299,11 @@ fun MovimientosScreen(
 
     if (eligiendoCategoria) {
         val categorias by vm.categorias.collectAsStateWithLifecycle()
-        androidx.compose.material3.AlertDialog(
+        io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia(
             onDismissRequest = { eligiendoCategoria = false },
             title = { Text("Categoría para los elegidos") },
             text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
+                Column {
                     Text("Ninguna", Modifier.fillMaxWidth().clickable { vm.categoriaSeleccion(null); eligiendoCategoria = false }.padding(vertical = Espacio.m))
                     categorias.forEach { cat ->
                         Row(

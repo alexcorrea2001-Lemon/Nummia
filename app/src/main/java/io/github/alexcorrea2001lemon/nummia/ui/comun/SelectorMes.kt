@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +40,7 @@ import java.time.format.TextStyle
 @Composable
 fun SelectorMes(actual: YearMonth, hoy: YearMonth, alCerrar: () -> Unit, alElegir: (YearMonth) -> Unit) {
     var anio by remember { mutableIntStateOf(actual.year) }
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text("Ir a…") },
         text = {

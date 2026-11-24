@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -163,7 +163,7 @@ private fun DialogoPresupuesto(e: EstadoPresupuesto?, categorias: List<Categoria
     var tiendas by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(Unit) { tiendas = vm.tiendas() }
 
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text(if (e == null) "Nuevo presupuesto" else "Editar presupuesto") },
         text = {

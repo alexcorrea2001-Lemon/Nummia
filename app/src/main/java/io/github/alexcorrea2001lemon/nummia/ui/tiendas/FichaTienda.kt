@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -145,11 +145,11 @@ fun FichaTiendaScreen(vm: FichaTiendaViewModel, alAbrirGasto: (String) -> Unit, 
     }
 
     if (eligiendo) {
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { eligiendo = false },
             title = { Text("Categoría para todos sus gastos") },
             text = {
-                Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())) {
+                Column {
                     Text("Ninguna", Modifier.fillMaxWidth().clickable { vm.categoriaParaTodos(null); eligiendo = false }.padding(vertical = Espacio.m))
                     categorias.forEach { cat ->
                         Row(

@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
@@ -153,7 +153,7 @@ fun TiendasScreen(vm: TiendasViewModel, snackbar: SnackbarHostState, alVolver: (
     uniendo?.let { origen ->
         val sugerido = tiendas.orEmpty().filter { it.nombre in origen }.maxByOrNull { it.veces }?.nombre.orEmpty()
         var nombre by remember(origen) { mutableStateOf(sugerido) }
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { uniendo = null },
             title = { Text(if (origen.size == 1) "Cambiar nombre" else "Unir ${origen.size} tiendas") },
             text = {
@@ -258,7 +258,7 @@ private fun DialogoCategoria(cat: CategoriaEntity?, alCerrar: () -> Unit, alBorr
     var color by remember { mutableStateOf(cat?.color ?: Acento.POR_DEFECTO.argb) }
     var icono by remember { mutableStateOf(cat?.icono ?: "more") }
     var confirmarBorrado by remember { mutableStateOf(false) }
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text(if (cat == null) "Nueva categoría" else "Editar categoría") },
         text = {

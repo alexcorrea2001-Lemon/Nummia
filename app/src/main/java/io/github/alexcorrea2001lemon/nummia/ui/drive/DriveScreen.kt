@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -216,7 +216,7 @@ fun DriveScreen(vm: DriveViewModel, snackbar: SnackbarHostState, alVolver: () ->
     }
 
     (evento as? EventoDrive.OfrecerRecuperar)?.let { ev ->
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { vm.eventoVisto(); vm.sincronizarAhora() },
             title = { Text("Hay una copia en tu Drive") },
             text = { Text("Este móvil está vacío y en tu Drive hay una copia del ${fechaDeCopia(ev.copia.nombre)?.let { FECHA_HORA.format(it) } ?: ev.copia.nombre}. ¿La recuperas?") },
@@ -226,7 +226,7 @@ fun DriveScreen(vm: DriveViewModel, snackbar: SnackbarHostState, alVolver: () ->
     }
 
     restaurando?.let { a ->
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { restaurando = null },
             title = { Text("¿Recuperar esta copia?") },
             text = { Text("Los datos del móvil se sustituirán por los de la copia y la hoja de tu Drive quedará igual. Antes se guarda una copia de lo que tienes ahora, por si acaso.") },
@@ -236,7 +236,7 @@ fun DriveScreen(vm: DriveViewModel, snackbar: SnackbarHostState, alVolver: () ->
     }
 
     if (desconectando) {
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { desconectando = false },
             title = { Text("¿Desconectar Drive?") },
             text = { Text("El móvil deja de sincronizar. No se borra nada ni del móvil ni de tu Drive; puedes volver a conectar cuando quieras.") },

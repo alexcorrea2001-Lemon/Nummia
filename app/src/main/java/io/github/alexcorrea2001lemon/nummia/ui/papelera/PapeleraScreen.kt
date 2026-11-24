@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -109,7 +109,7 @@ fun PapeleraScreen(vm: PapeleraViewModel, snackbar: SnackbarHostState, alVolver:
     }
 
     if (vaciando) {
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { vaciando = false },
             title = { Text("¿Vaciar la papelera?") },
             text = { Text("Se borrará para siempre todo lo que hay en ella. No se puede deshacer.") },
@@ -118,7 +118,7 @@ fun PapeleraScreen(vm: PapeleraViewModel, snackbar: SnackbarHostState, alVolver:
         )
     }
     eliminando?.let { b ->
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { eliminando = null },
             title = { Text("¿Borrar para siempre?") },
             text = { Text("«${b.titulo}» desaparecerá y no se podrá recuperar.") },

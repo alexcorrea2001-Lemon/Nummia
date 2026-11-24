@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.5.1] - 2026-11-24
+
+### Arreglado
+- **Nuevo pago**: la opción «Cada año» no cabía y salía vacía, y la ventana daba saltos al elegir la frecuencia. Ahora es un selector de tres partes (Mensual · Trimestral · Anual) y los meses salen en una cuadrícula, todo a la vista.
+
+### Mejorado (diseño)
+- **Todas las ventanas** (nuevo pago o cobro, contraseña de la copia, restaurar, borrar, ir a un mes…) salen ahora **desde abajo**, como en las apps de Google: más cómodas con el pulgar, con título grande, icono, campos con icono y botones más grandes. Ya no dan saltos al crecer.
+- **Pantallas de Ajustes** con **título grande** que se encoge al bajar.
+- **Sueldo** rediseñado: el importe en grande, cuándo será el próximo previsto y cómo funciona en tres pasos.
+
 ## [2.5.0] - 2026-11-24
 
 ### Nuevo

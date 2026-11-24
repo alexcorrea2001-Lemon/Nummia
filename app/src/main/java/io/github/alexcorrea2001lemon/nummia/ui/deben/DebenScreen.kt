@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -136,7 +136,7 @@ fun DebenScreen(vm: DebenViewModel, snackbar: SnackbarHostState, alAbrirGasto: (
     }
 
     pagando?.let { p ->
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { pagando = null },
             title = { Text("¿${p.nombre} te lo ha pagado todo?") },
             text = { Text("Se apunta que te ha devuelto ${formatearEuros(p.total)} hoy, repartido en sus ${p.deudas.size} gastos.") },

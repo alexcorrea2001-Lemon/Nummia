@@ -26,7 +26,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -418,7 +418,7 @@ private fun DondeMas(e: InicioEstado, alPulsar: () -> Unit) {
 private fun DialogoImporte(titulo: String, inicial: Long, alCerrar: () -> Unit, alAceptar: (Long) -> Unit) {
     var texto by rememberSaveable { mutableStateOf(formatearEuros(inicial).removeSuffix("€").trim()) }
     var error by remember { mutableStateOf<String?>(null) }
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text(titulo) },
         text = {
@@ -449,7 +449,7 @@ private fun DialogoConfirmarSueldo(s: SueldoPendiente, alCerrar: () -> Unit, alC
     var dia by rememberSaveable { mutableStateOf(dias.last()) }
     var texto by rememberSaveable { mutableStateOf(formatearEuros(s.importe).removeSuffix(" €")) }
     var error by remember { mutableStateOf<String?>(null) }
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text("Confirmar sueldo") },
         text = {

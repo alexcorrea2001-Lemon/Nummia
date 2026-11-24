@@ -26,6 +26,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
@@ -35,12 +36,19 @@ import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaAjustes(titulo: String, alVolver: () -> Unit, contenido: @Composable ColumnScope.() -> Unit) {
+    // Título grande que se encoge al bajar (como los Ajustes del sistema): más claro y con más aire.
+    val plegado = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
+        modifier = Modifier.nestedScroll(plegado.nestedScrollConnection),
         topBar = {
-            TopAppBar(
-                title = { Text(titulo, fontWeight = FontWeight.SemiBold) },
+            androidx.compose.material3.LargeTopAppBar(
+                title = { Text(titulo, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = alVolver) { Icon(Iconos.Atras, "Volver") } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+                scrollBehavior = plegado,
             )
         },
     ) { p ->

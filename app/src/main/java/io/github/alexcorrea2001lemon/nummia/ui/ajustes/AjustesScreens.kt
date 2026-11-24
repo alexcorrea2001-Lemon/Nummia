@@ -1,5 +1,6 @@
 package io.github.alexcorrea2001lemon.nummia.ui.ajustes
 
+import io.github.alexcorrea2001lemon.nummia.ui.comun.fechaLarga
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,7 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -295,7 +296,7 @@ private fun DialogoColorPersonalizado(inicial: Color, alCerrar: () -> Unit, alAc
     var s by remember { mutableFloatStateOf(hsv[1].coerceIn(0.3f, 1f)) }
     var v by remember { mutableFloatStateOf(hsv[2].coerceIn(0.5f, 1f)) }
     val color = Color.hsv(h, s, v)
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text("Color personalizado") },
         text = {
@@ -319,24 +320,74 @@ private fun DialogoColorPersonalizado(inicial: Color, alCerrar: () -> Unit, alAc
 @Composable
 fun SueldoScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
     val a by vm.ajustes.collectAsStateWithLifecycle()
+    val c = LocalColoresNummia.current
     var texto by rememberSaveable(a.sueldoHabitual) { mutableStateOf(a.sueldoHabitual?.let(::textoImporte).orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
+    val haptica = io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica()
     PantallaAjustes("Sueldo", alVolver) {
-        Text(
-            "Cada mes Nummia apuntará tu sueldo como «previsto» a final de mes. No contará hasta que lo confirmes con el día y el importe reales.",
-            style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
-        )
-        OutlinedTextField(
-            texto, { texto = it; error = null }, label = { Text("Sueldo habitual") }, suffix = { Text("€") }, singleLine = true,
-            isError = error != null, supportingText = error?.let { { Text(it) } },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            Button(onClick = {
-                leerImporte(texto).fold({ vm.sueldo(it); alVolver() }, { error = (it as? io.github.alexcorrea2001lemon.nummia.domain.dinero.ImporteInvalido)?.motivo })
-            }) { Text("Guardar") }
-            if (a.sueldoHabitual != null) OutlinedButton(onClick = { vm.sueldo(null); alVolver() }) { Text("Quitar sueldo") }
+        // Tarjeta principal: el importe, grande y claro.
+        Tarjeta(fondo = c.heroe) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                Surface(shape = CircleShape, color = c.ingresoFondo, contentColor = c.ingreso) {
+                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { Icon(Iconos.Euro, null) }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Tu sueldo habitual", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Lo que cobras normalmente cada mes", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                }
+            }
+            OutlinedTextField(
+                texto, { texto = it; error = null }, singleLine = true,
+                placeholder = { Text("0,00", style = MaterialTheme.typography.headlineMedium) },
+                suffix = { Text("€", style = MaterialTheme.typography.headlineMedium) },
+                textStyle = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
+                isError = error != null, supportingText = error?.let { { Text(it) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Sueldo habitual en euros" },
+            )
+            a.sueldoHabitual?.let { s ->
+                val fin = remember { java.time.YearMonth.now().atEndOfMonth() }
+                Text(
+                    "Próximo previsto: ${fechaLarga(fin).replaceFirstChar { it.lowercase() }} · ${formatearEuros(s)}",
+                    style = MaterialTheme.typography.bodyMedium, color = c.ingreso, fontWeight = FontWeight.Medium,
+                )
+            }
         }
+
+        // Cómo funciona, en tres pasos.
+        Tarjeta {
+            Text("Cómo funciona", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            listOf(
+                "A final de mes, Nummia lo apunta como «previsto». Aún no cuenta en tus números.",
+                "Te avisa (si tienes los avisos activados) y lo verás en Inicio, en «Pendientes».",
+                "Lo confirmas con el día y el importe reales. Desde ese momento cuenta.",
+            ).forEachIndexed { n, paso ->
+                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.m), verticalAlignment = Alignment.Top) {
+                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+                        Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) { Text("${n + 1}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold) }
+                    }
+                    Text(paso, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(top = 4.dp))
+                }
+            }
+        }
+
+        Button(
+            onClick = {
+                leerImporte(texto).fold(
+                    { haptica(); vm.sueldo(it); io.github.alexcorrea2001lemon.nummia.ui.comun.Hecho.avisar("Sueldo guardado"); alVolver() },
+                    { error = (it as? io.github.alexcorrea2001lemon.nummia.domain.dinero.ImporteInvalido)?.motivo },
+                )
+            },
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+        ) { Text("Guardar sueldo", fontWeight = FontWeight.SemiBold) }
+        if (a.sueldoHabitual != null) {
+            OutlinedButton(onClick = { vm.sueldo(null); alVolver() }, modifier = Modifier.fillMaxWidth().height(52.dp)) { Text("Quitar sueldo") }
+        }
+        Text(
+            "¿Cobras otras cosas cada mes, como un alquiler o una paga? Añádelas en Ajustes → Pagos y cobros fijos.",
+            style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+        )
     }
 }
 
@@ -447,8 +498,9 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
         var clave by remember(bytes) { mutableStateOf("") }
         var error by remember(bytes) { mutableStateOf<String?>(null) }
         var restaurando by remember(bytes) { mutableStateOf(false) }
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { if (!restaurando) pendiente = null },
+            icon = { Icon(Iconos.Subir, null) },
             title = { Text("¿Restaurar esta copia?") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
@@ -485,8 +537,9 @@ private fun DialogoContrasenaCopia(alCerrar: () -> Unit, alElegir: (String?) -> 
     var clave by remember { mutableStateOf("") }
     var repetir by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
+        icon = { Icon(Iconos.Escudo, null) },
         title = { Text("Proteger la copia") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
@@ -506,9 +559,9 @@ private fun DialogoContrasenaCopia(alCerrar: () -> Unit, alElegir: (String?) -> 
                     else -> null
                 }
                 if (error == null) alElegir(clave)
-            }) { Text("Proteger y guardar") }
+            }, modifier = Modifier.height(48.dp)) { Text("Proteger y guardar", fontWeight = FontWeight.SemiBold) }
         },
-        dismissButton = { TextButton(onClick = { alElegir(null) }) { Text("Sin contraseña") } },
+        dismissButton = { TextButton(onClick = { alElegir(null) }, modifier = Modifier.height(48.dp)) { Text("Sin contraseña") } },
     )
 }
 
@@ -582,10 +635,10 @@ fun AcercaScreen(vm: AjustesViewModel, act: ActualizarViewModel, alVolver: () ->
     }
 
     leyendo?.let { (titulo, texto) ->
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { leyendo = null },
             title = { Text(titulo) },
-            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(texto, style = MaterialTheme.typography.bodyMedium) } },
+            text = { Column { Text(texto, style = MaterialTheme.typography.bodyMedium) } },
             confirmButton = { TextButton(onClick = { leyendo = null }) { Text("Cerrar") } },
         )
     }

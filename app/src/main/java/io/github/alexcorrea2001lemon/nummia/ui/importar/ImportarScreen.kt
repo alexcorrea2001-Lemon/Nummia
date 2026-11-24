@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -192,7 +192,7 @@ private fun Vista(v: EstadoImportar.Vista, personas: List<PersonaEntity>, vm: Im
     }
 
     eligiendo?.let { i ->
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { eligiendo = null },
             title = { Text("¿Quién te lo devuelve?") },
             text = {
@@ -210,7 +210,7 @@ private fun Vista(v: EstadoImportar.Vista, personas: List<PersonaEntity>, vm: Im
     nuevaPara?.let { i -> DialogoNombre("Nueva persona", alCerrar = { nuevaPara = null }) { vm.nuevaPersona(it, i); nuevaPara = null } }
 
     if (confirmar) {
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { confirmar = false },
             title = { Text("¿Importar ${a.gastos.size} gastos y ${a.ingresos.size} ingresos?") },
             text = { Text("Antes se guarda una copia de seguridad de lo que tienes ahora (en el móvil y, si está conectado, en tu Drive).") },

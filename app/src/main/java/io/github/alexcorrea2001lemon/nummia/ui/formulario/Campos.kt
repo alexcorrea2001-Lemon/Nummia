@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -195,7 +195,7 @@ fun SelectorFecha(fecha: LocalDate, hoy: LocalDate, alCambiar: (LocalDate) -> Un
 @Composable
 fun DialogoNombre(titulo: String, inicial: String = "", alCerrar: () -> Unit, alAceptar: (String) -> Unit) {
     var texto by remember { mutableStateOf(inicial) }
-    AlertDialog(
+    DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text(titulo) },
         text = { OutlinedTextField(texto, { texto = it }, singleLine = true, label = { Text("Nombre") }) },

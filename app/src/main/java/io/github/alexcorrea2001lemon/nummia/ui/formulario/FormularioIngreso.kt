@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DialogoNummia
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -187,7 +187,7 @@ fun FormularioIngresoScreen(vm: FormularioIngresoViewModel, alCerrar: () -> Unit
     }
 
     if (confirmarBorrado) {
-        AlertDialog(
+        DialogoNummia(
             onDismissRequest = { confirmarBorrado = false },
             title = { Text("¿Borrar este ingreso?") },
             text = { Text("Dejará de contar en tus cuentas.") },

@@ -88,7 +88,9 @@ class FormularioIngresoViewModel @Inject constructor(
     val reloj: Reloj,
 ) : ViewModel() {
     private val idEdicion = estadoGuardado.get<String>("id")?.takeIf { it.isNotBlank() }
-    private val _form = MutableStateFlow(FormIngreso(fecha = reloj.hoy()))
+    // Desde el Calendario («Añadir en este día») llega la fecha elegida.
+    private val fechaInicial: LocalDate = estadoGuardado.get<String>("fecha")?.takeIf { it.isNotBlank() }?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: reloj.hoy()
+    private val _form = MutableStateFlow(FormIngreso(fecha = fechaInicial))
     val form = _form.asStateFlow()
     private val _hecho = Channel<Unit>(Channel.BUFFERED)
     val hecho = _hecho.receiveAsFlow()

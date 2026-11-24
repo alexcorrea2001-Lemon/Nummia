@@ -8,7 +8,7 @@ object Rutas {
     const val INFORMES = "informes"
     const val DETALLE = "detalle/{id}"
     const val GASTO = "gasto?id={id}&paraOtro={paraOtro}&fecha={fecha}"
-    const val INGRESO = "ingreso?id={id}"
+    const val INGRESO = "ingreso?id={id}&fecha={fecha}"
     const val REEMBOLSO = "reembolso?gastoId={gastoId}"
     const val AJUSTES = "ajustes"
     const val APARIENCIA = "ajustes/apariencia"
@@ -32,7 +32,7 @@ object Rutas {
     fun detalle(id: String) = "detalle/$id"
     fun gasto(id: String? = null, paraOtro: Boolean = false, fecha: java.time.LocalDate? = null) =
         "gasto?id=${id.orEmpty()}&paraOtro=$paraOtro&fecha=${fecha?.toString().orEmpty()}"
-    fun ingreso(id: String? = null) = "ingreso?id=${id.orEmpty()}"
+    fun ingreso(id: String? = null, fecha: java.time.LocalDate? = null) = "ingreso?id=${id.orEmpty()}&fecha=${fecha?.toString().orEmpty()}"
     fun reembolso(gastoId: String? = null) = "reembolso?gastoId=${gastoId.orEmpty()}"
 
     val PRINCIPALES = listOf(INICIO, MOVIMIENTOS, CALENDARIO, ESTADISTICAS)

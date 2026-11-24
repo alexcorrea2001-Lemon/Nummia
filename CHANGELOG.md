@@ -2,6 +2,17 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.8.0] - 2026-11-24
+
+### Novedades
+- **Inicio renovado:** el balance lleva un degradado y una curva con lo que llevas gastado este mes frente al anterior (discontinua), y la variación va en una píldora de color.
+- **Anillo de gasto:** las cifras del mes van junto a un anillo con la parte de lo que entró que ya has gastado («De cada 100 € que entraron…»).
+- **En qué se va:** barra de colores con el reparto por categorías y las tres tiendas con su puesto.
+- **Calendario:** «Añadir en este día» deja elegir entre gasto e ingreso.
+
+### Arreglado
+- En Movimientos, el botón + vuelve a aparecer al llegar al final de la lista.
+
 ## [2.7.0] - 2026-11-24
 
 ### Nuevo

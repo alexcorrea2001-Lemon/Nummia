@@ -219,3 +219,17 @@ fun textoDevolucion(dias: Int): String = "Suele devolverte " + when {
     dias < 60 -> "en unas ${Math.round(dias / 7.0)} semanas"
     else -> "en unos ${Math.round(dias / 30.0)} meses"
 }
+
+/**
+ * Reparto del gasto para una barra: suma las entradas con el mismo nombre, quita las que no suman
+ * nada, ordena de mayor a menor y deja las [maximo] primeras; el resto va junto en «Otras»
+ * (si solo sobra una, sale con su nombre).
+ */
+fun repartoConOtras(pares: List<Pair<String, Long>>, maximo: Int): List<Pair<String, Long>> {
+    val sumas = pares.groupBy({ it.first }, { it.second })
+        .map { (n, vs) -> n to vs.sum() }
+        .filter { it.second > 0 }
+        .sortedByDescending { it.second }
+    if (sumas.size <= maximo + 1) return sumas
+    return sumas.take(maximo) + ("Otras" to sumas.drop(maximo).sumOf { it.second })
+}

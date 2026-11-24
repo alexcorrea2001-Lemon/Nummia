@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -235,7 +237,7 @@ fun InicioScreen(
             }
             },
             TarjetaInicio.TOP to {
-            if (e.top.isNotEmpty()) item { DondeMas(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.DONDE, e.mes) } }
+            if (e.top.isNotEmpty() || e.reparto.isNotEmpty()) item { DondeMas(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.DONDE, e.mes) } }
             },
             TarjetaInicio.AHORRADO to {
             item {
@@ -308,16 +310,25 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alRevelar: () -> Unit, alPulsar: () -> Unit) {
     val c = LocalColoresNummia.current
+    val esquema = MaterialTheme.colorScheme
+    val forma = MaterialTheme.shapes.medium
+    // Degradado del color de acento hacia el fondo de las tarjetas, con un halo en la esquina.
+    val degradado = androidx.compose.ui.graphics.Brush.linearGradient(
+        listOf(esquema.primary.copy(alpha = 0.26f).compositeOver(esquema.surface), c.heroe, esquema.surfaceContainer),
+    )
+    val halo = esquema.primary.copy(alpha = 0.10f)
     Tarjeta(
-        Modifier.clip(MaterialTheme.shapes.medium).combinedClickable(
-            onClick = alPulsar,
-            onLongClick = if (e.discreto) alRevelar else null,
-            onLongClickLabel = if (e.discreto) "Mostrar los importes con tu huella" else null,
-        ),
-        fondo = c.heroe,
+        Modifier.clip(forma).background(degradado)
+            .drawBehind { drawCircle(halo, radius = size.width * 0.45f, center = androidx.compose.ui.geometry.Offset(size.width * 0.95f, 0f)) }
+            .combinedClickable(
+                onClick = alPulsar,
+                onLongClick = if (e.discreto) alRevelar else null,
+                onLongClickLabel = if (e.discreto) "Mostrar los importes con tu huella" else null,
+            ),
+        fondo = androidx.compose.ui.graphics.Color.Transparent,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Balance del mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.weight(1f))
+            Text("Balance de ${nombreMesMinuscula(e.mes)}", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.weight(1f))
             IconButton(onClick = alternarDiscreto) {
                 Icon(if (e.discreto) Iconos.OjoTachado else Iconos.Ojo, if (e.discreto) "Mostrar importes" else "Ocultar importes", tint = c.textoSuave)
             }
@@ -331,14 +342,47 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alReve
         )
         val v = e.variacion
         val anterior = nombreMesMinuscula(e.mes.minusMonths(1))
-        val texto = when {
-            v == null -> null
-            v == 0 -> "Has gastado lo mismo que en $anterior"
-            v > 0 -> "Has gastado un ${formatearPorMil(v)} más que en $anterior"
-            else -> "Has gastado un ${formatearPorMil(-v)} menos que en $anterior"
+        // La variación como píldora: ↑ en el color del gasto, ↓ en el del ingreso.
+        AnimatedVisibility(v != null) {
+            val sube = (v ?: 0) > 0
+            val tono = when { v == null || v == 0 -> c.textoSuave; sube -> c.gasto; else -> c.ingreso }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                Text(
+                    when { v == null || v == 0 -> "= igual"; sube -> "↑ ${formatearPorMil(v)}"; else -> "↓ ${formatearPorMil(-v)}" },
+                    style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = tono,
+                    modifier = Modifier.background(tono.copy(alpha = 0.14f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+                Text(
+                    when { v == null || v == 0 -> "de gasto que en $anterior"; sube -> "más de gasto que en $anterior"; else -> "menos de gasto que en $anterior" },
+                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                )
+            }
         }
-        AnimatedVisibility(texto != null) {
-            Text(texto.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+        // La curva del gasto del mes frente al anterior.
+        val hayCurva = e.diaCurva > 0 && (e.acumulado.getOrNull(e.diaCurva - 1) ?: 0L) > 0L
+        AnimatedVisibility(hayCurva) {
+            val llevas = e.acumulado.getOrNull(e.diaCurva - 1) ?: 0L
+            val antes = e.acumuladoAnterior.getOrNull((e.diaCurva - 1).coerceAtMost(e.acumuladoAnterior.size - 1)) ?: 0L
+            val textoLlevas = if (e.esMesActual) "Llevas gastado" else "Gastaste"
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs), modifier = Modifier.padding(top = Espacio.xs)) {
+                CurvaMes(
+                    e.acumulado, e.acumuladoAnterior, e.diaCurva,
+                    descripcion = "$textoLlevas ${formatearEuros(llevas, discreto = e.discreto)}; en $anterior, a estas alturas, ${formatearEuros(antes, discreto = e.discreto)}",
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PuntoLeyenda(MaterialTheme.colorScheme.primary)
+                    Text(
+                        " $textoLlevas ${formatearEuros(llevas, discreto = e.discreto)}",
+                        style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    Text("- - ", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                    Text(
+                        "$anterior: ${formatearEuros(antes, discreto = e.discreto)}",
+                        style = MaterialTheme.typography.bodySmall, color = c.textoSuave, maxLines = 1,
+                    )
+                }
+            }
         }
         AnimatedVisibility(e.discreto) {
             Text("Mantén pulsado para verlos con tu huella", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
@@ -385,43 +429,83 @@ private fun TarjetaPrevision(p: io.github.alexcorrea2001lemon.nummia.domain.calc
 @Composable
 private fun Indicadores(e: InicioEstado, alPulsar: () -> Unit) {
     val c = LocalColoresNummia.current
-    // Las cuatro cifras en una sola tarjeta: menos bordes y se ve antes lo de debajo.
-    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPulsar), relleno = false) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Indicador("Ingresos", e.resumen.ingresos, c.ingreso, e.discreto, Modifier.weight(1f))
-            VerticalDivider(color = c.borde)
-            Indicador("Pagado", e.resumen.pagado, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
+    val r = e.resumen
+    val pct = io.github.alexcorrea2001lemon.nummia.domain.calculo.porcentajeGastado(r.gastoReal, r.ingresos)
+    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPulsar)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l)) {
+            AnilloGasto(io.github.alexcorrea2001lemon.nummia.domain.calculo.parteGastada(r.gastoReal, r.ingresos), pct)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                Indicador("Ingresos", r.ingresos, c.ingreso, e.discreto)
+                Indicador("Pagado", r.pagado, MaterialTheme.colorScheme.onSurface, e.discreto)
+                if (r.reembolsos > 0) Indicador("Devoluciones", r.reembolsos, MaterialTheme.colorScheme.onSurface, e.discreto)
+                Indicador("Gasto real", r.gastoReal, c.gasto, e.discreto, fuerte = true)
+            }
         }
-        HorizontalDivider(color = c.borde)
-        Row(Modifier.height(IntrinsicSize.Min)) {
-            Indicador("Devoluciones", e.resumen.reembolsos, MaterialTheme.colorScheme.onSurface, e.discreto, Modifier.weight(1f))
-            VerticalDivider(color = c.borde)
-            Indicador("Gasto real", e.resumen.gastoReal, c.gasto, e.discreto, Modifier.weight(1f))
-        }
+        Text(
+            when {
+                pct == null -> "Aún no ha entrado dinero este mes."
+                e.discreto -> "Has gastado el $pct % de lo que entró."
+                else -> "De cada 100 € que entraron has gastado ${minOf(pct, 999)} €."
+            },
+            style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+        )
     }
 }
 
 @Composable
-private fun Indicador(titulo: String, valor: Long, color: androidx.compose.ui.graphics.Color, discreto: Boolean, modifier: Modifier) {
-    Column(modifier.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
-        Text(titulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
-        ImporteAnimado(valor, MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold), color = color, discreto = discreto)
+private fun Indicador(titulo: String, valor: Long, color: androidx.compose.ui.graphics.Color, discreto: Boolean, fuerte: Boolean = false) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(titulo, style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.weight(1f))
+        ImporteAnimado(
+            valor,
+            (if (fuerte) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge).copy(fontWeight = if (fuerte) FontWeight.Bold else FontWeight.SemiBold),
+            color = color, discreto = discreto,
+        )
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DondeMas(e: InicioEstado, alPulsar: () -> Unit) {
+    val c = LocalColoresNummia.current
+    val colores = io.github.alexcorrea2001lemon.nummia.ui.graficos.coloresGrafico()
     Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPulsar)) {
-        Text("Dónde más has gastado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        e.top.forEach { t ->
-            val ancho by animateFloatAsState(t.fraccion, spring(dampingRatio = 0.8f, stiffness = 200f), label = "barra")
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = Espacio.xs)) {
-                Row {
-                    Text(t.nombre, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                    Text(formatearEuros(t.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        Text("En qué se va", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        if (e.reparto.isNotEmpty()) {
+            val total = e.reparto.sumOf { it.second }
+            BarraReparto(
+                e.reparto, colores,
+                descripcion = e.reparto.joinToString { (n, v) -> "$n ${Math.round(v * 100.0 / total)} %" },
+                modifier = Modifier.padding(top = Espacio.xs),
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.m), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                e.reparto.forEachIndexed { i, (n, v) ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PuntoLeyenda(colores[i % colores.size])
+                        Text(" $n ", style = MaterialTheme.typography.bodySmall)
+                        Text("${Math.round(v * 100.0 / total)} %", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                    }
                 }
-                Box(Modifier.fillMaxWidth().height(8.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))) {
-                    Box(Modifier.fillMaxWidth(ancho).fillMaxHeight().background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
+            }
+        }
+        if (e.top.isNotEmpty()) {
+            Text("Tiendas", style = MaterialTheme.typography.labelLarge, color = c.textoSuave, modifier = Modifier.padding(top = Espacio.s))
+            e.top.forEachIndexed { i, t ->
+                val ancho by animateFloatAsState(t.fraccion, spring(dampingRatio = 0.8f, stiffness = 200f), label = "barra")
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                    // Puesto en un círculo: 1, 2, 3.
+                    Box(Modifier.size(28.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f - i * 0.03f), androidx.compose.foundation.shape.CircleShape), contentAlignment = Alignment.Center) {
+                        Text("${i + 1}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row {
+                            Text(t.nombre, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            Text(formatearEuros(t.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                        Box(Modifier.fillMaxWidth().height(6.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(3.dp))) {
+                            Box(Modifier.fillMaxWidth(ancho).fillMaxHeight().background(MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp)))
+                        }
+                    }
                 }
             }
         }

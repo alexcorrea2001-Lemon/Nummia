@@ -127,6 +127,15 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
                 if (available.y < -6f) fabVisible = false else if (available.y > 6f) fabVisible = true
                 return androidx.compose.ui.geometry.Offset.Zero
             }
+            // Al llegar al final de la lista (ya no baja más), el botón + vuelve: la lista deja hueco para que no tape nada.
+            override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
+                if (available.y < -1f) fabVisible = true
+                return androidx.compose.ui.geometry.Offset.Zero
+            }
+            override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
+                if (available.y < -1f) fabVisible = true
+                return androidx.compose.ui.unit.Velocity.Zero
+            }
         }
     }
 
@@ -234,7 +243,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.CALENDARIO) {
         CalendarioScreen(
             hiltViewModel(), ::abrirGasto, ::abrirIngreso,
-            alAnadirEn = { nav.navigate(Rutas.gasto(fecha = it)) },
+            alAnadirEn = { fecha, ingreso -> nav.navigate(if (ingreso) Rutas.ingreso(fecha = fecha) else Rutas.gasto(fecha = fecha)) },
             alAjustes = { nav.navigate(Rutas.AJUSTES) }, relleno = relleno,
         )
     }
@@ -266,7 +275,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
         val principal: io.github.alexcorrea2001lemon.nummia.MainViewModel = hiltViewModel(actividad)
         FormularioGastoScreen(hiltViewModel(), snackbar, alEditado = { principal.ofrecerDeshacer(snackbar, it) }) { nav.popBackStack() }
     }
-    pantalla(Rutas.INGRESO, listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" })) {
+    pantalla(Rutas.INGRESO, listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" }, navArgument("fecha") { type = NavType.StringType; defaultValue = "" })) {
         FormularioIngresoScreen(hiltViewModel()) { nav.popBackStack() }
     }
     pantalla(Rutas.REEMBOLSO, listOf(navArgument("gastoId") { type = NavType.StringType; defaultValue = "" })) {

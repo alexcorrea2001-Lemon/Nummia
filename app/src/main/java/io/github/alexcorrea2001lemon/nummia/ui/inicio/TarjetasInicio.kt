@@ -6,7 +6,7 @@ enum class TarjetaInicio(val clave: String, val nombre: String) {
     PREVISION("prevision", "A fin de mes te quedarán"),
     PRESUPUESTOS("presupuestos", "Presupuestos"),
     PENDIENTES("pendientes", "Pendientes y te deben"),
-    TOP("top", "Dónde más has gastado"),
+    TOP("top", "En qué se va"),
     AHORRADO("ahorrado", "Ahorrado en el año"),
     ULTIMOS("ultimos", "Últimos movimientos"),
 }

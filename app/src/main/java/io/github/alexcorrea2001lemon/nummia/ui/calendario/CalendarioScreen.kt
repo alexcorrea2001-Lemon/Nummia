@@ -82,7 +82,7 @@ fun CalendarioScreen(
     vm: CalendarioViewModel,
     alAbrirGasto: (String) -> Unit,
     alAbrirIngreso: (String) -> Unit,
-    alAnadirEn: (LocalDate) -> Unit,
+    alAnadirEn: (LocalDate, Boolean) -> Unit,
     alAjustes: () -> Unit,
     relleno: PaddingValues,
 ) {
@@ -233,7 +233,15 @@ fun CalendarioScreen(
                 } else if (e.movimientosDia.isEmpty()) {
                     Text("Nada apuntado este día.", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
                 }
-                Button(onClick = { alAnadirEn(e.elegido) }) { Icon(Iconos.Mas, null, Modifier.size(18.dp)); Text("  Añadir en este día") }
+                // Apuntar en el día elegido: un gasto o un ingreso.
+                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                    Button(onClick = { alAnadirEn(e.elegido, false) }, modifier = Modifier.weight(1f)) {
+                        Icon(Iconos.Bolsa, null, Modifier.size(18.dp)); Text("  Gasto", maxLines = 1)
+                    }
+                    androidx.compose.material3.FilledTonalButton(onClick = { alAnadirEn(e.elegido, true) }, modifier = Modifier.weight(1f)) {
+                        Icon(Iconos.Euro, null, Modifier.size(18.dp)); Text("  Ingreso", maxLines = 1)
+                    }
+                }
             }
         }
         if (e.movimientosDia.isNotEmpty()) {

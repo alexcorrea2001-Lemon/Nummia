@@ -167,6 +167,8 @@ private fun LazyListScope.pestanaMes(e: EstadoEst, vm: EstadisticasViewModel) {
                 listOf("1", "${(m.acumulado.size + 1) / 2}", "${m.acumulado.size}"),
                 "Gasto acumulado: ${formatearEuros(m.acumulado.lastOrNull() ?: 0)} este mes y ${formatearEuros(m.acumuladoAnterior.lastOrNull() ?: 0)} el mes anterior",
                 ejeY = true, discreto = e.discreto,
+                nombres = listOf(nombreMes(e.sel.mes.minusMonths(1)), nombreMes(e.sel.mes)),
+                etiquetaPunto = { "Día ${it + 1}" },
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) {
                 Leyenda(actual, nombreMes(e.sel.mes))
@@ -356,6 +358,8 @@ private fun LazyListScope.pestanaComparar(e: EstadoEst, vm: EstadisticasViewMode
                 listOf("Ene", "Jun", "Dic"),
                 "Gasto real de cada mes en ${c.a.anio} y ${c.b.anio}",
                 ejeY = true, discreto = e.discreto,
+                nombres = listOf("${c.a.anio}", "${c.b.anio}"),
+                etiquetaPunto = { listOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")[it] },
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) { Leyenda(principal, "${c.b.anio}"); Leyenda(suave, "${c.a.anio} (discontinua)") }
         }

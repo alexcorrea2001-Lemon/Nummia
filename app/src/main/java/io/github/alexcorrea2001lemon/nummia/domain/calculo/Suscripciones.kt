@@ -43,3 +43,31 @@ fun avisosAntesDelCobro(hoy: LocalDate, pagos: List<PagoProximo>): List<Aviso> =
         val cuando = when (ChronoUnit.DAYS.between(hoy, p.fecha)) { 1L -> "mañana"; else -> "dentro de ${ChronoUnit.DAYS.between(hoy, p.fecha)} días" }
         Aviso("antes-${p.id}-${YearMonth.from(p.fecha)}", "Se acerca un pago: ${p.concepto}", "Se cobra $cuando: ${formatearEuros(p.importe)}.")
     }
+
+/** Un pago o cobro fijo, para calcular lo que viene. */
+data class Repeticion(
+    val id: String, val concepto: String, val importe: Long, val dia: Int, val cadaMeses: Int, val desde: YearMonth?, val ingreso: Boolean,
+)
+
+data class PrevistoFuturo(val id: String, val concepto: String, val importe: Long, val fecha: LocalDate, val ingreso: Boolean, val cadaMeses: Int)
+
+/**
+ * Pagos y cobros fijos que tocarán entre [desde] y [hasta], solo en meses posteriores al de [hoy]
+ * (el mes en curso ya tiene sus previstos guardados).
+ */
+fun previstosFuturos(hoy: LocalDate, desde: LocalDate, hasta: LocalDate, reps: List<Repeticion>): List<PrevistoFuturo> {
+    val primero = maxOf(YearMonth.from(hoy).plusMonths(1), YearMonth.from(desde))
+    val ultimo = YearMonth.from(hasta)
+    val r = ArrayList<PrevistoFuturo>()
+    var ym = primero
+    while (!ym.isAfter(ultimo)) {
+        for (p in reps) {
+            if (!tocaEnMes(p.cadaMeses, p.desde, ym)) continue
+            val f = ym.atDay(p.dia.coerceIn(1, ym.lengthOfMonth()))
+            if (f.isBefore(desde) || f.isAfter(hasta)) continue
+            r += PrevistoFuturo(p.id, p.concepto, p.importe, f, p.ingreso, p.cadaMeses)
+        }
+        ym = ym.plusMonths(1)
+    }
+    return r.sortedWith(compareBy({ it.fecha }, { it.concepto }))
+}

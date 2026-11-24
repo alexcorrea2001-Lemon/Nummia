@@ -17,6 +17,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -89,8 +91,14 @@ data class SerieLinea(val valores: List<Long>, val color: Color, val discontinua
 fun GraficoLineas(
     series: List<SerieLinea>, etiquetas: List<String>, descripcion: String, modifier: Modifier = Modifier, alto: Dp = 180.dp,
     ejeY: Boolean = false, discreto: Boolean = false,
+    /** Para tocar o arrastrar y ver el importe exacto: nombre de cada serie y cómo se llama cada punto («Día 15», «Mar»…). */
+    nombres: List<String> = emptyList(), etiquetaPunto: ((Int) -> String)? = null,
 ) {
     val p = progreso(series.map { it.valores })
+    val n = series.maxOfOrNull { it.valores.size } ?: 0
+    var sel by remember(n) { androidx.compose.runtime.mutableStateOf<Int?>(null) }
+    val interactivo = etiquetaPunto != null && n > 1
+    val marca = MaterialTheme.colorScheme.onSurface
     val rejilla = LocalColoresNummia.current.borde
     val todos = series.flatMap { it.valores }
     val marcas = if (ejeY && todos.isNotEmpty()) ejeBonito(todos.min(), todos.max()) else emptyList()
@@ -103,7 +111,38 @@ fun GraficoLineas(
         (textos.maxOf { medidor.measure(it, estiloEje).size.width }).toDp() + 8.dp
     }
     Column(modifier.fillMaxWidth()) {
-        Canvas(Modifier.fillMaxWidth().height(alto).semantics { contentDescription = descripcion }) {
+        if (interactivo) {
+            // Siempre ocupa su sitio: al tocar no se mueve nada.
+            val i = sel
+            Text(
+                if (i == null) "Toca o desliza sobre la gráfica para ver los importes"
+                else etiquetaPunto!!(i) + series.mapIndexedNotNull { k, s ->
+                    s.valores.getOrNull(i)?.let { v -> " · " + (nombres.getOrNull(k)?.let { "$it " } ?: "") + if (discreto) "••" else io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros(v) }
+                }.joinToString(""),
+                style = MaterialTheme.typography.bodySmall,
+                color = if (i == null) LocalColoresNummia.current.textoSuave else MaterialTheme.colorScheme.onSurface,
+                maxLines = 2, minLines = 2,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+        }
+        val toque = if (!interactivo) Modifier else Modifier
+            .pointerInput(n, margen) {
+                fun indice(x: Float): Int {
+                    val izq = margen.toPx()
+                    return (((x - izq) / (size.width - izq)) * (n - 1)).let { kotlin.math.round(it).toInt() }.coerceIn(0, n - 1)
+                }
+                detectTapGestures { pos -> sel = indice(pos.x).takeIf { it != sel } }
+            }
+            .pointerInput(n, margen) {
+                fun indice(x: Float): Int {
+                    val izq = margen.toPx()
+                    return (((x - izq) / (size.width - izq)) * (n - 1)).let { kotlin.math.round(it).toInt() }.coerceIn(0, n - 1)
+                }
+                androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                    onDragStart = { sel = indice(it.x) },
+                ) { cambio, _ -> cambio.consume(); sel = indice(cambio.position.x) }
+            }
+        Canvas(Modifier.fillMaxWidth().height(alto).then(toque).semantics { contentDescription = descripcion }) {
             if (todos.isEmpty()) return@Canvas
             val izq = margen.toPx()
             val ancho = size.width - izq
@@ -142,6 +181,17 @@ fun GraficoLineas(
                         pathEffect = if (s.discontinua) PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())) else null,
                     ),
                 )
+            }
+            // Punto elegido: una línea vertical y un punto en cada serie.
+            sel?.let { i ->
+                val x = izq + if (n > 1) ancho / (n - 1) * i else 0f
+                drawLine(marca.copy(alpha = 0.35f), Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
+                series.forEach { s ->
+                    val v = s.valores.getOrNull(i) ?: return@forEach
+                    val xs = izq + if (s.valores.size > 1) ancho / (s.valores.size - 1) * i else 0f
+                    drawCircle(s.color, 5.dp.toPx(), Offset(xs, y(v)))
+                    drawCircle(marca, 2.dp.toPx(), Offset(xs, y(v)))
+                }
             }
         }
         if (etiquetas.isNotEmpty()) androidx.compose.foundation.layout.Box(Modifier.padding(start = margen)) { EtiquetasEje(etiquetas) }

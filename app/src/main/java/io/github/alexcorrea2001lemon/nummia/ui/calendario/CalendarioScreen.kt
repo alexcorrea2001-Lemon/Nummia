@@ -148,6 +148,18 @@ fun CalendarioScreen(
                 Text("Gasto real ${formatearEuros(e.gastoMes, discreto = e.discreto)}", style = MaterialTheme.typography.bodySmall, color = c.gasto)
                 Text("Ingresos ${formatearEuros(e.ingresoMes, discreto = e.discreto)}", style = MaterialTheme.typography.bodySmall, color = c.ingreso)
             }
+            // Meses que vienen: lo que ya se sabe que toca.
+            if (e.previstoPagos > 0 || e.previstoCobros > 0) {
+                Text(
+                    buildString {
+                        append("Previsto:")
+                        if (e.previstoPagos > 0) append(" pagos fijos ${formatearEuros(e.previstoPagos, discreto = e.discreto)}")
+                        if (e.previstoPagos > 0 && e.previstoCobros > 0) append(" ·")
+                        if (e.previstoCobros > 0) append(" cobros ${formatearEuros(e.previstoCobros, discreto = e.discreto)}")
+                    },
+                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                )
+            }
         }
         item { Column {
             Row(Modifier.fillMaxWidth()) {
@@ -198,7 +210,25 @@ fun CalendarioScreen(
                         if (t.ingreso != 0L) Text("Ingresos ${formatearEuros(t.ingreso, discreto = e.discreto)}", style = MaterialTheme.typography.bodySmall, color = c.ingreso)
                     }
                 }
-                if (e.movimientosDia.isEmpty()) {
+                if (e.previstosDia.isNotEmpty()) {
+                    Text("Previsto para este día", style = MaterialTheme.typography.labelLarge, color = c.textoSuave)
+                    e.previstosDia.forEach { p ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(p.concepto, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    (if (p.ingreso) "Cobro" else "Pago") + when (p.cadaMeses) { 1 -> " de cada mes"; 3 -> " cada 3 meses"; 12 -> " de cada año"; else -> " fijo" },
+                                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                                )
+                            }
+                            Text(
+                                (if (p.ingreso) "+" else "−") + formatearEuros(p.importe, discreto = e.discreto),
+                                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold,
+                                color = if (p.ingreso) c.ingreso else c.gasto,
+                            )
+                        }
+                    }
+                } else if (e.movimientosDia.isEmpty()) {
                     Text("Nada apuntado este día.", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
                 }
                 Button(onClick = { alAnadirEn(e.elegido) }) { Icon(Iconos.Mas, null, Modifier.size(18.dp)); Text("  Añadir en este día") }

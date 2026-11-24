@@ -2,6 +2,12 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.5.0] - 2026-11-24
+
+### Nuevo
+- **Calendario con lo que viene**: en los meses siguientes se marcan los días en que tocan tus pagos y cobros fijos (también los trimestrales y anuales). Al elegir uno de esos días ves qué toca y cuánto, y arriba del mes, el total previsto de pagos y de cobros.
+- **Gráficas que se tocan**: en «Gasto acumulado» y «Gasto de cada mes», toca o desliza el dedo sobre la gráfica para ver el importe exacto de ese día o de ese mes en cada línea.
+
 ## [2.4.0] - 2026-11-24
 
 ### Nuevo

@@ -66,6 +66,11 @@ data class EstadoCalendario(
     val rejillas: Map<YearMonth, List<List<Celda>>> = emptyMap(),
     val movimientosDia: List<FilaMov> = emptyList(),
     val totalDia: DiaCalendario? = null,
+    /** Pagos y cobros fijos que tocarán el día elegido (meses que vienen). */
+    val previstosDia: List<io.github.alexcorrea2001lemon.nummia.domain.calculo.PrevistoFuturo> = emptyList(),
+    /** En un mes que aún no ha llegado: lo previsto de pagos y de cobros fijos. */
+    val previstoPagos: Long = 0,
+    val previstoCobros: Long = 0,
     val gastoMes: Long = 0,
     val ingresoMes: Long = 0,
     val discreto: Boolean = false,
@@ -87,11 +92,22 @@ class CalendarioViewModel @Inject constructor(
         repo.periodo(seisSemanas(ym.minusMonths(1)).first().first(), seisSemanas(ym.plusMonths(1)).last().last())
     }
 
+    // Pagos y cobros fijos activos, para dibujar lo que viene en los meses siguientes.
+    private val repeticiones = combine(repo.pagos(), repo.ingresosFijos()) { pagos, cobros ->
+        pagos.filter { it.activo }.map { io.github.alexcorrea2001lemon.nummia.domain.calculo.Repeticion(it.id, it.concepto, it.importe, it.dia, it.cadaMeses, it.mesDesde, false) } +
+            cobros.filter { it.activo }.map { io.github.alexcorrea2001lemon.nummia.domain.calculo.Repeticion(it.id, it.concepto, it.importe, it.dia, 1, null, true) }
+    }
+
     val estado: StateFlow<EstadoCalendario> = combine(
-        combine(mes, elegido, semana) { m, e, s -> Triple(m, e, s) }, datos, repo.personas(), repo.categorias(), ajustesRepo.ajustes,
-    ) { (ym, sel, vistaSemana), d, personas, categorias, ajustes ->
-        val dias = porDia(d.movGastos, d.movReembolsos, d.movIngresos)
+        combine(mes, elegido, semana) { m, e, s -> Triple(m, e, s) }, combine(datos, repeticiones) { d, r -> d to r }, repo.personas(), repo.categorias(), ajustesRepo.ajustes,
+    ) { (ym, sel, vistaSemana), (d, reps), personas, categorias, ajustes ->
         val hoy = reloj.hoy()
+        val futuros = io.github.alexcorrea2001lemon.nummia.domain.calculo.previstosFuturos(
+            hoy, seisSemanas(ym.minusMonths(1)).first().first(), seisSemanas(ym.plusMonths(1)).last().last(), reps,
+        )
+        // Los días con algo previsto llevan su marca, como los previstos de este mes.
+        val dias = porDia(d.movGastos, d.movReembolsos, d.movIngresos).toMutableMap()
+        futuros.forEach { f -> dias[f.fecha] = dias[f.fecha]?.copy(previsto = true) ?: DiaCalendario(0, 0, true) }
         val semanas = semanasDelMes(ym).map { sem -> sem.map { f -> Celda(f, YearMonth.from(f) == ym, dias[f], f == hoy, f == sel) } }
         fun rejilla(m: YearMonth) = seisSemanas(m).map { sem -> sem.map { f -> Celda(f, YearMonth.from(f) == m, dias[f], f == hoy, m == ym && f == sel) } }
         val rejillas = listOf(ym.minusMonths(1), ym, ym.plusMonths(1)).associateWith(::rejilla)
@@ -104,6 +120,9 @@ class CalendarioViewModel @Inject constructor(
             movimientosDia = (d.gastos.filter { it.gasto.fecha == sel }.map { it.aFila(pm, cm) } + d.ingresos.filter { it.fecha == sel }.map { it.aFila() })
                 .sortedByDescending { it.creado },
             totalDia = dias[sel], gastoMes = r.gastoReal, ingresoMes = r.ingresos, discreto = ajustes.modoDiscreto,
+            previstosDia = futuros.filter { it.fecha == sel },
+            previstoPagos = futuros.filter { !it.ingreso && YearMonth.from(it.fecha) == ym }.sumOf { it.importe },
+            previstoCobros = futuros.filter { it.ingreso && YearMonth.from(it.fecha) == ym }.sumOf { it.importe },
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoCalendario(mes.value, elegido.value))
 

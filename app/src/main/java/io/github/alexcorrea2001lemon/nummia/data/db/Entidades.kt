@@ -134,7 +134,13 @@ data class PagoMensualEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
-)
+    /** Cada cuántos meses se paga: 1 (mensual), 3 (trimestral) o 12 (anual). */
+    @ColumnInfo(defaultValue = "1") val cadaMeses: Int = 1,
+    /** Mes del primer cobro («2030-03»), para los que no son mensuales. */
+    val desde: String? = null,
+) {
+    val mesDesde: java.time.YearMonth? get() = desde?.let { runCatching { java.time.YearMonth.parse(it) }.getOrNull() }
+}
 
 /** Límite de gasto mensual: total, de una categoría ([ref] = id) o de una tienda ([ref] = nombre). [ambito] = nombre de Ambito. */
 @Entity(tableName = "presupuestos")

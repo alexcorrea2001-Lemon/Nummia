@@ -34,6 +34,7 @@ class CopiaInvalida(motivo: String) : Exception(motivo)
 @Serializable data class PagoDto(
     val id: String, val concepto: String, val tienda: String, val categoriaId: String?, val importe: Long, val dia: Int,
     val activo: Boolean, val createdAt: Long, val updatedAt: Long, val deletedAt: Long?,
+    val cadaMeses: Int = 1, val desde: String? = null,
 )
 @Serializable data class PresupuestoDto(val id: String, val ambito: String, val ref: String?, val limite: Long, val createdAt: Long, val updatedAt: Long)
 @Serializable data class ReembolsoDto(

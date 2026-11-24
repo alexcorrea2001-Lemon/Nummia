@@ -22,6 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,13 +45,21 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.alexcorrea2001lemon.nummia.ui.theme.LocalColoresNummia
 
-/** Avance 0→1 al aparecer o cuando cambian los datos (con «Quitar animaciones» llega al instante). */
+/**
+ * Avance 0→1 la primera vez que se ven estos datos. Al volver a la tarjeta tras desplazarse
+ * (la lista la descarta al salir de pantalla) no se repite: se guarda qué datos ya se animaron.
+ * Con «Quitar animaciones» llega al instante.
+ */
 @Composable
 private fun avance(clave: Any?): Float {
-    val p = remember { Animatable(0f) }
-    LaunchedEffect(clave) {
+    var animada by rememberSaveable { mutableIntStateOf(0) }
+    val huella = clave.hashCode() or 1
+    val p = remember { Animatable(if (animada == huella) 1f else 0f) }
+    LaunchedEffect(huella) {
+        if (animada == huella) { p.snapTo(1f); return@LaunchedEffect }
         p.snapTo(0f)
         p.animateTo(1f, tween(durationMillis = 900, easing = FastOutSlowInEasing))
+        animada = huella
     }
     return p.value
 }

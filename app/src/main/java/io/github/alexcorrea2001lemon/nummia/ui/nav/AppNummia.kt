@@ -110,7 +110,6 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
     val esPrincipal = ruta in Rutas.PRINCIPALES
     var menuAbierto by rememberSaveable { mutableStateOf(false) }
     val haptica = rememberHaptica()
-    var fabVisible by remember { mutableStateOf(true) }
     // «Nuevo gasto» / «Nuevo ingreso» desde el icono o el widget
     val actividadApp = androidx.compose.ui.platform.LocalContext.current.actividad()
     if (actividadApp != null) {
@@ -118,24 +117,6 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
         val destino by principal.destino.collectAsStateWithLifecycle()
         LaunchedEffect(destino) {
             destino?.let { nav.navigate(it) { launchSingleTop = true }; principal.destino.value = null }
-        }
-    }
-    LaunchedEffect(ruta) { fabVisible = true }
-    val ocultarAlBajar = remember {
-        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
-            override fun onPreScroll(available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                if (available.y < -6f) fabVisible = false else if (available.y > 6f) fabVisible = true
-                return androidx.compose.ui.geometry.Offset.Zero
-            }
-            // Al llegar al final de la lista (ya no baja más), el botón + vuelve: la lista deja hueco para que no tape nada.
-            override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource): androidx.compose.ui.geometry.Offset {
-                if (available.y < -1f) fabVisible = true
-                return androidx.compose.ui.geometry.Offset.Zero
-            }
-            override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity): androidx.compose.ui.unit.Velocity {
-                if (available.y < -1f) fabVisible = true
-                return androidx.compose.ui.unit.Velocity.Zero
-            }
         }
     }
 
@@ -160,7 +141,7 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
         floatingActionButton = {
             // Al bajar por una lista el botón + se esconde para no tapar nada; al subir vuelve.
             AnimatedVisibility(
-                (ruta == Rutas.INICIO || ruta == Rutas.MOVIMIENTOS) && (fabVisible || menuAbierto),
+                (ruta == Rutas.INICIO || ruta == Rutas.MOVIMIENTOS) && true,
                 enter = scaleIn(spring(dampingRatio = 0.7f, stiffness = 500f)) + fadeIn(),
                 exit = scaleOut(tween(150)) + fadeOut(tween(150)),
             ) {
@@ -197,7 +178,7 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
                 NavHost(
                     navController = nav,
                     startDestination = Rutas.INICIO,
-                    modifier = Modifier.fillMaxSize().nestedScroll(ocultarAlBajar),
+                    modifier = Modifier.fillMaxSize(),
                     enterTransition = { fadeIn(tween(220)) + scaleIn(initialScale = 0.97f, animationSpec = tween(220)) },
                     exitTransition = { fadeOut(tween(160)) },
                     popEnterTransition = { fadeIn(tween(220)) },

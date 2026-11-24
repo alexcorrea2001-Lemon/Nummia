@@ -105,7 +105,7 @@ fun InicioScreen(
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(columnas),
         // Deslizar a los lados cambia de mes (como en el Calendario).
-        modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
+        modifier = Modifier.fillMaxWidth().statusBarsPadding().pointerInput(Unit) {
             var total = 0f
             detectHorizontalDragGestures(
                 onDragStart = { total = 0f },
@@ -289,7 +289,7 @@ fun InicioScreen(
 
 @Composable
 private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Unit, hoy: () -> Unit, buscar: () -> Unit, ajustes: () -> Unit, irAHoy: () -> Unit, estadoDrive: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth().statusBarsPadding().padding(top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(top = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
         // El mes ocupa el espacio que sobra: los iconos de la derecha siempre tienen el mismo tamaño.
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = anterior, modifier = Modifier.size(40.dp)) { Icon(Iconos.ChevronIzq, "Mes anterior") }
@@ -328,7 +328,13 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alReve
         fondo = androidx.compose.ui.graphics.Color.Transparent,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Balance de ${nombreMesMinuscula(e.mes)}", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.weight(1f))
+            // Con los importes ocultos, el título dice cómo verlos (sin cambiar el alto de la tarjeta).
+            androidx.compose.animation.Crossfade(e.discreto, Modifier.weight(1f), label = "titulo") { oculto ->
+                Text(
+                    if (oculto) "Mantén pulsado para ver los importes" else "Balance de ${nombreMesMinuscula(e.mes)}",
+                    style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
             IconButton(onClick = alternarDiscreto) {
                 Icon(if (e.discreto) Iconos.OjoTachado else Iconos.Ojo, if (e.discreto) "Mostrar importes" else "Ocultar importes", tint = c.textoSuave)
             }
@@ -383,9 +389,6 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alReve
                     )
                 }
             }
-        }
-        AnimatedVisibility(e.discreto) {
-            Text("Mantén pulsado para verlos con tu huella", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
         }
         // Sin el sueldo confirmado el mes parece en negativo: se enseña cómo quedará.
         AnimatedVisibility(e.sueldoPrevistoMes > 0) {

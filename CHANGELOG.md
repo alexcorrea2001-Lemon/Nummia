@@ -2,6 +2,14 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.8.1] - 2026-11-24
+
+### Arreglado
+- Inicio: la curva y la barra de colores ya no se vuelven a dibujar cada vez que bajas y subes; solo se animan la primera vez que las ves.
+- Inicio: el contenido ya no se mete por debajo de la barra de estado al desplazarte.
+- El botón + se queda siempre a la vista en Inicio y en Movimientos (antes se escondía al desplazarte y a veces no volvía).
+- Ocultar y mostrar importes ya no da un salto al final: el aviso «Mantén pulsado…» sustituye al título del balance en vez de añadir una línea.
+
 ## [2.8.0] - 2026-11-24
 
 ### Novedades

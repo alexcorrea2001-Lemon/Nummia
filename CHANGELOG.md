@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.2.3] - 2026-11-24
+
+### Arreglado
+- **Botón «Confirmar» de las notificaciones**: si el pago o el sueldo ya lo habías confirmado en la app (quizá con otro importe) o habías dicho «Este mes no», el botón de una notificación antigua lo volvía a cambiar. Ahora solo confirma lo que sigue pendiente, y si ya no existe no hace nada (antes podía cerrar la app).
+- **Widget al cambiar de mes**: si no abrías la app, seguía mostrando el mes anterior. Ahora se refresca dos veces al día (solo lee tus datos; no usa internet).
+- Errores raros al actualizar el widget o al apuntar un cambio para Drive ya no pueden cerrar la app.
+
+### Optimizado
+- Fuera una biblioteca de iconos que no se usaba.
+
 ## [2.2.2] - 2026-11-24
 
 ### Arreglado

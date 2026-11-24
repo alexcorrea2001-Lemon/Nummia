@@ -557,6 +557,27 @@ class MovimientosRepo @Inject constructor(
         if (p.importe != importe) db.pagos().guardar(p.copy(importe = importe, updatedAt = reloj.ahoraMs()))
     }
 
+    /**
+     * Botón «Confirmar» de una notificación: solo si sigue previsto. Si ya lo confirmaste en la app,
+     * lo quitaste («Este mes no») o ya no existe, no se toca. Devuelve si se confirmó.
+     */
+    suspend fun confirmarPagoDesdeAviso(gastoId: String, importe: Long): Boolean = db.withTransaction {
+        val g = db.gastos().obtener(gastoId)
+        if (g == null || g.deletedAt != null || g.estado != Estado.PREVISTO || importe <= 0) return@withTransaction false
+        confirmarPago(gastoId, importe)
+        true
+    }
+
+    /** Igual para el sueldo previsto: se cobra hoy si es su mes; si no, el último día de su mes. */
+    suspend fun confirmarSueldoDesdeAviso(ingresoId: String, importe: Long): Boolean = db.withTransaction {
+        val i = db.ingresos().obtener(ingresoId)
+        if (i == null || i.deletedAt != null || i.estado != Estado.PREVISTO) return@withTransaction false
+        val hoy = reloj.hoy()
+        val dia = if (YearMonth.from(hoy) == YearMonth.from(i.fecha)) hoy else YearMonth.from(i.fecha).atEndOfMonth()
+        confirmarIngreso(ingresoId, dia, if (importe > 0) importe else i.importe)
+        true
+    }
+
     /** «Este mes no»: el previsto se quita (queda marcado para no volver a crearse este mes). */
     suspend fun omitirPago(gastoId: String) = db.withTransaction {
         db.gastos().marcarBorrado(gastoId, reloj.ahoraMs())

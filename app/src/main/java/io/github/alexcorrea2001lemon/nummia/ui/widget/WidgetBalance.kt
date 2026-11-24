@@ -42,7 +42,7 @@ class WidgetBalance : AppWidgetProvider() {
         if (ids.isEmpty()) return
         val pendiente = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
-            try {
+            try { runCatching {
                 val ym = YearMonth.from(reloj.hoy())
                 val r = repo.resumenMes(ym).first()
                 val discreto = ajustes.ajustes.first().modoDiscreto
@@ -58,7 +58,7 @@ class WidgetBalance : AppWidgetProvider() {
                     setOnClickPendingIntent(R.id.widget_anadir, abrir(context, MainActivity.ACCION_GASTO, 1))
                 }
                 gestor.updateAppWidget(ids, vista)
-            } finally {
+            } } finally {
                 pendiente.finish()
             }
         }

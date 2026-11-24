@@ -68,8 +68,10 @@ object DriveModule {
         return AvisoCambios {
             alcance.launch {
                 // Se apunta al momento (aunque se cierre la app enseguida, el cambio no se pierde).
-                val sinc = s.get()
-                if (sinc.correo() != null) sinc.marcarCambio()
+                runCatching {
+                    val sinc = s.get()
+                    if (sinc.correo() != null) sinc.marcarCambio()
+                }
             }
             senales.tryEmit(Unit)
         }

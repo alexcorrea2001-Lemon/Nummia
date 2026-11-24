@@ -10,7 +10,7 @@ plugins {
 // Versión: MAYOR.MENOR.CORRECCIÓN → versionCode = MAYOR*10000 + MENOR*100 + CORRECCIÓN
 val versionMayor = 2
 val versionMenor = 2
-val versionCorreccion = 2
+val versionCorreccion = 3
 
 android {
     namespace = "io.github.alexcorrea2001lemon.nummia"
@@ -103,7 +103,6 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons)
     implementation(libs.compose.animation)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.navigation.compose)

@@ -71,6 +71,26 @@ class PagosMensualesTest {
         assertEquals(listOf(3299L, 2999L), repo.historialPago(pago).first().map { it.importe })
     }
 
+    @Test fun elBotonDeLaNotificacionNoTocaLoYaResuelto() = runBlocking {
+        gimnasioDesdeGasto()
+        reloj.fecha = LocalDate.of(2030, 4, 6)
+        repo.asegurarPagosPrevistos(reloj.hoy())
+        val id = previstos().single().id
+        // Ya confirmado en la app con otro precio: la notificación vieja no lo cambia.
+        repo.confirmarPago(id, 3299)
+        assertEquals(false, repo.confirmarPagoDesdeAviso(id, 2999))
+        assertEquals(3299L, db.gastos().obtener(id)!!.importe)
+        // «Este mes no» y luego el botón: sigue sin pagarse.
+        reloj.fecha = LocalDate.of(2030, 5, 6)
+        repo.asegurarPagosPrevistos(reloj.hoy())
+        val mayo = previstos().single().id
+        repo.omitirPago(mayo)
+        assertEquals(false, repo.confirmarPagoDesdeAviso(mayo, 2999))
+        assertTrue(db.gastos().obtener(mayo)!!.deletedAt != null)
+        // Algo que ya no existe: no falla.
+        assertEquals(false, repo.confirmarPagoDesdeAviso("no-existe", 100))
+    }
+
     @Test fun esteMesNoNoVuelveAAparecer() = runBlocking {
         gimnasioDesdeGasto()
         reloj.fecha = LocalDate.of(2030, 4, 6)

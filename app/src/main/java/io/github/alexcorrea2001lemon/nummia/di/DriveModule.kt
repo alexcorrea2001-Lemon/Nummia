@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.debounce
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import okhttp3.OkHttpClient
 import javax.inject.Singleton
@@ -48,18 +49,30 @@ object DriveModule {
 
     @Provides
     @Singleton
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
     fun avisoCambios(@ApplicationContext context: Context, s: dagger.Lazy<Sincronizador>, ajustes: AjustesRepo): AvisoCambios {
         val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        return AvisoCambios {
-            alcance.launch {
-                io.github.alexcorrea2001lemon.nummia.ui.widget.WidgetBalance.actualizar(context)
-                val a = ajustes.ajustes.first()
-                if (a.notificaciones) io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.pronto(context)
-                val sinc = s.get()
-                if (sinc.correo() == null) return@launch
-                sinc.marcarCambio()
-                TrabajoSync.pronto(context, a.driveSoloWifi)
+        // Varios cambios seguidos (borrar varios, importar, deshacer…) se agrupan: el widget, los avisos
+        // y la sincronización se preparan una sola vez, 1,5 s después del último.
+        val senales = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST)
+        alcance.launch {
+            senales.debounce(1_500).collect {
+                runCatching {
+                    io.github.alexcorrea2001lemon.nummia.ui.widget.WidgetBalance.actualizar(context)
+                    val a = ajustes.ajustes.first()
+                    if (a.notificaciones) io.github.alexcorrea2001lemon.nummia.data.avisos.TrabajoAvisos.pronto(context)
+                    if (s.get().correo() != null) TrabajoSync.pronto(context, a.driveSoloWifi)
+                }
             }
         }
+        return AvisoCambios {
+            alcance.launch {
+                // Se apunta al momento (aunque se cierre la app enseguida, el cambio no se pierde).
+                val sinc = s.get()
+                if (sinc.correo() != null) sinc.marcarCambio()
+            }
+            senales.tryEmit(Unit)
+        }
     }
+
 }

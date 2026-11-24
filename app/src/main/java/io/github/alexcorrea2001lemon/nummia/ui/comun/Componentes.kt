@@ -1,5 +1,9 @@
 package io.github.alexcorrea2001lemon.nummia.ui.comun
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.Animatable
@@ -204,6 +208,39 @@ fun DibujoVacio(icono: ImageVector) {
             contentAlignment = Alignment.Center,
         ) {
             Icon(icono, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(26.dp))
+        }
+    }
+}
+
+/**
+ * Filas de carga: la forma de la lista mientras llegan los datos (en vez de una pantalla en blanco).
+ * Laten suavemente; con «Quitar animaciones» se quedan quietas.
+ */
+@androidx.compose.runtime.Composable
+fun FilasEsqueleto(filas: Int = 5, modifier: Modifier = Modifier) {
+    val pulso = androidx.compose.animation.core.rememberInfiniteTransition(label = "esqueleto")
+    val alfa by pulso.animateFloat(
+        0.35f, 0.7f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse),
+        label = "alfa",
+    )
+    val tono = MaterialTheme.colorScheme.surfaceVariant
+    Column(
+        modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "Cargando" },
+        verticalArrangement = Arrangement.spacedBy(Espacio.s),
+    ) {
+        repeat(filas) {
+            Row(
+                Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).background(MaterialTheme.colorScheme.surfaceContainer).padding(Espacio.l),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m),
+            ) {
+                Box(Modifier.size(40.dp).graphicsLayer { alpha = alfa }.background(tono, androidx.compose.foundation.shape.CircleShape))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(Modifier.fillMaxWidth(0.55f).height(12.dp).graphicsLayer { alpha = alfa }.background(tono, MaterialTheme.shapes.small))
+                    Box(Modifier.fillMaxWidth(0.35f).height(10.dp).graphicsLayer { alpha = alfa }.background(tono, MaterialTheme.shapes.small))
+                }
+                Box(Modifier.width(56.dp).height(12.dp).graphicsLayer { alpha = alfa }.background(tono, MaterialTheme.shapes.small))
+            }
         }
     }
 }

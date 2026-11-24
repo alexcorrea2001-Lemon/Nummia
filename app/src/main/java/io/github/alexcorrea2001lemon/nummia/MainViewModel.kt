@@ -65,7 +65,7 @@ class MainViewModel @Inject constructor(
             if (sinc.correo() != null) {
                 val wifi = ajustesRepo.ajustes.first().driveSoloWifi
                 io.github.alexcorrea2001lemon.nummia.data.drive.TrabajoSync.programar(context, true, wifi)
-                io.github.alexcorrea2001lemon.nummia.data.drive.TrabajoSync.pronto(context, wifi, 3)
+                if (sinc.convieneAlAbrir()) io.github.alexcorrea2001lemon.nummia.data.drive.TrabajoSync.pronto(context, wifi, 3)
             }
         }
         viewModelScope.launch {

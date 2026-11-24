@@ -153,6 +153,8 @@ class DatosLocales(private val db: NummiaDb, private val reloj: Reloj) {
                         id = id, codigo = codigoLibre("I", c[0], id), fecha = LocalDate.ofEpochDay(c[1].toLong()), concepto = c[2], tipo = tipo,
                         importe = c[4].toLong(), notas = c[5], estado = Estado.CONFIRMADO,
                         createdAt = previo?.createdAt ?: ahora, updatedAt = ahora, deletedAt = null,
+                        // Lo que solo vive en el móvil no se pierde al editar desde el ordenador.
+                        ingresoFijoId = previo?.ingresoFijoId,
                     ),
                 )
                 anotar("ingreso", id, if (previo == null) "creado" else "editado")

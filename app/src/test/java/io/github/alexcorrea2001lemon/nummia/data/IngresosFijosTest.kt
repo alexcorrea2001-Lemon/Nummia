@@ -110,6 +110,18 @@ class IngresosFijosTest {
         assertNull(db.ingresos().obtener(i.id)!!.ingresoFijoId)
     }
 
+    @Test fun editarElCobroDesdeElOrdenadorNoLoDesenlazaNiLoDuplica() = runBlocking {
+        val fijo = alquilerDesdeIngreso()
+        val i = db.ingresos().volcar().single()
+        val datos = io.github.alexcorrea2001lemon.nummia.data.drive.DatosLocales(db, reloj)
+        val canon = datos.canon(io.github.alexcorrea2001lemon.nummia.data.drive.Pestana.INGRESOS, 2030).getValue(i.id).toMutableList()
+        canon[4] = "8200" // en el ordenador cambian el importe
+        datos.aplicar(io.github.alexcorrea2001lemon.nummia.data.drive.Pestana.INGRESOS, i.id, canon)
+        assertEquals(fijo, db.ingresos().obtener(i.id)!!.ingresoFijoId)
+        repo.asegurarIngresosPrevistos(reloj.hoy())
+        assertTrue(previstos().isEmpty())
+    }
+
     @Test fun unSueldoFijoNoDuplicaElSueldoHabitual() = runBlocking {
         repo.guardarIngreso(IngresoInput(fecha = LocalDate.of(2030, 3, 28), concepto = "Sueldo", tipo = TipoIngreso.SUELDO, importe = 150000, cadaMes = true))
         reloj.fecha = LocalDate.of(2030, 4, 1)

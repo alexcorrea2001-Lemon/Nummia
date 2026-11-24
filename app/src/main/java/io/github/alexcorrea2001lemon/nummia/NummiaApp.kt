@@ -28,6 +28,8 @@ class NummiaApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        // Si la app se cerró de golpe con los importes a la vista (huella), vuelven a ocultarse.
+        alcance.launch { runCatching { ajustes.volverADiscretoSiTemporal() } }
         // El icono elegido se aplica cuando la app pasa a segundo plano: así el lanzador lo recoge
         // en cuanto vuelves a la pantalla de inicio y la app no se cierra en mitad de un ajuste.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {

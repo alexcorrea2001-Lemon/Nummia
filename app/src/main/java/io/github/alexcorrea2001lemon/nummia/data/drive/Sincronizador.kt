@@ -57,6 +57,11 @@ class Sincronizador(
         sync.vaciarHojas(); sync.vaciarInstantaneas(); sync.vaciarConflictos()
     }
 
+    /** ¿Sincronizar ahora que se abre la app? (Ver [convieneAlAbrir].) */
+    suspend fun convieneAlAbrir(): Boolean = convieneAlAbrir(
+        sync.meta(Meta.ULTIMA)?.toLongOrNull(), sync.meta(Meta.PENDIENTE) != null, sync.meta(Meta.ERROR) != null, reloj.ahoraMs(),
+    )
+
     suspend fun marcarCambio() {
         sync.guardarMeta(MetaEntity(Meta.PENDIENTE, "1"))
         sync.guardarMeta(MetaEntity(Meta.CAMBIOS_DESDE_COPIA, "1"))
@@ -419,3 +424,11 @@ class Sincronizador(
         }
     }
 }
+
+/**
+ * Al abrir la app se sincroniza solo si hay algo que subir, la última vez falló, nunca se ha hecho
+ * o han pasado 15 minutos o más (por si cambiaste algo en el ordenador). Abrir la app muchas veces seguidas
+ * ya no gasta red ni batería cada vez.
+ */
+fun convieneAlAbrir(ultima: Long?, pendiente: Boolean, error: Boolean, ahora: Long): Boolean =
+    ultima == null || pendiente || error || ahora - ultima >= 15 * 60_000L || ahora < ultima

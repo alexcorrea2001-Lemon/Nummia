@@ -2,6 +2,18 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.2.2] - 2026-11-24
+
+### Arreglado
+- **Cobros fijos editados desde el ordenador**: al cambiar en la hoja de Drive un ingreso que se cobra cada mes, perdía el enlace con su cobro fijo y ese mes podía aparecer otro previsto repetido. Ya no.
+- **Modo discreto con huella**: si la app se cerraba de golpe con los importes a la vista, al volver a abrirla siguen ocultos.
+
+### Mejorado
+- **Menos batería y datos**:
+  - Al abrir la app solo se sincroniza con Drive si hay algo que subir, la última vez falló o han pasado 15 minutos. Antes se sincronizaba cada vez que la abrías.
+  - Varios cambios seguidos (borrar varios, deshacer, importar…) actualizan el widget, los avisos y la sincronización una sola vez en lugar de una por cambio.
+- **Movimientos**: mientras cargan, se ve la forma de la lista en lugar de un hueco vacío.
+
 ## [2.2.1] - 2026-11-22
 
 ### Arreglado

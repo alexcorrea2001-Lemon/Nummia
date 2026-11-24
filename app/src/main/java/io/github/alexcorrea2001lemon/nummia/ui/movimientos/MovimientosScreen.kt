@@ -70,6 +70,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros
 import io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporte
 import io.github.alexcorrea2001lemon.nummia.ui.comun.EstadoVacio
+import io.github.alexcorrea2001lemon.nummia.ui.comun.FilasEsqueleto
 import io.github.alexcorrea2001lemon.nummia.ui.comun.FilaMov
 import io.github.alexcorrea2001lemon.nummia.ui.comun.FilaMovimiento
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
@@ -232,6 +233,7 @@ fun MovimientosScreen(
                 }
             }
 
+            if (e.cargando) item { FilasEsqueleto(6, Modifier.padding(horizontal = Espacio.l, vertical = Espacio.m)) }
             if (e.grupos.all { it.filas.isEmpty() } && !e.cargando) {
                 item {
                     if (e.filtros.texto.isNotBlank() || e.filtros.avanzados > 0) {

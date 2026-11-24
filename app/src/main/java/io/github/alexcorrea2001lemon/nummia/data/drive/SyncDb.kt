@@ -63,4 +63,5 @@ object Meta {
     const val CAMBIOS_DESDE_COPIA = "cambios_desde_copia"
     const val AVISOS = "avisos"
     const val CAMBIOS_ORDENADOR = "cambios_ordenador"
+    const val HISTORIAL = "historial_sync"
 }

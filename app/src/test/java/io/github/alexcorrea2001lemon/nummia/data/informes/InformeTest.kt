@@ -58,6 +58,14 @@ class InformeTest {
         assertEquals(listOf("Ana"), informe(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 31), "ana").deben.map { it.persona })
     }
 
+    @Test fun informeDeUnaPersonaSoloTraeLoSuyo() {
+        val i = informe(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 31), "ana")
+        assertEquals(listOf("Móvil"), i.movimientos.map { it.concepto }) // ni el súper ni el sueldo
+        assertEquals(34950L, i.resumen.pagado)
+        assertEquals(5000L, i.resumen.reembolsos)
+        assertEquals(0L, i.resumen.ingresos)
+    }
+
     @Test fun elExcelSeLeeConLosMismosNumeros() {
         val bytes = EscritorXlsx.escribir(hojasDeInforme(informe(LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 31))))
         val celdas = LectorXlsx.leer(bytes) // primera hoja: Resumen

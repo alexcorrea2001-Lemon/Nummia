@@ -1,5 +1,7 @@
 package io.github.alexcorrea2001lemon.nummia.ui.drive
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Icon
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -185,6 +187,35 @@ fun DriveScreen(vm: DriveViewModel, snackbar: SnackbarHostState, alVolver: () ->
         }
 
         // ---- Copias de seguridad
+        // Historial: qué pasó en cada sincronización.
+        if (e.historial.isNotEmpty()) {
+            var verTodo by remember { mutableStateOf(false) }
+            Text("Últimas sincronizaciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
+                val hora = remember { java.time.format.DateTimeFormatter.ofPattern("d MMM, HH:mm", java.util.Locale.forLanguageTag("es-ES")) }
+                (if (verTodo) e.historial else e.historial.take(4)).forEachIndexed { n, h ->
+                    if (n > 0) HorizontalDivider(color = LocalColoresNummia.current.borde)
+                    Row(Modifier.fillMaxWidth().padding(horizontal = Espacio.l, vertical = Espacio.m), horizontalArrangement = Arrangement.spacedBy(Espacio.m), verticalAlignment = Alignment.CenterVertically) {
+                        val mal = h.error != null
+                        Icon(
+                            if (mal) Iconos.Aviso else Iconos.Check, null,
+                            tint = if (mal) LocalColoresNummia.current.gasto else LocalColoresNummia.current.ingreso, modifier = Modifier.size(20.dp),
+                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                hora.format(java.time.Instant.ofEpochMilli(h.fecha).atZone(java.time.ZoneId.systemDefault())).replace(".", ""),
+                                style = MaterialTheme.typography.labelMedium, color = LocalColoresNummia.current.textoSuave,
+                            )
+                            Text(h.resumen(), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+                if (e.historial.size > 4) {
+                    TextButton(onClick = { verTodo = !verTodo }, modifier = Modifier.padding(start = Espacio.s)) { Text(if (verTodo) "Ver menos" else "Ver las ${e.historial.size}") }
+                }
+            }
+        }
+
         Text("Copias de seguridad en tu Drive", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text(
             "Se guarda una al día si has cambiado algo. Se conservan las de los últimos 7 días, 4 semanas y 12 meses.",

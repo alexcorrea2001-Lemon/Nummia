@@ -237,18 +237,26 @@ fun InformesScreen(vm: InformesViewModel, snackbar: SnackbarHostState, alAjustes
                         FilterChip(selected = k in contenidos, onClick = { contenidos = if (k in contenidos) contenidos - k else contenidos + k }, label = { Text(k.nombre) })
                     }
                 }
-                AnimatedVisibility(Contenido.DEBEN in contenidos && personas.isNotEmpty()) {
-                    Column {
-                        Text("Lo que me deben de", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                            FilterChip(selected = persona == null, onClick = { persona = null }, label = { Text("Todos") })
-                            personas.forEach { p -> FilterChip(selected = persona == p.id, onClick = { persona = p.id }, label = { Text(p.nombre) }) }
-                        }
+                if (personas.isNotEmpty()) {
+                    Text("De quién", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                        FilterChip(selected = persona == null, onClick = { persona = null }, label = { Text("Todo lo mío") })
+                        personas.forEach { p -> FilterChip(selected = persona == p.id, onClick = { persona = p.id }, label = { Text(p.nombre) }) }
+                    }
+                    AnimatedVisibility(persona != null) {
+                        Text(
+                            "Solo lo que has pagado por ${personas.firstOrNull { it.id == persona }?.nombre.orEmpty()}, lo que te ha devuelto y lo que te debe.",
+                            style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                        )
                     }
                 }
                 Button(
                     enabled = !e.generando && contenidos.isNotEmpty(),
-                    onClick = { val (a, b) = rango(); vm.generar("Informe", a, b, contenidos, persona) },
+                    onClick = {
+                        val (a, b) = rango()
+                        val titulo = personas.firstOrNull { it.id == persona }?.let { "Informe de ${it.nombre}" } ?: "Informe"
+                        vm.generar(titulo, a, b, contenidos, persona)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("Crear informe") }
             }

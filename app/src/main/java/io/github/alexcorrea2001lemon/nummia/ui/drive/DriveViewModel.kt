@@ -37,6 +37,8 @@ data class EstadoDrive(
     val avisos: List<String> = emptyList(),
     /** «Desde el ordenador: 2 nuevos y 1 cambiado» de la última sincronización (null si no llegó nada). */
     val cambiosOrdenador: String? = null,
+    /** Últimas sincronizaciones, la más reciente primero. */
+    val historial: List<io.github.alexcorrea2001lemon.nummia.data.drive.EntradaSync> = emptyList(),
     val conflictos: List<ConflictoEntity> = emptyList(),
     val ocupado: Boolean = false,
     val soloWifi: Boolean = false,
@@ -65,6 +67,7 @@ class DriveViewModel @Inject constructor(
             correo = m[Meta.CUENTA], carpeta = m[Meta.CARPETA], ultima = m[Meta.ULTIMA]?.toLongOrNull(), error = m[Meta.ERROR],
             pendiente = m[Meta.PENDIENTE] == "1", avisos = m[Meta.AVISOS]?.lines().orEmpty().filter { it.isNotBlank() },
             cambiosOrdenador = io.github.alexcorrea2001lemon.nummia.data.drive.CambiosOrdenador.leer(m[Meta.CAMBIOS_ORDENADOR])?.texto(),
+            historial = io.github.alexcorrea2001lemon.nummia.data.drive.EntradaSync.lista(m[Meta.HISTORIAL]),
             conflictos = conflictos, ocupado = ocupado, soloWifi = a.driveSoloWifi,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EstadoDrive())

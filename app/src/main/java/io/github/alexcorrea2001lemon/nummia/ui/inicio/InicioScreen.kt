@@ -88,6 +88,7 @@ fun InicioScreen(
     alPendientes: () -> Unit = {},
 ) {
     val e by vm.estado.collectAsStateWithLifecycle()
+    val tarjetas by vm.tarjetas.collectAsStateWithLifecycle()
     val presupuestos by vm.presupuestos.collectAsStateWithLifecycle()
     var confirmando by remember { mutableStateOf<SueldoPendiente?>(null) }
     var cambiandoPago by remember { mutableStateOf<PagoPendiente?>(null) }
@@ -132,88 +133,6 @@ fun InicioScreen(
                 },
             ) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) }
         }
-        item { Indicadores(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) } }
-        e.prevision?.takeIf { !e.vacio }?.let { p -> item("prevision") { TarjetaPrevision(p, e.discreto, Modifier.animateItem()) } }
-
-        if (presupuestos.isNotEmpty()) {
-            item("presupuestos") {
-                Tarjeta(modifier = Modifier.animateItem().clickable(onClick = alPresupuestos)) {
-                    Text("Presupuestos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    presupuestos.forEach { (nombre, p) ->
-                        io.github.alexcorrea2001lemon.nummia.ui.presupuestos.BarraPresupuesto(p, nombre, e.discreto)
-                    }
-                }
-            }
-        }
-
-        if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty() || e.pagosPendientes.isNotEmpty() || e.cobrosPendientes.isNotEmpty()) {
-            item(span = todaLaFila) { EncabezadoSeccion("Pendientes") }
-            items(e.sueldosPendientes, key = { "s" + it.id }) { s ->
-                Tarjeta {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                        Avatar("€", LocalColoresNummia.current.ingresoFondo, LocalColoresNummia.current.ingreso, Iconos.Euro)
-                        Column(Modifier.weight(1f)) {
-                            Text("Sueldo de ${nombreMesMinuscula(java.time.YearMonth.from(s.fecha))} previsto", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                            Text(formatearEuros(s.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
-                        }
-                        Button(onClick = { confirmando = s }) { Text("Confirmar") }
-                    }
-                }
-            }
-            items(e.cobrosPendientes, key = { "c" + it.id }) { p ->
-                Tarjeta(modifier = Modifier.animateItem()) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                        Avatar("€", LocalColoresNummia.current.ingresoFondo, LocalColoresNummia.current.ingreso, Iconos.Repetir)
-                        Column(Modifier.weight(1f)) {
-                            Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                            Text(
-                                "${formatearEuros(p.importe, discreto = e.discreto)} · se cobra cada mes, día ${p.fecha.dayOfMonth}",
-                                style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
-                            )
-                        }
-                    }
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                        Button(onClick = { haptica(); vm.confirmarCobro(p.id, p.importe) }) { Text("Cobrado") }
-                        OutlinedButton(onClick = { cambiandoCobro = p }) { Text("Otro importe") }
-                        TextButton(onClick = { vm.omitirCobro(p.id) }) { Text("Este mes no") }
-                    }
-                }
-            }
-            items(e.pagosPendientes, key = { "p" + it.id }) { p ->
-                Tarjeta(modifier = Modifier.animateItem()) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                        Avatar("", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, Iconos.Repetir)
-                        Column(Modifier.weight(1f)) {
-                            Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                            Text(
-                                "${formatearEuros(p.importe, discreto = e.discreto)} · pago mensual, día ${p.fecha.dayOfMonth}",
-                                style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
-                            )
-                        }
-                    }
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                        Button(onClick = { vm.confirmarPago(p.id, p.importe) }) { Text("Confirmar") }
-                        OutlinedButton(onClick = { cambiandoPago = p }) { Text("Otro importe") }
-                        TextButton(onClick = { vm.omitirPago(p.id) }) { Text("Este mes no") }
-                    }
-                }
-            }
-            if (e.teDeben.isNotEmpty()) {
-                item("deben") {
-                    Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPendientes)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                            Avatar("", LocalColoresNummia.current.avisoFondo, LocalColoresNummia.current.aviso, Iconos.Persona)
-                            Column(Modifier.weight(1f)) {
-                                Text("Te deben", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                                Text(e.teDeben.joinToString(" · ") { "${it.first} ${formatearEuros(it.second, discreto = e.discreto)}" }, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
-                            }
-                            Text(formatearEuros(e.teDeben.sumOf { it.second }, discreto = e.discreto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = LocalColoresNummia.current.aviso)
-                        }
-                    }
-                }
-            }
-        }
-
         if (e.vacio && !e.cargando) {
             item(span = todaLaFila) {
                 EstadoVacio(
@@ -226,37 +145,132 @@ fun InicioScreen(
             }
         }
 
-        if (e.top.isNotEmpty()) item { DondeMas(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.DONDE, e.mes) } }
-
-        item {
-            Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.ANIO, e.mes) }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Ahorrado en ${e.mes.year}", style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
-                        ImporteAnimado(
-                            e.ahorradoAnio, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            color = if (e.ahorradoAnio >= 0) LocalColoresNummia.current.ingreso else LocalColoresNummia.current.gasto,
-                            discreto = e.discreto,
-                        )
+        // Tarjetas en el orden que hayas elegido (Ajustes → Apariencia → Tarjetas de Inicio).
+        val bloques: Map<TarjetaInicio, androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope.() -> Unit> = mapOf(
+            TarjetaInicio.INDICADORES to {
+            item { Indicadores(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.MES, e.mes) } }
+            },
+            TarjetaInicio.PREVISION to {
+            e.prevision?.takeIf { !e.vacio }?.let { p -> item("prevision") { TarjetaPrevision(p, e.discreto, Modifier.animateItem()) } }
+            },
+            TarjetaInicio.PRESUPUESTOS to {
+            if (presupuestos.isNotEmpty()) {
+                item("presupuestos") {
+                    Tarjeta(modifier = Modifier.animateItem().clickable(onClick = alPresupuestos)) {
+                        Text("Presupuestos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        presupuestos.forEach { (nombre, p) ->
+                            io.github.alexcorrea2001lemon.nummia.ui.presupuestos.BarraPresupuesto(p, nombre, e.discreto)
+                        }
                     }
                 }
             }
-        }
-
-        if (e.ultimos.isNotEmpty()) {
-            item(span = todaLaFila) { EncabezadoSeccion("Últimos movimientos", accion = "Ver todos", alPulsar = alVerTodos) }
+            },
+            TarjetaInicio.PENDIENTES to {
+            if (e.sueldosPendientes.isNotEmpty() || e.teDeben.isNotEmpty() || e.pagosPendientes.isNotEmpty() || e.cobrosPendientes.isNotEmpty()) {
+                item(span = todaLaFila) { EncabezadoSeccion("Pendientes") }
+                items(e.sueldosPendientes, key = { "s" + it.id }) { s ->
+                    Tarjeta {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                            Avatar("€", LocalColoresNummia.current.ingresoFondo, LocalColoresNummia.current.ingreso, Iconos.Euro)
+                            Column(Modifier.weight(1f)) {
+                                Text("Sueldo de ${nombreMesMinuscula(java.time.YearMonth.from(s.fecha))} previsto", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text(formatearEuros(s.importe, discreto = e.discreto), style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
+                            }
+                            Button(onClick = { confirmando = s }) { Text("Confirmar") }
+                        }
+                    }
+                }
+                items(e.cobrosPendientes, key = { "c" + it.id }) { p ->
+                    Tarjeta(modifier = Modifier.animateItem()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                            Avatar("€", LocalColoresNummia.current.ingresoFondo, LocalColoresNummia.current.ingreso, Iconos.Repetir)
+                            Column(Modifier.weight(1f)) {
+                                Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text(
+                                    "${formatearEuros(p.importe, discreto = e.discreto)} · se cobra cada mes, día ${p.fecha.dayOfMonth}",
+                                    style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
+                                )
+                            }
+                        }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                            Button(onClick = { haptica(); vm.confirmarCobro(p.id, p.importe) }) { Text("Cobrado") }
+                            OutlinedButton(onClick = { cambiandoCobro = p }) { Text("Otro importe") }
+                            TextButton(onClick = { vm.omitirCobro(p.id) }) { Text("Este mes no") }
+                        }
+                    }
+                }
+                items(e.pagosPendientes, key = { "p" + it.id }) { p ->
+                    Tarjeta(modifier = Modifier.animateItem()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                            Avatar("", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, Iconos.Repetir)
+                            Column(Modifier.weight(1f)) {
+                                Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text(
+                                    "${formatearEuros(p.importe, discreto = e.discreto)} · pago mensual, día ${p.fecha.dayOfMonth}",
+                                    style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave,
+                                )
+                            }
+                        }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                            Button(onClick = { vm.confirmarPago(p.id, p.importe) }) { Text("Confirmar") }
+                            OutlinedButton(onClick = { cambiandoPago = p }) { Text("Otro importe") }
+                            TextButton(onClick = { vm.omitirPago(p.id) }) { Text("Este mes no") }
+                        }
+                    }
+                }
+                if (e.teDeben.isNotEmpty()) {
+                    item("deben") {
+                        Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = alPendientes)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                                Avatar("", LocalColoresNummia.current.avisoFondo, LocalColoresNummia.current.aviso, Iconos.Persona)
+                                Column(Modifier.weight(1f)) {
+                                    Text("Te deben", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                    Text(e.teDeben.joinToString(" · ") { "${it.first} ${formatearEuros(it.second, discreto = e.discreto)}" }, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
+                                }
+                                Text(formatearEuros(e.teDeben.sumOf { it.second }, discreto = e.discreto), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = LocalColoresNummia.current.aviso)
+                            }
+                        }
+                    }
+                }
+            }
+            },
+            TarjetaInicio.TOP to {
+            if (e.top.isNotEmpty()) item { DondeMas(e) { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.DONDE, e.mes) } }
+            },
+            TarjetaInicio.AHORRADO to {
             item {
-                Tarjeta(relleno = false) {
-                    e.ultimos.forEach { f ->
-                        FilaMovimiento(
-                            f, e.discreto,
-                            alPulsar = { if (f.esGasto) alAbrirGasto(f.id) else alAbrirIngreso(f.id) },
-                            modifier = if (f.esGasto) Modifier.compartido("gasto-${f.id}") else Modifier,
-                        )
+                Tarjeta(Modifier.clip(MaterialTheme.shapes.medium).clickable { alEstadisticas(io.github.alexcorrea2001lemon.nummia.ui.estadisticas.PestanaEst.ANIO, e.mes) }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Ahorrado en ${e.mes.year}", style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
+                            ImporteAnimado(
+                                e.ahorradoAnio, MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                color = if (e.ahorradoAnio >= 0) LocalColoresNummia.current.ingreso else LocalColoresNummia.current.gasto,
+                                discreto = e.discreto,
+                            )
+                        }
                     }
                 }
             }
-        }
+            },
+            TarjetaInicio.ULTIMOS to {
+            if (e.ultimos.isNotEmpty()) {
+                item(span = todaLaFila) { EncabezadoSeccion("Últimos movimientos", accion = "Ver todos", alPulsar = alVerTodos) }
+                item {
+                    Tarjeta(relleno = false) {
+                        e.ultimos.forEach { f ->
+                            FilaMovimiento(
+                                f, e.discreto,
+                                alPulsar = { if (f.esGasto) alAbrirGasto(f.id) else alAbrirIngreso(f.id) },
+                                modifier = if (f.esGasto) Modifier.compartido("gasto-${f.id}") else Modifier,
+                            )
+                        }
+                    }
+                }
+            }
+            },
+        )
+        tarjetas.forEach { bloques[it]?.invoke(this) }
     }
 
     if (eligiendoMes) {

@@ -51,6 +51,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Switch
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -265,6 +267,35 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
             OpcionInterruptor(Iconos.Movimientos, "Listas compactas", "Filas más bajas: caben más movimientos en pantalla", a.compacto, vm::compacto)
             HorizontalDivider(color = c.borde)
             OpcionInterruptor(Iconos.Check, "Vibración", "Una pequeña vibración al tocar y al guardar", a.vibracion, vm::vibracion)
+        }
+
+        // Tarjetas de Inicio: qué se ve y en qué orden.
+        Text("Tarjetas de Inicio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text("Elige qué ves en Inicio y en qué orden. El balance del mes siempre va arriba.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+        val orden = io.github.alexcorrea2001lemon.nummia.ui.inicio.ordenTarjetas(a.tarjetasInicio)
+        fun guardar(o: List<io.github.alexcorrea2001lemon.nummia.ui.inicio.TarjetaInicio>, ocultas: Set<String>) = vm.tarjetasInicio(o.map { it.clave }, ocultas)
+        Tarjeta(relleno = false) {
+            orden.forEachIndexed { n, t ->
+                if (n > 0) HorizontalDivider(color = c.borde)
+                val visible = t.clave !in a.tarjetasOcultas
+                Row(Modifier.fillMaxWidth().padding(start = Espacio.l, end = Espacio.s, top = Espacio.xs, bottom = Espacio.xs), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        t.nombre, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f),
+                        color = if (visible) MaterialTheme.colorScheme.onSurface else c.textoSuave,
+                    )
+                    IconButton(onClick = { guardar(io.github.alexcorrea2001lemon.nummia.ui.inicio.mover(orden, t, -1), a.tarjetasOcultas) }, enabled = n > 0) {
+                        Icon(Iconos.ChevronIzq, "Subir ${t.nombre}", Modifier.rotate(90f))
+                    }
+                    IconButton(onClick = { guardar(io.github.alexcorrea2001lemon.nummia.ui.inicio.mover(orden, t, 1), a.tarjetasOcultas) }, enabled = n < orden.lastIndex) {
+                        Icon(Iconos.ChevronDer, "Bajar ${t.nombre}", Modifier.rotate(90f))
+                    }
+                    Switch(
+                        checked = visible,
+                        onCheckedChange = { guardar(orden, if (it) a.tarjetasOcultas - t.clave else a.tarjetasOcultas + t.clave) },
+                        modifier = Modifier.semantics { contentDescription = "Mostrar ${t.nombre}" },
+                    )
+                }
+            }
         }
     }
 

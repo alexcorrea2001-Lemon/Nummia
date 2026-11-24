@@ -53,7 +53,7 @@ class Sincronizador(
     suspend fun conectar(correo: String) = sync.guardarMeta(MetaEntity(Meta.CUENTA, correo))
 
     suspend fun desconectar() {
-        listOf(Meta.CUENTA, Meta.CARPETA, Meta.CARPETA_COPIAS, Meta.ULTIMA, Meta.ERROR, Meta.PENDIENTE, Meta.FORZAR_SUBIDA, Meta.AVISOS).forEach { sync.borrarMeta(it) }
+        listOf(Meta.CUENTA, Meta.CARPETA, Meta.CARPETA_COPIAS, Meta.ULTIMA, Meta.ERROR, Meta.PENDIENTE, Meta.FORZAR_SUBIDA, Meta.AVISOS, Meta.HISTORIAL).forEach { sync.borrarMeta(it) }
         sync.vaciarHojas(); sync.vaciarInstantaneas(); sync.vaciarConflictos()
     }
 
@@ -85,7 +85,7 @@ class Sincronizador(
             val hojas = descubrirHojas(n, carpeta)
             val avisos = ArrayList<String>()
             var conflictos = 0
-            val cambios = IntArray(3) // nuevos, editados y borrados desde el ordenador
+            val cambios = IntArray(4) // nuevos, editados y borrados desde el ordenador; y filas subidas a la hoja
             for (anio in (datos.anios() + hojas.keys).sorted()) {
                 conflictos += anioSync(n, carpeta, anio, hojas[anio], forzar, avisos, cambios)
             }
@@ -93,6 +93,7 @@ class Sincronizador(
             sync.borrarMeta(Meta.FORZAR_SUBIDA); sync.borrarMeta(Meta.PENDIENTE); sync.borrarMeta(Meta.ERROR)
             if (avisos.isEmpty()) sync.borrarMeta(Meta.AVISOS) else sync.guardarMeta(MetaEntity(Meta.AVISOS, avisos.joinToString("\n")))
             sync.guardarMeta(MetaEntity(Meta.ULTIMA, reloj.ahoraMs().toString()))
+            apuntar(EntradaSync(reloj.ahoraMs(), cambios[3], cambios[0], cambios[1], cambios[2], conflictos))
             copiaDiaria(n, carpeta)
             ResultadoSync.Hecho(conflictos, avisos)
         } catch (e: NecesitaReconectar) {
@@ -106,8 +107,14 @@ class Sincronizador(
         }
     }
 
+    /** Historial de las últimas sincronizaciones (se ve en Tu Drive). */
+    private suspend fun apuntar(e: EntradaSync) = runCatching {
+        sync.guardarMeta(MetaEntity(Meta.HISTORIAL, anadirHistorial(sync.meta(Meta.HISTORIAL), e)))
+    }
+
     private suspend fun fallo(m: String, reintentar: Boolean): ResultadoSync {
         sync.guardarMeta(MetaEntity(Meta.ERROR, m))
+        apuntar(EntradaSync(reloj.ahoraMs(), error = m))
         return ResultadoSync.Fallo(m, reintentar)
     }
 
@@ -196,6 +203,7 @@ class Sincronizador(
                 n.escribir(id, nuevas.map { (fila, nid, _) -> "${p.nombre}!${p.letraFinal}$fila" to listOf(listOf(JsonPrimitive(nid))) })
             }
             cambios[0] += plan.nuevasDesdeRemoto.size; cambios[1] += plan.aplicarLocal.size; cambios[2] += plan.borrarLocal.size
+            cambios[3] += plan.actualizarRemoto.size + plan.anadirRemoto.size + plan.borrarRemoto.size
             // 2) Cambios hacia el móvil.
             for ((nid, c) in plan.aplicarLocal) if (datos.aplicar(p, nid, c) == null) avisos += "${p.nombre}: no se pudo aplicar una fila (¿código de gasto inexistente?)"
             plan.borrarLocal.forEach { datos.borrar(p, it) }

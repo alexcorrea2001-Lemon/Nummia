@@ -2,6 +2,13 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.7.0] - 2026-11-24
+
+### Nuevo
+- **Informes de una persona**: en «A tu medida» elige de quién (por ejemplo, Luis). El informe trae solo lo que has pagado por esa persona, lo que te ha devuelto y lo que te debe, y se llama «Informe de Luis».
+- **Tarjetas de Inicio a tu gusto** (Ajustes → Apariencia → Tarjetas de Inicio): muestra u oculta cada tarjeta y cambia su orden con las flechas. El balance del mes siempre va arriba.
+- **Historial de sincronización** en Tu Drive: las últimas sincronizaciones con lo que se subió, lo que llegó del ordenador, los conflictos y los errores.
+
 ## [2.6.0] - 2026-11-24
 
 ### Arreglado

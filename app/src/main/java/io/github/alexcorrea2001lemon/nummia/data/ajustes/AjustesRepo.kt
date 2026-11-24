@@ -43,6 +43,9 @@ data class Ajustes(
     val bloqueo: Boolean = false,
     val vibracion: Boolean = true,
     val compacto: Boolean = false,
+    /** Orden de las tarjetas de Inicio («ultimos,ahorrado,…»; vacío = el de siempre) y las que no se muestran. */
+    val tarjetasInicio: String = "",
+    val tarjetasOcultas: Set<String> = emptySet(),
     val formaTarjetas: io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas = io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas.NORMAL,
     /** Importes mostrados con la huella: se vuelven a ocultar al salir de la app. */
     val discretoTemporal: Boolean = false,
@@ -79,6 +82,8 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
         val mantenimiento = longPreferencesKey("ultimo_mantenimiento")
         val vibracion = booleanPreferencesKey("vibracion")
         val compacto = booleanPreferencesKey("compacto")
+        val tarjetasInicio = androidx.datastore.preferences.core.stringPreferencesKey("tarjetas_inicio")
+        val tarjetasOcultas = stringSetPreferencesKey("tarjetas_ocultas")
         val formaTarjetas = stringPreferencesKey("forma_tarjetas")
         val discretoTemporal = booleanPreferencesKey("discreto_temporal")
     }
@@ -107,6 +112,8 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
             bloqueo = p[K.bloqueo] ?: d.bloqueo,
             vibracion = p[K.vibracion] ?: d.vibracion,
             compacto = p[K.compacto] ?: d.compacto,
+            tarjetasInicio = p[K.tarjetasInicio] ?: d.tarjetasInicio,
+            tarjetasOcultas = p[K.tarjetasOcultas] ?: d.tarjetasOcultas,
             formaTarjetas = enumO(p[K.formaTarjetas], d.formaTarjetas),
             discretoTemporal = p[K.discretoTemporal] ?: d.discretoTemporal,
         )
@@ -131,6 +138,7 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
 
     suspend fun vibracion(v: Boolean) = store.edit { it[K.vibracion] = v }
     suspend fun compacto(v: Boolean) = store.edit { it[K.compacto] = v }
+    suspend fun tarjetasInicio(orden: List<String>, ocultas: Set<String>) = store.edit { it[K.tarjetasInicio] = orden.joinToString(","); it[K.tarjetasOcultas] = ocultas }
     suspend fun formaTarjetas(f: io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas) = store.edit { it[K.formaTarjetas] = f.name }
 
     /** Muestra los importes hasta salir de la app (tras pedir la huella). */

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -178,6 +179,10 @@ class InicioViewModel @Inject constructor(
     fun irAMes(ym: YearMonth) { mes.value = ym }
     fun hoy(): YearMonth = YearMonth.from(reloj.hoy())
 
+    /** Tarjetas de Inicio en el orden elegido, sin las ocultas. */
+    val tarjetas: StateFlow<List<TarjetaInicio>> = ajustesRepo.ajustes
+        .map { a -> ordenTarjetas(a.tarjetasInicio).filter { it.clave !in a.tarjetasOcultas } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TarjetaInicio.entries.toList())
     fun mostrarImportes() = viewModelScope.launch { ajustesRepo.mostrarImportesTemporal() }
     fun alternarDiscreto() = viewModelScope.launch { ajustesRepo.modoDiscreto(!estado.value.discreto) }
 

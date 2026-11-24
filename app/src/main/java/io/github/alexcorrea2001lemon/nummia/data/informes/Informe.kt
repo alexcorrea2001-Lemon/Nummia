@@ -55,7 +55,7 @@ fun nombreMes(ym: YearMonth) = "${MESES[ym.monthValue - 1]} ${ym.year}"
 
 /**
  * Prepara el informe de [desde]..[hasta] con lo CONFIRMADO. «Lo que me deben» es lo pendiente a día de hoy
- * (de cualquier fecha), y se puede limitar a una [persona].
+ * (de cualquier fecha). Con [persona], todo el informe es de esa persona: lo que pagaste por ella y te devolvió.
  */
 fun construirInforme(
     titulo: String,
@@ -70,8 +70,9 @@ fun construirInforme(
 ): Informe {
     val en = { f: LocalDate -> !f.isBefore(desde) && !f.isAfter(hasta) }
     val gs = gastos.filter { it.gasto.deletedAt == null && it.gasto.estado == Estado.CONFIRMADO }
-    val gp = gs.filter { en(it.gasto.fecha) }
-    val ip = ingresos.filter { it.deletedAt == null && it.estado == Estado.CONFIRMADO && en(it.fecha) }
+    // Informe de una persona: solo lo que pagaste por ella (y lo que te devolvió); tus ingresos no entran.
+    val gp = gs.filter { en(it.gasto.fecha) && (persona == null || it.gasto.personaId == persona) }
+    val ip = if (persona != null) emptyList() else ingresos.filter { it.deletedAt == null && it.estado == Estado.CONFIRMADO && en(it.fecha) }
     val reemb = gp.flatMap { it.reembolsosMov() }
 
     val r = resumen(desde, hasta, gp.map { it.aMov() }, reemb, ip.map { it.aMov() })

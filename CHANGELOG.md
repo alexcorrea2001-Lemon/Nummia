@@ -2,6 +2,12 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.8.6] - 2026-11-27
+
+### Arreglado
+- Categorías: ya no se cierra la app al pulsar «+ Nueva categoría» (ni al editar una). El diálogo llevaba un desplazamiento propio dentro de la hoja, que también se desplaza.
+- Una prueba nueva recorre el código y avisa si algún diálogo vuelve a llevar un desplazamiento vertical anidado.
+
 ## [2.8.5] - 2026-11-27
 
 ### Arreglado

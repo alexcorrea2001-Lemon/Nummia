@@ -5,7 +5,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -262,7 +261,7 @@ private fun DialogoCategoria(cat: CategoriaEntity?, alCerrar: () -> Unit, alBorr
         onDismissRequest = alCerrar,
         title = { Text(if (cat == null) "Nueva categoría" else "Editar categoría") },
         text = {
-            Column(Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) { // la hoja ya se desplaza: aquí un scroll propio cerraría la app
                 OutlinedTextField(nombre, { nombre = it }, label = { Text("Nombre") }, singleLine = true)
                 Text("Icono", style = MaterialTheme.typography.labelMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.xs), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {

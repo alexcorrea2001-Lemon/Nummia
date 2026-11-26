@@ -54,6 +54,11 @@ class AjustesViewModel @Inject constructor(
     fun bloqueo(v: Boolean) = viewModelScope.launch { ajustesRepo.bloqueo(v) }
     fun vibracion(v: Boolean) = viewModelScope.launch { ajustesRepo.vibracion(v) }
     fun compacto(v: Boolean) = viewModelScope.launch { ajustesRepo.compacto(v) }
+    fun letra(l: io.github.alexcorrea2001lemon.nummia.ui.theme.TipoLetra) = viewModelScope.launch { ajustesRepo.letra(l) }
+    fun coloresAccesibles(v: Boolean) = viewModelScope.launch { ajustesRepo.coloresAccesibles(v) }
+    fun tinteFondo(v: Boolean) = viewModelScope.launch { ajustesRepo.tinteFondo(v) }
+    fun bloqueoTras(b: io.github.alexcorrea2001lemon.nummia.data.ajustes.BloqueoTras) = viewModelScope.launch { ajustesRepo.bloqueoTras(b) }
+    fun ocultarEnRecientes(v: Boolean) = viewModelScope.launch { ajustesRepo.ocultarEnRecientes(v) }
     fun tarjetasInicio(orden: List<String>, ocultas: Set<String>) = viewModelScope.launch { ajustesRepo.tarjetasInicio(orden, ocultas) }
     fun formaTarjetas(f: io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas) = viewModelScope.launch { ajustesRepo.formaTarjetas(f) }
 
@@ -71,6 +76,8 @@ class AjustesViewModel @Inject constructor(
 
     suspend fun exportar(contrasena: String? = null): ByteArray = copia.exportar(reloj.ahoraMs(), contrasena)
     suspend fun copiaGuardada() = ajustesRepo.ultimaCopiaLocal(reloj.hoy().toEpochDay())
+    /** Días que han pasado desde la última copia guardada en un archivo (null si nunca). */
+    suspend fun diasDesdeCopia(): Long? = ajustesRepo.ultimaCopiaLocal()?.let { reloj.hoy().toEpochDay() - it }
     suspend fun exportarCsv(): ByteArray = csv.zip()
 
     /** Antes de restaurar se guarda una copia del estado actual en el móvil. */

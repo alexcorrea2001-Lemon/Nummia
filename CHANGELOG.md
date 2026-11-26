@@ -2,6 +2,23 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.9.0] - 2026-11-27
+
+### Añadido
+- Apariencia, rehecha: arriba hay una vista previa que cambia en vivo con cada ajuste. Los temas se muestran con una miniatura y los colores con círculos, incluido uno para «Personalizado» y otro para los colores del fondo de pantalla.
+- Letra: elige entre la del sistema, con serifa o monoespaciada.
+- Fondo con tu color: un toque del color de la app en el fondo y las tarjetas (con el tema AMOLED el fondo sigue siendo negro).
+- Colores para daltonismo: ingresos en azul y gastos en naranja, con contraste suficiente en todos los temas.
+- Seguridad: elige a los cuántos minutos fuera de Nummia vuelve a pedir la huella (al instante, 1, 5 o 15 minutos).
+- Seguridad: «Ocultar en recientes y capturas» deja en blanco la vista previa de la app y bloquea las capturas de pantalla.
+- Datos: avisa de cuándo guardaste la última copia en un archivo, y lo resalta si hace más de 30 días.
+- Acerca de: enlaces al código, a las novedades de cada versión y para contar un problema o una idea.
+- Ajustes: la portada empieza con un resumen (versión y si hay bloqueo, importes ocultos y avisos), y cada apartado muestra su estado: tema y color, personas, bloqueo…
+
+### Cambiado
+- Color personalizado: ahora son tres barras con degradado (tono, intensidad y brillo) y una vista previa con el código del color, en vez de los deslizadores amarillos.
+- Cada fila de Ajustes lleva su icono en una pastilla con el color de la app, y los títulos de grupo se anuncian como encabezados en TalkBack.
+
 ## [2.8.6] - 2026-11-27
 
 ### Arreglado

@@ -56,6 +56,12 @@ class MainActivity : FragmentActivity() {
             val bloqueada by Cerrojo.bloqueada.collectAsStateWithLifecycle()
             val categorias by vm.categorias.collectAsStateWithLifecycle()
             val cerrada = a.bloqueo && bloqueada
+            // Cuánto tiempo fuera antes de pedir la huella, y si la app se oculta en «Recientes» y en capturas.
+            androidx.compose.runtime.SideEffect {
+                Cerrojo.esperaMs = a.bloqueoTras.ms
+                if (a.ocultarEnRecientes) window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+            }
             NummiaTheme(a) {
                 androidx.compose.runtime.CompositionLocalProvider(io.github.alexcorrea2001lemon.nummia.ui.comun.LocalCategorias provides categorias) {
                 Box(Modifier.fillMaxSize()) {

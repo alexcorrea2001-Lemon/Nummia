@@ -102,6 +102,7 @@ private data class EntradaAjuste(
 @Composable
 fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Unit) {
     val a by vm.ajustes.collectAsStateWithLifecycle()
+    val personas by vm.personas.collectAsStateWithLifecycle()
     var buscar by rememberSaveable { mutableStateOf("") }
     val R = io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas
     val entradas = listOf(
@@ -110,11 +111,11 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
         EntradaAjuste("Dinero", Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar", R.SUELDO, "nomina salario ingreso"),
         EntradaAjuste("Dinero", Iconos.Repetir, "Pagos y cobros fijos", "Suscripciones, gimnasio, lo que cobras cada mes…", R.PAGOS, "suscripcion recibo cada mes fijo pagos mensuales ingreso cobro"),
         EntradaAjuste("Dinero", Iconos.Estadisticas, "Presupuestos", "Límites de gasto al mes", R.PRESUPUESTOS, "limite tope ahorro"),
-        EntradaAjuste("Dinero", Iconos.Persona, "Personas", "Quién te devuelve el dinero", R.PERSONAS, "deben deuda devolver amigos familia"),
+        EntradaAjuste("Dinero", Iconos.Persona, "Personas", when (personas.size) { 0 -> "Quién te devuelve el dinero"; 1 -> "1 persona · quién te devuelve el dinero"; else -> "${personas.size} personas · quién te devuelve el dinero" }, R.PERSONAS, "deben deuda devolver amigos familia"),
         EntradaAjuste("Dinero", Iconos.Bolsa, "Tiendas", "Unir nombres repetidos o cambiarlos", R.TIENDAS, "comercio lugar duplicados unir"),
         EntradaAjuste("Dinero", Iconos.Filtro, "Categorías", "Crear, renombrar, iconos y colores", R.CATEGORIAS, "tipo grupo icono color"),
-        EntradaAjuste("Aspecto", Iconos.Paleta, "Apariencia", "Tema, color de la app, icono y tamaño del texto", R.APARIENCIA, "oscuro claro amoled color icono letra tamaño tema"),
-        EntradaAjuste("Seguridad y avisos", Iconos.Escudo, "Seguridad", if (a.bloqueo) "Bloqueo activado · modo discreto" else "Bloqueo con huella o PIN · modo discreto", R.SEGURIDAD, "huella pin bloqueo discreto ocultar privacidad"),
+        EntradaAjuste("Aspecto", Iconos.Paleta, "Apariencia", "${a.tema.nombre} · ${nombreColor(a)} · letra ${a.letra.nombre.lowercase()}", R.APARIENCIA, "oscuro claro amoled color icono letra tamaño tema"),
+        EntradaAjuste("Seguridad y avisos", Iconos.Escudo, "Seguridad", if (a.bloqueo) "Bloqueo activado · pide la huella tras ${a.bloqueoTras.nombre.lowercase()}" else "Bloqueo con huella o PIN · modo discreto", R.SEGURIDAD, "huella pin bloqueo discreto ocultar privacidad"),
         EntradaAjuste("Seguridad y avisos", Iconos.Info, "Notificaciones", if (a.notificaciones) "Activadas" else "Sueldo, pagos del día y presupuestos", R.NOTIFICACIONES, "avisos alertas recordatorio"),
         EntradaAjuste("Nummia", Iconos.Info, "Acerca de Nummia", "Versión ${BuildConfig.VERSION_NAME} · actualizaciones", R.ACERCA, "version actualizar actualizacion privacidad licencia codigo"),
     )
@@ -125,6 +126,7 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
                 Button(onClick = { ir(R.ACERCA) }) { Text("Ver la actualización") }
             }
         }
+        if (buscar.isBlank()) ResumenAjustes(a)
         // Buscador: escribe «drive», «huella», «presupuesto»…
         androidx.compose.material3.TextField(
             value = buscar, onValueChange = { buscar = it }, singleLine = true,
@@ -146,7 +148,7 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
             Text("No hay ningún ajuste con «$buscar».", color = LocalColoresNummia.current.textoSuave, modifier = Modifier.padding(Espacio.l))
         }
         visibles.groupBy { it.seccion }.forEach { (seccion, lista) ->
-            Text(seccion, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = Espacio.s, top = Espacio.xs))
+            TituloAjustes(seccion)
             Tarjeta(relleno = false) {
                 lista.forEachIndexed { n, en ->
                     if (n > 0) HorizontalDivider(color = LocalColoresNummia.current.borde)
@@ -155,195 +157,6 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
             }
         }
     }
-}
-
-// ------------------------------------------------------------------ Apariencia
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
-    val a by vm.ajustes.collectAsStateWithLifecycle()
-    var personalizando by rememberSaveable { mutableStateOf(false) }
-    val c = LocalColoresNummia.current
-    PantallaAjustes("Apariencia", alVolver) {
-        Text("Tema", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Column(verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            Tema.entries.chunked(2).forEach { fila ->
-                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                    fila.forEach { t ->
-                        val (fondo, texto) = when (t) {
-                            Tema.AUTOMATICO -> MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.onSurface
-                            Tema.CLARO -> Color.White to Color(0xFF14151A)
-                            Tema.OSCURO -> Color(0xFF15171C) to Color(0xFFECEDF1)
-                            Tema.AMOLED -> Color.Black to Color(0xFFF2F2F2)
-                        }
-                        val elegido = a.tema == t
-                        Surface(
-                            onClick = { vm.tema(t) }, color = fondo, shape = MaterialTheme.shapes.medium,
-                            border = BorderStroke(if (elegido) 2.dp else 1.dp, if (elegido) MaterialTheme.colorScheme.primary else c.borde),
-                            modifier = Modifier.weight(1f).height(76.dp).semantics { selected = elegido; role = Role.RadioButton },
-                        ) {
-                            Column(Modifier.padding(horizontal = Espacio.l), verticalArrangement = Arrangement.Center) {
-                                Text(t.nombre, color = texto, fontWeight = FontWeight.SemiBold)
-                                Text(t.descripcion, color = texto.copy(alpha = 0.75f), style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Text("Color de la app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Tarjeta {
-            SelectorColores(seleccionado = a.acento.takeIf { a.modoAcento == ModoAcento.PALETA }, alElegir = vm::acento)
-            Text(
-                when (a.modoAcento) {
-                    ModoAcento.PALETA -> "Seleccionado: ${a.acento.nombre}"
-                    ModoAcento.PERSONALIZADO -> "Seleccionado: personalizado"
-                    ModoAcento.FONDO_PANTALLA -> "Seleccionado: colores del fondo de pantalla"
-                },
-                style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
-            )
-        }
-        Tarjeta(relleno = false) {
-            OpcionAjuste(Iconos.Paleta, "Personalizado", "Elige cualquier color", alPulsar = { personalizando = true })
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                HorizontalDivider(color = c.borde)
-                OpcionAjuste(Iconos.Paleta, "Del fondo de pantalla", "Usa los colores de tu móvil (Material You)", alPulsar = vm::acentoFondo)
-            }
-        }
-
-        Text("Icono de la app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Tarjeta {
-            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                Logo.entries.forEach { l ->
-                    val elegido = a.iconoLogo == l
-                    Surface(
-                        onClick = { vm.icono(l, a.iconoColor) }, shape = MaterialTheme.shapes.medium, color = Color.Transparent,
-                        border = BorderStroke(if (elegido) 2.dp else 1.dp, if (elegido) MaterialTheme.colorScheme.onSurface else c.borde),
-                        modifier = Modifier.weight(1f).height(96.dp).semantics { selected = elegido; role = Role.RadioButton; contentDescription = "Logo ${l.nombre}" },
-                    ) {
-                        Box(contentAlignment = Alignment.Center) { ImagenLogo(l, a.iconoColor, Modifier.size(64.dp)) }
-                    }
-                }
-            }
-            Text("Color del icono (independiente del de la app): ${a.iconoColor.nombre}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-            SelectorColores(seleccionado = a.iconoColor, alElegir = { vm.icono(a.iconoLogo, it) })
-            Text("El icono cambiará en tu pantalla de inicio al salir de Nummia.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-            val ctx = LocalContext.current
-            if (IconoApp.puedeAnclar(ctx)) {
-                Text(
-                    "¿Tu móvil sigue mostrando el icono anterior? Algunos móviles guardan el icono y no lo actualizan. Pon un acceso directo con el icono elegido y, si quieres, quita el antiguo de la pantalla de inicio.",
-                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
-                )
-                OutlinedButton(onClick = { IconoApp.anclarAccesoDirecto(ctx, a.iconoLogo, a.iconoColor) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Poner este icono en la pantalla de inicio")
-                }
-            }
-        }
-
-        Text("Tamaño del texto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            TamanoTexto.entries.forEach { t -> FilterChip(selected = a.tamanoTexto == t, onClick = { vm.tamano(t) }, label = { Text(t.nombre) }) }
-        }
-
-        Text("Forma de las tarjetas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas.entries.forEach { f ->
-                val sel = a.formaTarjetas == f
-                Surface(
-                    onClick = { vm.formaTarjetas(f) }, selected = sel,
-                    shape = RoundedCornerShape(f.radio.dp),
-                    color = if (sel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                    border = BorderStroke(if (sel) 2.dp else 1.dp, if (sel) MaterialTheme.colorScheme.primary else c.borde),
-                    modifier = Modifier.weight(1f).height(64.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) { Text(f.nombre, fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal) }
-                }
-            }
-        }
-
-        Tarjeta(relleno = false) {
-            OpcionInterruptor(Iconos.Movimientos, "Listas compactas", "Filas más bajas: caben más movimientos en pantalla", a.compacto, vm::compacto)
-            HorizontalDivider(color = c.borde)
-            OpcionInterruptor(Iconos.Check, "Vibración", "Una pequeña vibración al tocar y al guardar", a.vibracion, vm::vibracion)
-        }
-
-        // Tarjetas de Inicio: qué se ve y en qué orden.
-        Text("Tarjetas de Inicio", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Text("Elige qué ves en Inicio y en qué orden. El balance del mes siempre va arriba.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-        val orden = io.github.alexcorrea2001lemon.nummia.ui.inicio.ordenTarjetas(a.tarjetasInicio)
-        fun guardar(o: List<io.github.alexcorrea2001lemon.nummia.ui.inicio.TarjetaInicio>, ocultas: Set<String>) = vm.tarjetasInicio(o.map { it.clave }, ocultas)
-        Tarjeta(relleno = false) {
-            orden.forEachIndexed { n, t ->
-                if (n > 0) HorizontalDivider(color = c.borde)
-                val visible = t.clave !in a.tarjetasOcultas
-                Row(Modifier.fillMaxWidth().padding(start = Espacio.l, end = Espacio.s, top = Espacio.xs, bottom = Espacio.xs), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        t.nombre, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f),
-                        color = if (visible) MaterialTheme.colorScheme.onSurface else c.textoSuave,
-                    )
-                    IconButton(onClick = { guardar(io.github.alexcorrea2001lemon.nummia.ui.inicio.mover(orden, t, -1), a.tarjetasOcultas) }, enabled = n > 0) {
-                        Icon(Iconos.ChevronIzq, "Subir ${t.nombre}", Modifier.rotate(90f))
-                    }
-                    IconButton(onClick = { guardar(io.github.alexcorrea2001lemon.nummia.ui.inicio.mover(orden, t, 1), a.tarjetasOcultas) }, enabled = n < orden.lastIndex) {
-                        Icon(Iconos.ChevronDer, "Bajar ${t.nombre}", Modifier.rotate(90f))
-                    }
-                    Switch(
-                        checked = visible,
-                        onCheckedChange = { guardar(orden, if (it) a.tarjetasOcultas - t.clave else a.tarjetasOcultas + t.clave) },
-                        modifier = Modifier.semantics { contentDescription = "Mostrar ${t.nombre}" },
-                    )
-                }
-            }
-        }
-    }
-
-    if (personalizando) {
-        DialogoColorPersonalizado(Color(a.acentoPersonalizado), alCerrar = { personalizando = false }) { vm.acentoPersonalizado(it.toArgb().toLong() and 0xFFFFFFFFL); personalizando = false }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SelectorColores(seleccionado: Acento?, alElegir: (Acento) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.s), maxItemsInEachRow = 6) {
-        Acento.entries.forEach { ac ->
-            val elegido = ac == seleccionado
-            Box(
-                Modifier.size(44.dp).clip(CircleShape)
-                    .border(2.dp, if (elegido) MaterialTheme.colorScheme.onSurface else Color.Transparent, CircleShape)
-                    .clickable { alElegir(ac) }.padding(4.dp)
-                    .semantics { selected = elegido; role = Role.RadioButton; contentDescription = ac.nombre },
-            ) { Box(Modifier.fillMaxWidth().aspectRatio(1f).background(ac.color, CircleShape)) }
-        }
-    }
-}
-
-@Composable
-private fun DialogoColorPersonalizado(inicial: Color, alCerrar: () -> Unit, alAceptar: (Color) -> Unit) {
-    val hsv = remember { FloatArray(3).also { android.graphics.Color.colorToHSV(inicial.toArgb(), it) } }
-    var h by remember { mutableFloatStateOf(hsv[0]) }
-    var s by remember { mutableFloatStateOf(hsv[1].coerceIn(0.3f, 1f)) }
-    var v by remember { mutableFloatStateOf(hsv[2].coerceIn(0.5f, 1f)) }
-    val color = Color.hsv(h, s, v)
-    DialogoNummia(
-        onDismissRequest = alCerrar,
-        title = { Text("Color personalizado") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(Espacio.m)) {
-                Box(Modifier.fillMaxWidth().height(56.dp).background(color, RoundedCornerShape(16.dp)))
-                Text("Tono", style = MaterialTheme.typography.bodySmall)
-                Slider(h, { h = it }, valueRange = 0f..360f)
-                Text("Intensidad", style = MaterialTheme.typography.bodySmall)
-                Slider(s, { s = it }, valueRange = 0.3f..1f)
-                Text("Brillo", style = MaterialTheme.typography.bodySmall)
-                Slider(v, { v = it }, valueRange = 0.5f..1f)
-            }
-        },
-        confirmButton = { Button(onClick = { alAceptar(color) }) { Text("Usar este color") } },
-        dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },
-    )
 }
 
 // ------------------------------------------------------------------ Sueldo
@@ -491,7 +304,20 @@ fun DatosScreen(vm: AjustesViewModel, snackbar: SnackbarHostState, ir: (String) 
         }
     }
 
+    var diasCopia by remember { mutableStateOf<Long?>(null) }
+    var copiaLeida by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(claveCopia, protegiendo) { diasCopia = vm.diasDesdeCopia(); copiaLeida = true }
     PantallaAjustes("Datos", alVolver) {
+        if (copiaLeida) {
+            val antigua = diasCopia == null || diasCopia!! > 30
+            Tarjeta(fondo = if (antigua) LocalColoresNummia.current.avisoFondo else LocalColoresNummia.current.ingresoFondo) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                    Icon(if (antigua) Iconos.Aviso else Iconos.Check, null)
+                    Text(textoUltimaCopia(diasCopia), fontWeight = FontWeight.SemiBold)
+                }
+                if (antigua) Text("Guardar una copia lleva unos segundos y te protege si pierdes o cambias de móvil.", style = MaterialTheme.typography.bodySmall)
+            }
+        }
         Tarjeta(relleno = false) {
             OpcionAjuste(Iconos.Informes, "Importar Excel", "Trae los gastos e ingresos de tu Excel de cuentas") { ir(io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas.IMPORTAR) }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
@@ -662,6 +488,13 @@ fun AcercaScreen(vm: AjustesViewModel, act: ActualizarViewModel, alVolver: () ->
             OpcionAjuste(Iconos.Escudo, "Privacidad", "Sin servidores, sin anuncios, sin rastreo") { leyendo = TEXTO_PRIVACIDAD }
             HorizontalDivider(color = LocalColoresNummia.current.borde)
             OpcionAjuste(Iconos.Codigo, "Licencia", "Código abierto · MIT") { leyendo = TEXTO_LICENCIA }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
+            val ctx = LocalContext.current
+            OpcionAjuste(Iconos.Abrir, "Código en GitHub", "Mira cómo está hecha Nummia") { abrirEnlace(ctx, "https://github.com/alexcorrea2001-Lemon/Nummia") }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Info, "Novedades de cada versión", "Qué ha cambiado en Nummia") { abrirEnlace(ctx, "https://github.com/alexcorrea2001-Lemon/Nummia/releases") }
+            HorizontalDivider(color = LocalColoresNummia.current.borde)
+            OpcionAjuste(Iconos.Nota, "Contar un problema o una idea", "Se abre en GitHub") { abrirEnlace(ctx, "https://github.com/alexcorrea2001-Lemon/Nummia/issues") }
         }
     }
 
@@ -693,3 +526,49 @@ Copyright (c) 2026 alexcorrea2001-Lemon
 Se concede permiso, de forma gratuita, a cualquier persona que obtenga una copia de este software y de los archivos de documentación asociados, para utilizarlo sin restricción, incluyendo sin limitación los derechos a usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar y/o vender copias del software, con la condición de incluir el aviso de copyright anterior y este aviso de permiso en todas las copias o partes sustanciales del software.
 
 EL SOFTWARE SE PROPORCIONA «TAL CUAL», SIN GARANTÍA DE NINGÚN TIPO. (Traducción orientativa; el texto legal válido es el original en inglés incluido con el código.)"""
+
+private fun nombreColor(a: io.github.alexcorrea2001lemon.nummia.data.ajustes.Ajustes) = when (a.modoAcento) {
+    ModoAcento.PALETA -> a.acento.nombre.lowercase()
+    ModoAcento.PERSONALIZADO -> "color propio"
+    ModoAcento.FONDO_PANTALLA -> "color del fondo"
+}
+
+/** Cómo está Nummia de un vistazo: icono, versión y qué protecciones y avisos hay activos. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ResumenAjustes(a: io.github.alexcorrea2001lemon.nummia.data.ajustes.Ajustes) {
+    val c = LocalColoresNummia.current
+    Tarjeta(fondo = c.heroe) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l)) {
+            ImagenLogo(a.iconoLogo, a.iconoColor, Modifier.size(56.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Nummia", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Versión ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+            }
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
+            EstadoAjuste(Iconos.Escudo, if (a.bloqueo) "Bloqueo activado" else "Sin bloqueo", a.bloqueo)
+            EstadoAjuste(if (a.modoDiscreto) Iconos.OjoTachado else Iconos.Ojo, if (a.modoDiscreto) "Importes ocultos" else "Importes visibles", a.modoDiscreto)
+            EstadoAjuste(Iconos.Info, if (a.notificaciones) "Avisos activados" else "Sin avisos", a.notificaciones)
+        }
+    }
+}
+
+@Composable
+private fun EstadoAjuste(icono: androidx.compose.ui.graphics.vector.ImageVector, texto: String, activo: Boolean) {
+    val c = LocalColoresNummia.current
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (activo) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = if (activo) MaterialTheme.colorScheme.onPrimaryContainer else c.textoSuave,
+    ) {
+        Row(Modifier.padding(horizontal = Espacio.m, vertical = Espacio.s), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+            Icon(icono, null, Modifier.size(16.dp))
+            Text(texto, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+private fun abrirEnlace(ctx: android.content.Context, url: String) {
+    runCatching { ctx.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}

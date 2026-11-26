@@ -69,17 +69,22 @@ object Bloqueo {
 }
 
 /**
- * Si la app está bloqueada. Se bloquea al arrancar y al volver tras más de 1 minuto fuera
- * (solo tiene efecto si el bloqueo está activado en Ajustes).
+ * Si la app está bloqueada. Se bloquea al arrancar y al volver tras estar fuera más del tiempo elegido en
+ * Ajustes → Seguridad (solo tiene efecto si el bloqueo está activado).
  */
 object Cerrojo {
-    private const val ESPERA_MS = 60_000L
     private val _bloqueada = MutableStateFlow(true)
     val bloqueada: StateFlow<Boolean> = _bloqueada
     private var salida = 0L
 
+    /** Tiempo fuera permitido sin volver a pedir la identidad (lo fija MainActivity desde los ajustes). */
+    @Volatile var esperaMs: Long = 60_000L
+
+    /** ¿Hay que bloquear al volver? [salida] = 0 significa que aún no se había salido. */
+    fun debeBloquear(salida: Long, ahora: Long, esperaMs: Long): Boolean = salida != 0L && ahora - salida >= maxOf(esperaMs, 1L)
+
     fun alSalir() { salida = SystemClock.elapsedRealtime() }
-    fun alVolver() { if (salida != 0L && SystemClock.elapsedRealtime() - salida > ESPERA_MS) _bloqueada.value = true }
+    fun alVolver() { if (debeBloquear(salida, SystemClock.elapsedRealtime(), esperaMs)) _bloqueada.value = true }
     fun desbloquear() { _bloqueada.value = false }
 }
 

@@ -57,3 +57,10 @@ enum class TamanoTexto(val nombre: String, val escala: Float) {
     GRANDE("Grande", 1.12f),
     MUY_GRANDE("Muy grande", 1.25f),
 }
+
+/** Tipo de letra de toda la app. Son las familias que trae Android, sin añadir fuentes al APK. */
+enum class TipoLetra(val nombre: String, val descripcion: String) {
+    SISTEMA("Del sistema", "La de tu móvil"),
+    SERIFA("Con serifa", "Aire de libro de cuentas"),
+    MONO("Monoespaciada", "Cifras como en una caja registradora"),
+}

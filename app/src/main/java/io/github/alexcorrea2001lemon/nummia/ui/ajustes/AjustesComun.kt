@@ -28,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Espacio
@@ -72,7 +74,10 @@ fun OpcionAjuste(icono: ImageVector, titulo: String, subtitulo: String? = null, 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
-        Icon(icono, null, tint = LocalColoresNummia.current.textoSuave, modifier = Modifier.size(24.dp))
+        // Icono dentro de una pastilla con el color de la app: se reconoce cada fila de un vistazo.
+        androidx.compose.material3.Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+            androidx.compose.foundation.layout.Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { Icon(icono, null, modifier = Modifier.size(22.dp)) }
+        }
         Column(Modifier.weight(1f)) {
             Text(titulo, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
             if (subtitulo != null) Text(subtitulo, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
@@ -90,3 +95,26 @@ fun OpcionInterruptor(icono: ImageVector, titulo: String, subtitulo: String?, va
 }
 
 val SinRelleno = PaddingValues()
+
+/** Título de un grupo de ajustes. Va marcado como encabezado para TalkBack. */
+@Composable
+fun TituloAjustes(texto: String) {
+    Text(
+        texto, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = Espacio.s, top = Espacio.xs).semantics { heading() },
+    )
+}
+
+/** Explicación breve bajo un grupo de ajustes. */
+@Composable
+fun NotaAjuste(texto: String) {
+    Text(texto, style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.padding(horizontal = Espacio.s))
+}
+
+/** «Última copia: hoy», «hace 3 días»… Con null avisa de que aún no hay ninguna. */
+internal fun textoUltimaCopia(dias: Long?): String = when {
+    dias == null -> "Todavía no has guardado ninguna copia en un archivo"
+    dias <= 0L -> "Última copia en un archivo: hoy"
+    dias == 1L -> "Última copia en un archivo: ayer"
+    else -> "Última copia en un archivo: hace $dias días"
+}

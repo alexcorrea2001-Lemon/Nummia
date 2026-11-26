@@ -49,7 +49,24 @@ data class Ajustes(
     val formaTarjetas: io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas = io.github.alexcorrea2001lemon.nummia.ui.theme.FormaTarjetas.NORMAL,
     /** Importes mostrados con la huella: se vuelven a ocultar al salir de la app. */
     val discretoTemporal: Boolean = false,
+    val letra: io.github.alexcorrea2001lemon.nummia.ui.theme.TipoLetra = io.github.alexcorrea2001lemon.nummia.ui.theme.TipoLetra.SISTEMA,
+    /** Ingresos en azul y gastos en naranja (se distinguen mejor sin ver bien el rojo y el verde). */
+    val coloresAccesibles: Boolean = false,
+    /** Fondo y tarjetas con un toque del color de la app. */
+    val tinteFondo: Boolean = false,
+    /** Cuánto tiempo fuera de la app antes de pedir otra vez la huella. */
+    val bloqueoTras: BloqueoTras = BloqueoTras.UN_MINUTO,
+    /** Impide capturas de pantalla y oculta Nummia en la lista de apps recientes. */
+    val ocultarEnRecientes: Boolean = false,
 )
+
+/** Tiempo fuera de la app tras el que se vuelve a pedir la identidad. */
+enum class BloqueoTras(val nombre: String, val ms: Long) {
+    AL_INSTANTE("Al instante", 0L),
+    UN_MINUTO("1 minuto", 60_000L),
+    CINCO_MINUTOS("5 minutos", 300_000L),
+    QUINCE_MINUTOS("15 minutos", 900_000L),
+}
 
 private val Context.almacen: DataStore<Preferences> by preferencesDataStore(name = "ajustes")
 
@@ -86,6 +103,11 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
         val tarjetasOcultas = stringSetPreferencesKey("tarjetas_ocultas")
         val formaTarjetas = stringPreferencesKey("forma_tarjetas")
         val discretoTemporal = booleanPreferencesKey("discreto_temporal")
+        val letra = stringPreferencesKey("letra")
+        val coloresAccesibles = booleanPreferencesKey("colores_accesibles")
+        val tinteFondo = booleanPreferencesKey("tinte_fondo")
+        val bloqueoTras = stringPreferencesKey("bloqueo_tras")
+        val ocultarEnRecientes = booleanPreferencesKey("ocultar_en_recientes")
     }
 
     val ajustes: Flow<Ajustes> = store.data.map { p ->
@@ -116,6 +138,11 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
             tarjetasOcultas = p[K.tarjetasOcultas] ?: d.tarjetasOcultas,
             formaTarjetas = enumO(p[K.formaTarjetas], d.formaTarjetas),
             discretoTemporal = p[K.discretoTemporal] ?: d.discretoTemporal,
+            letra = enumO(p[K.letra], d.letra),
+            coloresAccesibles = p[K.coloresAccesibles] ?: d.coloresAccesibles,
+            tinteFondo = p[K.tinteFondo] ?: d.tinteFondo,
+            bloqueoTras = enumO(p[K.bloqueoTras], d.bloqueoTras),
+            ocultarEnRecientes = p[K.ocultarEnRecientes] ?: d.ocultarEnRecientes,
         )
     }
 
@@ -135,6 +162,12 @@ class AjustesRepo internal constructor(private val store: DataStore<Preferences>
     suspend fun avisoPagos(v: Boolean) = store.edit { it[K.avisoPagos] = v }
     suspend fun avisoPresupuestos(v: Boolean) = store.edit { it[K.avisoPresupuestos] = v }
     suspend fun bloqueo(v: Boolean) = store.edit { it[K.bloqueo] = v }
+
+    suspend fun letra(l: io.github.alexcorrea2001lemon.nummia.ui.theme.TipoLetra) = store.edit { it[K.letra] = l.name }
+    suspend fun coloresAccesibles(v: Boolean) = store.edit { it[K.coloresAccesibles] = v }
+    suspend fun tinteFondo(v: Boolean) = store.edit { it[K.tinteFondo] = v }
+    suspend fun bloqueoTras(b: BloqueoTras) = store.edit { it[K.bloqueoTras] = b.name }
+    suspend fun ocultarEnRecientes(v: Boolean) = store.edit { it[K.ocultarEnRecientes] = v }
 
     suspend fun vibracion(v: Boolean) = store.edit { it[K.vibracion] = v }
     suspend fun compacto(v: Boolean) = store.edit { it[K.compacto] = v }

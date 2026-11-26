@@ -14,6 +14,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import io.github.alexcorrea2001lemon.nummia.data.ajustes.Ajustes
@@ -81,14 +83,46 @@ private val tipografia = Typography().let { t ->
     )
 }
 
+/** La misma escala de estilos con otra familia de letra (la del sistema es la de [tipografia]). */
+internal fun tipografiaDe(letra: TipoLetra): Typography {
+    val f = when (letra) {
+        TipoLetra.SISTEMA -> return tipografia
+        TipoLetra.SERIFA -> FontFamily.Serif
+        TipoLetra.MONO -> FontFamily.Monospace
+    }
+    val t = tipografia
+    return Typography(
+        displayLarge = t.displayLarge.copy(fontFamily = f), displayMedium = t.displayMedium.copy(fontFamily = f), displaySmall = t.displaySmall.copy(fontFamily = f),
+        headlineLarge = t.headlineLarge.copy(fontFamily = f), headlineMedium = t.headlineMedium.copy(fontFamily = f), headlineSmall = t.headlineSmall.copy(fontFamily = f),
+        titleLarge = t.titleLarge.copy(fontFamily = f), titleMedium = t.titleMedium.copy(fontFamily = f), titleSmall = t.titleSmall.copy(fontFamily = f),
+        bodyLarge = t.bodyLarge.copy(fontFamily = f), bodyMedium = t.bodyMedium.copy(fontFamily = f), bodySmall = t.bodySmall.copy(fontFamily = f),
+        labelLarge = t.labelLarge.copy(fontFamily = f), labelMedium = t.labelMedium.copy(fontFamily = f), labelSmall = t.labelSmall.copy(fontFamily = f),
+    )
+}
+
+/**
+ * Colores de ingreso y de gasto. Con [accesibles] van en azul y naranja (se distinguen sin necesidad de ver el
+ * rojo y el verde); todos pasan el contraste AA sobre los fondos de la app.
+ */
+internal fun coloresMovimiento(oscuro: Boolean, accesibles: Boolean): Pair<Color, Color> = when {
+    oscuro && accesibles -> Color(0xFF60A5FA) to Color(0xFFFB923C)
+    oscuro -> Color(0xFF4ADE80) to Color(0xFFF87171)
+    accesibles -> Color(0xFF1D4ED8) to Color(0xFFC2410C)
+    else -> Color(0xFF15803D) to Color(0xFFB91C1C)
+}
+
 private fun oscurecer(c: Color, f: Float) = Color.Black.copy(alpha = f).compositeOver(c)
 private fun sobre(c: Color) = if (c.luminance() > 0.4f) Color(0xFF16121F) else Color.White
 
-private fun esquemaOscuro(acento: Color, amoled: Boolean): ColorScheme {
-    val fondo = if (amoled) Color(0xFF000000) else Color(0xFF0E0F13)
+/** Un toque del color de la app sobre una superficie (solo con «Fondo con tu color»). */
+private fun tinte(acento: Color, base: Color, alfa: Float, activo: Boolean) = if (activo) acento.copy(alpha = alfa).compositeOver(base) else base
+
+private fun esquemaOscuro(acento: Color, amoled: Boolean, tinte: Boolean = false): ColorScheme {
+    // Con AMOLED el fondo sigue siendo negro puro (ahorra batería); el tinte solo llega a las tarjetas.
+    val fondo = if (amoled) Color(0xFF000000) else tinte(acento, Color(0xFF0E0F13), 0.05f, tinte)
     // Tarjetas algo más claras que el fondo y textos secundarios más legibles (contraste AA).
-    val sup = if (amoled) Color(0xFF121214) else Color(0xFF1A1C23)
-    val sup2 = if (amoled) Color(0xFF1C1C20) else Color(0xFF242731)
+    val sup = tinte(acento, if (amoled) Color(0xFF121214) else Color(0xFF1A1C23), 0.07f, tinte)
+    val sup2 = tinte(acento, if (amoled) Color(0xFF1C1C20) else Color(0xFF242731), 0.09f, tinte)
     return darkColorScheme(
         primary = acento, onPrimary = sobre(acento),
         primaryContainer = acento.copy(alpha = 0.22f).compositeOver(sup), onPrimaryContainer = Color(0xFFF2EEFF),
@@ -104,18 +138,20 @@ private fun esquemaOscuro(acento: Color, amoled: Boolean): ColorScheme {
     )
 }
 
-private fun esquemaClaro(acento: Color): ColorScheme {
+private fun esquemaClaro(acento: Color, tinte: Boolean = false): ColorScheme {
     val texto = oscurecer(acento, 0.38f)
+    val fondo = tinte(acento, Color(0xFFF6F6F9), 0.10f, tinte)
+    val tarjeta = tinte(acento, Color.White, 0.04f, tinte)
     return lightColorScheme(
         primary = texto, onPrimary = Color.White,
         primaryContainer = acento.copy(alpha = 0.22f).compositeOver(Color.White), onPrimaryContainer = oscurecer(acento, 0.65f),
         secondary = texto, onSecondary = Color.White,
         secondaryContainer = acento.copy(alpha = 0.16f).compositeOver(Color.White), onSecondaryContainer = oscurecer(acento, 0.65f),
-        background = Color(0xFFF6F6F9), onBackground = Color(0xFF14151A),
-        surface = Color(0xFFF6F6F9), onSurface = Color(0xFF14151A),
+        background = fondo, onBackground = Color(0xFF14151A),
+        surface = fondo, onSurface = Color(0xFF14151A),
         surfaceVariant = Color(0xFFECEDF2), onSurfaceVariant = Color(0xFF555A66),
-        surfaceContainerLowest = Color.White, surfaceContainerLow = Color.White, surfaceContainer = Color.White,
-        surfaceContainerHigh = Color(0xFFF0F1F5), surfaceContainerHighest = Color(0xFFE8E9EF),
+        surfaceContainerLowest = tarjeta, surfaceContainerLow = tarjeta, surfaceContainer = tarjeta,
+        surfaceContainerHigh = tinte(acento, Color(0xFFF0F1F5), 0.07f, tinte), surfaceContainerHighest = tinte(acento, Color(0xFFE8E9EF), 0.09f, tinte),
         outline = Color(0xFFC9CBD3), outlineVariant = Color(0xFFE2E4EA),
         error = Color(0xFFB91C1C), onError = Color.White,
     )
@@ -142,20 +178,21 @@ fun NummiaTheme(ajustes: Ajustes, contenido: @Composable () -> Unit) {
             dynamicLightColorScheme(ctx)
         }
     } else if (oscuro) {
-        esquemaOscuro(acento, amoled)
+        esquemaOscuro(acento, amoled, ajustes.tinteFondo)
     } else {
-        esquemaClaro(acento)
+        esquemaClaro(acento, ajustes.tinteFondo)
     }
+    val (ingreso, gasto) = coloresMovimiento(oscuro, ajustes.coloresAccesibles)
     val colores = if (oscuro) {
         ColoresNummia(
-            ingreso = Color(0xFF4ADE80), gasto = Color(0xFFF87171), aviso = Color(0xFFFBBF24),
+            ingreso = ingreso, gasto = gasto, aviso = Color(0xFFFBBF24),
             avisoFondo = Color(0x33FBBF24), ingresoFondo = Color(0x294ADE80),
             heroe = esquema.primary.copy(alpha = 0.10f).compositeOver(esquema.background),
             borde = esquema.outlineVariant, textoSuave = esquema.onSurfaceVariant, esOscuro = true,
         )
     } else {
         ColoresNummia(
-            ingreso = Color(0xFF15803D), gasto = Color(0xFFB91C1C), aviso = Color(0xFF92400E),
+            ingreso = ingreso, gasto = gasto, aviso = Color(0xFF92400E),
             avisoFondo = Color(0xFFFDF0D5), ingresoFondo = Color(0xFFDCF5E5),
             heroe = acento.copy(alpha = 0.14f).compositeOver(Color.White),
             borde = esquema.outlineVariant, textoSuave = esquema.onSurfaceVariant, esOscuro = false,
@@ -167,6 +204,6 @@ fun NummiaTheme(ajustes: Ajustes, contenido: @Composable () -> Unit) {
         LocalPreferenciasUi provides PreferenciasUi(ajustes.vibracion, ajustes.compacto, ajustes.formaTarjetas.radio),
         LocalDensity provides Density(densidad.density, densidad.fontScale * ajustes.tamanoTexto.escala),
     ) {
-        MaterialTheme(colorScheme = esquema, typography = tipografia, shapes = formas(ajustes.formaTarjetas), content = contenido)
+        MaterialTheme(colorScheme = esquema, typography = remember(ajustes.letra) { tipografiaDe(ajustes.letra) }, shapes = formas(ajustes.formaTarjetas), content = contenido)
     }
 }

@@ -9,6 +9,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -113,18 +117,31 @@ fun GraficoLineas(
     }
     Column(modifier.fillMaxWidth()) {
         if (interactivo) {
-            // Siempre ocupa su sitio: al tocar no se mueve nada.
+            // Siempre ocupa su sitio (el de una línea de título y una por serie): al tocar no se mueve nada.
             val i = sel
-            Text(
-                if (i == null) "Toca o desliza sobre la gráfica para ver los importes"
-                else etiquetaPunto!!(i) + series.mapIndexedNotNull { k, s ->
-                    s.valores.getOrNull(i)?.let { v -> " · " + (nombres.getOrNull(k)?.let { "$it " } ?: "") + if (discreto) "••" else io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros(v) }
-                }.joinToString(""),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (i == null) LocalColoresNummia.current.textoSuave else MaterialTheme.colorScheme.onSurface,
-                maxLines = 2, minLines = 2,
-                modifier = Modifier.padding(bottom = 4.dp),
-            )
+            androidx.compose.foundation.layout.Column(
+                Modifier.fillMaxWidth().heightIn(min = ((series.size + 1) * 24).dp).padding(bottom = 6.dp),
+            ) {
+                if (i == null) {
+                    Text("Toca o desliza sobre la gráfica para ver los importes", style = MaterialTheme.typography.bodySmall, color = LocalColoresNummia.current.textoSuave)
+                } else {
+                    // Título («Día 24», «Marzo»…) y una fila por serie: punto de su color, nombre e importe. La principal arriba.
+                    Text(etiquetaPunto!!(i), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    series.indices.reversed().forEach { k ->
+                        series[k].valores.getOrNull(i)?.let { v ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+                                androidx.compose.foundation.layout.Box(Modifier.size(10.dp).background(series[k].color, androidx.compose.foundation.shape.CircleShape))
+                                androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
+                                Text(nombres.getOrNull(k).orEmpty(), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                Text(
+                                    if (discreto) "••" else io.github.alexcorrea2001lemon.nummia.domain.dinero.formatearEuros(v),
+                                    style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
         val toque = if (!interactivo) Modifier else Modifier
             .pointerInput(n, margen) {

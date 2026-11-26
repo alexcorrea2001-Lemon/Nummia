@@ -170,7 +170,7 @@ private fun LazyListScope.pestanaMes(e: EstadoEst, vm: EstadisticasViewModel) {
                 nombres = listOf(nombreMes(e.sel.mes.minusMonths(1)), nombreMes(e.sel.mes)),
                 etiquetaPunto = { "Día ${it + 1}" },
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Espacio.l, Alignment.CenterHorizontally)) {
                 Leyenda(actual, nombreMes(e.sel.mes))
                 Leyenda(anterior, nombreMes(e.sel.mes.minusMonths(1)))
             }
@@ -260,7 +260,7 @@ private fun LazyListScope.pestanaAnio(e: EstadoEst, vm: EstadisticasViewModel) {
                 a.meses.map { listOf(it.ingresos, it.gastoReal) }, listOf(c.ingreso, c.gasto), INICIALES,
                 "Ingresos y gasto real de cada mes de ${a.anio}", alPulsar = { vm.verMes(it + 1) },
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) { Leyenda(c.ingreso, "Ingresos"); Leyenda(c.gasto, "Gasto real") }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Espacio.l, Alignment.CenterHorizontally)) { Leyenda(c.ingreso, "Ingresos"); Leyenda(c.gasto, "Gasto real") }
         }
     }
     // 3) Lo destacado, en frases
@@ -361,7 +361,7 @@ private fun LazyListScope.pestanaComparar(e: EstadoEst, vm: EstadisticasViewMode
                 nombres = listOf("${c.a.anio}", "${c.b.anio}"),
                 etiquetaPunto = { listOf("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre")[it] },
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Espacio.l)) { Leyenda(principal, "${c.b.anio}"); Leyenda(suave, "${c.a.anio} (discontinua)") }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Espacio.l, Alignment.CenterHorizontally)) { Leyenda(principal, "${c.b.anio}"); Leyenda(suave, "${c.a.anio} (discontinua)") }
         }
     }
 }

@@ -2,6 +2,12 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.8.4] - 2026-11-26
+
+### Cambiado
+- Gráficas de líneas: al tocar un punto, el texto de arriba ahora tiene un título («Día 24») y una fila por serie con su punto de color, su nombre y su importe, en vez de una frase larga con puntos.
+- Estadísticas: las leyendas bajo las gráficas van centradas.
+
 ## [2.8.3] - 2026-11-26
 
 ### Arreglado

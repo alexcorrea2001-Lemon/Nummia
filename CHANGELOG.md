@@ -2,6 +2,11 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.8.5] - 2026-11-27
+
+### Arreglado
+- Modo discreto: tocar el ojo para ver los importes ahora pide la huella o el PIN, igual que mantener pulsado el balance. Si el móvil no tiene ningún bloqueo, se ven directamente.
+
 ## [2.8.4] - 2026-11-26
 
 ### Cambiado

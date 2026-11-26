@@ -126,10 +126,14 @@ fun InicioScreen(
         item {
             val ctx = androidx.compose.ui.platform.LocalContext.current
             TarjetaBalance(
-                e, vm::alternarDiscreto,
+                e, vm::ocultarImportes,
                 alRevelar = {
-                    // Modo discreto: mantener pulsado + huella muestra los importes hasta salir de la app
-                    ctx.actividad()?.let { act ->
+                    // Ver los importes (mantener pulsado o tocar el ojo) pide la huella o el PIN y dura hasta salir de la app.
+                    val act = ctx.actividad()
+                    if (act == null || !io.github.alexcorrea2001lemon.nummia.ui.bloqueo.Bloqueo.disponible(ctx)) {
+                        // Sin ningún bloqueo en el móvil no hay nada que pedir: se ven directamente.
+                        haptica(); vm.mostrarImportes()
+                    } else {
                         io.github.alexcorrea2001lemon.nummia.ui.bloqueo.Bloqueo.pedir(act, "Mostrar los importes", alConseguir = { haptica(); vm.mostrarImportes() }, alFallar = {})
                     }
                 },
@@ -308,7 +312,7 @@ private fun Cabecera(e: InicioEstado, anterior: () -> Unit, siguiente: () -> Uni
 
 @Composable
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alRevelar: () -> Unit, alPulsar: () -> Unit) {
+private fun TarjetaBalance(e: InicioEstado, alOcultar: () -> Unit, alRevelar: () -> Unit, alPulsar: () -> Unit) {
     val c = LocalColoresNummia.current
     val esquema = MaterialTheme.colorScheme
     val fondo = esquema.surfaceContainer
@@ -350,7 +354,7 @@ private fun TarjetaBalance(e: InicioEstado, alternarDiscreto: () -> Unit, alReve
                         style = MaterialTheme.typography.bodyMedium, color = tituloCabecera, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
-                IconButton(onClick = alternarDiscreto) {
+                IconButton(onClick = if (e.discreto) alRevelar else alOcultar) {
                     Icon(if (e.discreto) Iconos.OjoTachado else Iconos.Ojo, if (e.discreto) "Mostrar importes" else "Ocultar importes", tint = tituloCabecera)
                 }
             }

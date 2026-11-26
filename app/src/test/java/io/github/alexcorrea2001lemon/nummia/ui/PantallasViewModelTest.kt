@@ -100,13 +100,13 @@ class PantallasViewModelTest {
         assertNull(e.resumen.ahorroPorMil)
     }
 
-    @Test fun elOjoMuestraLosImportesSoloHastaSalirDeLaApp() = runBlocking {
+    @Test fun losImportesVistosConLaHuellaSoloDuranHastaSalirDeLaApp() = runBlocking {
         ajustes.modoDiscreto(true)
         val vm = InicioViewModel(repo, ajustes, reloj)
         assertTrue(withTimeout(5_000) { vm.estado.first { !it.cargando } }.discreto)
 
-        // Tocar el ojo para verlos no apaga el modo discreto: solo los enseña mientras la app sigue abierta.
-        vm.alternarDiscreto()
+        // Verlos (tras la huella) no apaga el modo discreto: solo los enseña mientras la app sigue abierta.
+        vm.mostrarImportes()
         assertEquals(false, withTimeout(5_000) { vm.estado.first { !it.discreto } }.discreto)
         assertTrue(ajustes.ajustes.first().discretoTemporal)
 
@@ -116,13 +116,10 @@ class PantallasViewModelTest {
         assertTrue(ajustes.ajustes.first().modoDiscreto)
     }
 
-    @Test fun elOjoVuelveAOcultarAlPulsarloOtraVez() = runBlocking {
-        ajustes.modoDiscreto(true)
+    @Test fun elOjoOcultaLosImportesDeFormaFija() = runBlocking {
         val vm = InicioViewModel(repo, ajustes, reloj)
-        withTimeout(5_000) { vm.estado.first { !it.cargando } }
-        vm.alternarDiscreto()
-        withTimeout(5_000) { vm.estado.first { !it.discreto } }
-        vm.alternarDiscreto()
+        assertEquals(false, withTimeout(5_000) { vm.estado.first { !it.cargando } }.discreto)
+        vm.ocultarImportes()
         assertTrue(withTimeout(5_000) { vm.estado.first { it.discreto } }.discreto)
         val a = ajustes.ajustes.first()
         assertTrue(a.modoDiscreto)

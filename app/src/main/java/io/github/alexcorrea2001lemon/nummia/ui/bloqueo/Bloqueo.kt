@@ -46,6 +46,10 @@ tailrec fun android.content.Context.actividad(): FragmentActivity? = when (this)
 object Bloqueo {
     const val AUTENTICADORES = BIOMETRIC_WEAK or DEVICE_CREDENTIAL
 
+    /** Si el móvil tiene huella, PIN o patrón con los que pedir la identidad. */
+    fun disponible(ctx: android.content.Context) =
+        androidx.biometric.BiometricManager.from(ctx).canAuthenticate(AUTENTICADORES) == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
+
     fun pedir(actividad: FragmentActivity, titulo: String, alConseguir: () -> Unit, alFallar: (String) -> Unit) {
         val prompt = BiometricPrompt(
             actividad, ContextCompat.getMainExecutor(actividad),

@@ -2,6 +2,11 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.8.3] - 2026-11-26
+
+### Arreglado
+- Modo discreto: al tocar el ojo de Inicio para ver los importes, ya no se apaga el ajuste para siempre. Se ven mientras la app sigue abierta y, al salir de ella, vuelven a ocultarse.
+
 ## [2.8.2] - 2026-11-24
 
 ### Cambiado

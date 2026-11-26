@@ -193,7 +193,13 @@ class InicioViewModel @Inject constructor(
         .map { a -> ordenTarjetas(a.tarjetasInicio).filter { it.clave !in a.tarjetasOcultas } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TarjetaInicio.entries.toList())
     fun mostrarImportes() = viewModelScope.launch { ajustesRepo.mostrarImportesTemporal() }
-    fun alternarDiscreto() = viewModelScope.launch { ajustesRepo.modoDiscreto(!estado.value.discreto) }
+    /**
+     * El ojo de Inicio: con los importes ocultos los muestra solo hasta salir de la app (el ajuste «Modo
+     * discreto» sigue activado); con ellos a la vista, los vuelve a ocultar.
+     */
+    fun alternarDiscreto() = viewModelScope.launch {
+        if (estado.value.discreto) ajustesRepo.mostrarImportesTemporal() else ajustesRepo.modoDiscreto(true)
+    }
 
     fun confirmarPago(id: String, importe: Long) = viewModelScope.launch { repo.confirmarPago(id, importe) }
     fun omitirPago(id: String) = viewModelScope.launch { repo.omitirPago(id) }

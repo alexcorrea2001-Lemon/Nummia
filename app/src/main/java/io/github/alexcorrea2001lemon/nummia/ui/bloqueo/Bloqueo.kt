@@ -81,7 +81,7 @@ object Cerrojo {
     @Volatile var esperaMs: Long = 60_000L
 
     /** ¿Hay que bloquear al volver? [salida] = 0 significa que aún no se había salido. */
-    fun debeBloquear(salida: Long, ahora: Long, esperaMs: Long): Boolean = salida != 0L && ahora - salida >= maxOf(esperaMs, 1L)
+    fun debeBloquear(salida: Long, ahora: Long, esperaMs: Long): Boolean = salida != 0L && ahora - salida >= esperaMs
 
     fun alSalir() { salida = SystemClock.elapsedRealtime() }
     fun alVolver() { if (debeBloquear(salida, SystemClock.elapsedRealtime(), esperaMs)) _bloqueada.value = true }

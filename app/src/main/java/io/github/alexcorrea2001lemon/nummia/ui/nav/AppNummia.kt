@@ -81,6 +81,7 @@ import io.github.alexcorrea2001lemon.nummia.ui.estadisticas.EstadisticasScreen
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.comun.rememberHaptica
 import io.github.alexcorrea2001lemon.nummia.ui.detalle.DetalleScreen
+import io.github.alexcorrea2001lemon.nummia.ui.detalle.DetalleIngresoScreen
 import io.github.alexcorrea2001lemon.nummia.ui.formulario.FormularioGastoScreen
 import io.github.alexcorrea2001lemon.nummia.ui.formulario.FormularioIngresoScreen
 import io.github.alexcorrea2001lemon.nummia.ui.formulario.FormularioReembolsoScreen
@@ -202,7 +203,7 @@ fun AppNummia(ajustes: Ajustes, alTerminarBienvenida: (Long?, String?) -> Unit) 
 
 private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHostState, relleno: PaddingValues) {
     fun abrirGasto(id: String) = nav.navigate(Rutas.detalle(id))
-    fun abrirIngreso(id: String) = nav.navigate(Rutas.ingreso(id))
+    fun abrirIngreso(id: String) = nav.navigate(Rutas.detalleIngreso(id))
 
     pantalla(Rutas.INICIO) {
         InicioScreen(
@@ -255,6 +256,9 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
         val actividad = requireNotNull(androidx.compose.ui.platform.LocalContext.current.actividad())
         val principal: io.github.alexcorrea2001lemon.nummia.MainViewModel = hiltViewModel(actividad)
         FormularioGastoScreen(hiltViewModel(), snackbar, alEditado = { principal.ofrecerDeshacer(snackbar, it) }) { nav.popBackStack() }
+    }
+    pantalla(Rutas.DETALLE_INGRESO, listOf(navArgument("id") { type = NavType.StringType })) {
+        DetalleIngresoScreen(hiltViewModel(), snackbar, alVolver = { nav.popBackStack() }, alEditar = { nav.navigate(Rutas.ingreso(it)) })
     }
     pantalla(Rutas.INGRESO, listOf(navArgument("id") { type = NavType.StringType; defaultValue = "" }, navArgument("fecha") { type = NavType.StringType; defaultValue = "" })) {
         FormularioIngresoScreen(hiltViewModel()) { nav.popBackStack() }

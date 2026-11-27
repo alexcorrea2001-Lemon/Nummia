@@ -9,6 +9,7 @@ object Rutas {
     const val DETALLE = "detalle/{id}"
     const val GASTO = "gasto?id={id}&paraOtro={paraOtro}&fecha={fecha}"
     const val INGRESO = "ingreso?id={id}&fecha={fecha}"
+    const val DETALLE_INGRESO = "detalleIngreso/{id}"
     const val REEMBOLSO = "reembolso?gastoId={gastoId}"
     const val AJUSTES = "ajustes"
     const val APARIENCIA = "ajustes/apariencia"
@@ -30,6 +31,7 @@ object Rutas {
     const val SEGURIDAD = "ajustes/seguridad"
 
     fun detalle(id: String) = "detalle/$id"
+    fun detalleIngreso(id: String) = "detalleIngreso/$id"
     fun gasto(id: String? = null, paraOtro: Boolean = false, fecha: java.time.LocalDate? = null) =
         "gasto?id=${id.orEmpty()}&paraOtro=$paraOtro&fecha=${fecha?.toString().orEmpty()}"
     fun ingreso(id: String? = null, fecha: java.time.LocalDate? = null) = "ingreso?id=${id.orEmpty()}&fecha=${fecha?.toString().orEmpty()}"

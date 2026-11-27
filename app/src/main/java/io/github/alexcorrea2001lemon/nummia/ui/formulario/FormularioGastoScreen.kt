@@ -122,15 +122,14 @@ fun FormularioGastoScreen(
             Modifier.fillMaxSize().padding(p).verticalScroll(rememberScrollState()).padding(horizontal = Espacio.l, vertical = Espacio.s),
             verticalArrangement = Arrangement.spacedBy(Espacio.l),
         ) {
-            if (!f.editando) {
-                OutlinedButton(onClick = escaner.abrir, enabled = !escaner.ocupado, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                    if (escaner.ocupado) {
-                        androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                        Text("  Leyendo el ticket…")
-                    } else {
-                        Icon(Iconos.Camara, null, Modifier.size(20.dp))
-                        Text("  Escanear ticket")
-                    }
+            // También al editar un gasto antiguo: así se le añade el ticket después.
+            OutlinedButton(onClick = escaner.abrir, enabled = !escaner.ocupado, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                if (escaner.ocupado) {
+                    androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Text("  Leyendo el ticket…")
+                } else {
+                    Icon(Iconos.Camara, null, Modifier.size(20.dp))
+                    Text("  Escanear ticket")
                 }
             }
             CampoImporteGrande(f.importe, vm::importe, f.errorImporte, foco) { runCatching { focoConcepto.requestFocus() } }

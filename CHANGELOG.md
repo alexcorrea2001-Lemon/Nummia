@@ -2,6 +2,15 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [3.0.1] - 2026-11-27
+
+### Cambiado
+- Al tocar un ingreso ahora se abre su pantalla de detalle, como en los gastos, y desde ahí se pulsa «Editar». Ya no entra directo al formulario.
+- Los cobros previstos muestran un botón «Confirmar cobro» en su detalle.
+
+### Añadido
+- «Escanear ticket» también aparece al editar un gasto que ya existe, para añadirle el ticket después.
+
 ## [3.0.0] - 2026-11-27
 
 ### Añadido

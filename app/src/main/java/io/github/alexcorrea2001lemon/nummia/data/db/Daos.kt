@@ -69,6 +69,7 @@ interface ReembolsoDao {
 interface IngresoDao {
     @Upsert suspend fun guardar(i: IngresoEntity)
     @Query("SELECT * FROM ingresos WHERE id = :id") suspend fun obtener(id: String): IngresoEntity?
+    @Query("SELECT * FROM ingresos WHERE id = :id") fun observar(id: String): Flow<IngresoEntity?>
 
     @Query("SELECT * FROM ingresos WHERE deletedAt IS NULL AND fecha BETWEEN :desde AND :hasta ORDER BY fecha DESC, createdAt DESC")
     fun entre(desde: LocalDate, hasta: LocalDate): Flow<List<IngresoEntity>>

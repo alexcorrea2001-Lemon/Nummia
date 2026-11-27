@@ -298,7 +298,7 @@ fun DetalleScreen(
     }
 }
 
-private fun textoHistorial(campo: String, antes: String?, despues: String?): String = when (campo) {
+internal fun textoHistorial(campo: String, antes: String?, despues: String?): String = when (campo) {
     "creado" -> "Creado${despues?.let { " ($it)" }.orEmpty()}"
     "borrado" -> "Borrado"
     "restaurado" -> "Restaurado"
@@ -316,7 +316,7 @@ private fun Cifra(titulo: String, valor: String, modifier: Modifier, color: Colo
 }
 
 @Composable
-private fun Dato(titulo: String, valor: String) {
+internal fun Dato(titulo: String, valor: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = Espacio.xs)) {
         Text(titulo, style = MaterialTheme.typography.bodyLarge, color = LocalColoresNummia.current.textoSuave, modifier = Modifier.weight(1f))
         Text(valor, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, textAlign = TextAlign.End, modifier = Modifier.weight(1f))

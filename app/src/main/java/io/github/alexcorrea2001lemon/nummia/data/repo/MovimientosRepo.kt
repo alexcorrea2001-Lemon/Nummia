@@ -114,6 +114,7 @@ class MovimientosRepo @Inject constructor(
     fun categorias() = db.categorias().todas()
 
     suspend fun ingreso(id: String): IngresoEntity? = db.ingresos().obtener(id)
+    fun ingresoObservado(id: String): Flow<IngresoEntity?> = db.ingresos().observar(id)
     suspend fun gastoUnaVez(id: String): GastoConReembolsos? = db.gastos().observarUnaVez(id)
     suspend fun categoriaHabitual(tienda: String): String? = db.gastos().categoriaHabitual(tienda.trim())
 

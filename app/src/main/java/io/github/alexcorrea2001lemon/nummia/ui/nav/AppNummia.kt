@@ -266,7 +266,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.AJUSTES) { AjustesScreen(hiltViewModel(), { nav.popBackStack() }) { nav.navigate(it) } }
     pantalla(Rutas.APARIENCIA) { AparienciaScreen(ajustesVm(nav), { nav.popBackStack() }) }
     pantalla(Rutas.SUELDO) { SueldoScreen(ajustesVm(nav), { nav.popBackStack() }) }
-    pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), { nav.popBackStack() }) { nav.navigate(Rutas.DEBEN) } }
+    pantalla(Rutas.PERSONAS) { PersonasScreen(ajustesVm(nav), hiltViewModel(), snackbar, { nav.popBackStack() }) { nav.navigate(Rutas.DEBEN) } }
     pantalla(Rutas.TIENDA, listOf(navArgument("nombre") { type = NavType.StringType })) {
         io.github.alexcorrea2001lemon.nummia.ui.tiendas.FichaTiendaScreen(hiltViewModel(), ::abrirGasto) { nav.popBackStack() }
     }

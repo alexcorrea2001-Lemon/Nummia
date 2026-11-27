@@ -499,6 +499,8 @@ class MovimientosRepo @Inject constructor(
         aviso.cambio()
     }
     suspend fun borrarPersona(p: PersonaEntity) = db.personas().guardar(p.copy(deletedAt = reloj.ahoraMs()))
+    /** Deshace [borrarPersona]. */
+    suspend fun restaurarPersona(p: PersonaEntity) = db.personas().guardar(p.copy(deletedAt = null))
 
     // ---------- Pagos mensuales ----------
 

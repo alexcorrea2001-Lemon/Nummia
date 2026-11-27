@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -238,23 +239,136 @@ fun SueldoScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
 // ------------------------------------------------------------------ Personas
 
 @Composable
-fun PersonasScreen(vm: AjustesViewModel, alVolver: () -> Unit, alDeben: () -> Unit = {}) {
+fun PersonasScreen(
+    vm: AjustesViewModel, deben: io.github.alexcorrea2001lemon.nummia.ui.deben.DebenViewModel, snackbar: SnackbarHostState,
+    alVolver: () -> Unit, alDeben: () -> Unit = {},
+) {
     val personas by vm.personas.collectAsStateWithLifecycle()
+    val deudas by deben.personas.collectAsStateWithLifecycle()
+    val c = LocalColoresNummia.current
+    val alcance = rememberCoroutineScope()
     var creando by rememberSaveable { mutableStateOf(false) }
+    var abierta by remember { mutableStateOf<io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity?>(null) }
     var editando by remember { mutableStateOf<io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity?>(null) }
+    var quitando by remember { mutableStateOf<io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity?>(null) }
+    val porPersona = deudas.orEmpty().associateBy { it.personaId }
+    val tnum = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")
+
+    fun pagarTodo(d: io.github.alexcorrea2001lemon.nummia.ui.deben.PersonaDeuda) = alcance.launch {
+        val hechos = deben.pagarTodo(d)
+        val r = snackbar.showSnackbar("${d.nombre} te lo ha pagado todo", actionLabel = "Deshacer", duration = androidx.compose.material3.SnackbarDuration.Long)
+        if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) deben.deshacer(hechos)
+    }
+    fun quitar(p: io.github.alexcorrea2001lemon.nummia.data.db.PersonaEntity) = alcance.launch {
+        vm.borrarPersona(p)
+        val r = snackbar.showSnackbar("Has quitado a ${p.nombre}", actionLabel = "Deshacer", duration = androidx.compose.material3.SnackbarDuration.Long)
+        if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) vm.restaurarPersona(p)
+    }
+
     PantallaAjustes("Personas", alVolver) {
-        Text("Las personas que te devuelven dinero: padres, hermanos, amigos…", style = MaterialTheme.typography.bodyMedium, color = LocalColoresNummia.current.textoSuave)
-        Tarjeta(relleno = false) { OpcionAjuste(Iconos.Euro, "Lo que me deben", "Cuánto te debe cada persona y «Me lo ha pagado todo»", alPulsar = alDeben) }
-        Tarjeta(relleno = false) {
-            if (personas.isEmpty()) Text("Aún no has añadido a nadie.", modifier = Modifier.padding(Espacio.l), color = LocalColoresNummia.current.textoSuave)
-            personas.forEach { p ->
-                OpcionAjuste(
-                    Iconos.Persona, p.nombre,
-                    final = { IconButton(onClick = { vm.borrarPersona(p) }) { Icon(Iconos.Papelera, "Quitar a ${p.nombre}", tint = LocalColoresNummia.current.textoSuave) } },
-                ) { editando = p }
+        val total = deudas.orEmpty().sumOf { it.total }
+        val conDeuda = deudas.orEmpty().count { it.total > 0 }
+        Tarjeta(fondo = c.heroe, modifier = Modifier.clickable(onClickLabel = "Ver lo que te deben", onClick = alDeben)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Te deben en total", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+                    Text(formatearEuros(total), style = MaterialTheme.typography.headlineMedium.merge(tnum), fontWeight = FontWeight.Bold, color = if (total > 0) c.aviso else MaterialTheme.colorScheme.onSurface)
+                    Text(
+                        when (conDeuda) { 0 -> "Nadie te debe nada"; 1 -> "1 persona con algo pendiente"; else -> "$conDeuda personas con algo pendiente" },
+                        style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                    )
+                }
+                Icon(Iconos.ChevronDer, null, tint = c.textoSuave)
             }
         }
-        Button(onClick = { creando = true }) { Text("Añadir persona") }
+        Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
+            if (personas.isEmpty()) {
+                Text("Padres, hermanos, amigos… Añade a quien te devuelve dinero.", modifier = Modifier.padding(Espacio.l), color = c.textoSuave)
+            }
+            personas.forEach { p ->
+                val d = porPersona[p.id]
+                Row(
+                    Modifier.fillMaxWidth().clickable(onClickLabel = "Abrir") { abierta = p }.padding(horizontal = Espacio.l, vertical = Espacio.m),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l),
+                ) {
+                    io.github.alexcorrea2001lemon.nummia.ui.comun.AvatarIniciales(io.github.alexcorrea2001lemon.nummia.ui.tiendas.iniciales(p.nombre), tam = 44.dp)
+                    Column(Modifier.weight(1f)) {
+                        Text(p.nombre, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                        Text(
+                            when (val n = d?.deudas?.size ?: 0) { 0 -> "Nada pendiente"; 1 -> "1 cosa pendiente"; else -> "$n cosas pendientes" },
+                            style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                        )
+                    }
+                    if (d != null && d.total > 0) {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(formatearEuros(d.total), style = MaterialTheme.typography.bodyLarge.merge(tnum), fontWeight = FontWeight.SemiBold, color = c.aviso)
+                            Text("te debe", style = MaterialTheme.typography.labelSmall, color = c.textoSuave)
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+                            Icon(Iconos.Check, null, tint = c.ingreso, modifier = Modifier.size(18.dp))
+                            Text("Al día", style = MaterialTheme.typography.bodyMedium, color = c.ingreso)
+                        }
+                    }
+                }
+                HorizontalDivider(color = c.borde)
+            }
+            Row(
+                Modifier.fillMaxWidth().clickable { creando = true }.padding(horizontal = Espacio.l, vertical = Espacio.m),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l),
+            ) {
+                Box(Modifier.size(44.dp).border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(Iconos.Mas, null, tint = MaterialTheme.colorScheme.primary)
+                }
+                Text("Añadir persona", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+
+    abierta?.let { p ->
+        val d = porPersona[p.id]
+        val cerrar = { abierta = null }
+        io.github.alexcorrea2001lemon.nummia.ui.comun.PanelNummia(alCerrar = cerrar) {
+            io.github.alexcorrea2001lemon.nummia.ui.comun.CabeceraPanel(
+                { io.github.alexcorrea2001lemon.nummia.ui.comun.AvatarIniciales(io.github.alexcorrea2001lemon.nummia.ui.tiendas.iniciales(p.nombre), tam = 56.dp) },
+                p.nombre, if (d != null && d.total > 0) "Te debe ${formatearEuros(d.total)}" else "Al día: no te debe nada",
+            )
+            if (d != null && d.deudas.isNotEmpty()) {
+                Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                    Column(Modifier.padding(horizontal = Espacio.l, vertical = Espacio.s)) {
+                        d.deudas.take(6).forEachIndexed { n, x ->
+                            if (n > 0) HorizontalDivider(color = c.borde)
+                            Row(Modifier.fillMaxWidth().padding(vertical = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(x.concepto.ifBlank { "Sin concepto" }, style = MaterialTheme.typography.bodyMedium)
+                                    Text(io.github.alexcorrea2001lemon.nummia.ui.comun.fechaCorta(x.fecha), style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                                }
+                                Text(formatearEuros(x.falta), style = MaterialTheme.typography.bodyMedium.merge(tnum), fontWeight = FontWeight.Medium)
+                            }
+                        }
+                        if (d.deudas.size > 6) Text("y ${d.deudas.size - 6} más", style = MaterialTheme.typography.bodySmall, color = c.textoSuave, modifier = Modifier.padding(bottom = Espacio.s))
+                    }
+                }
+                Button(onClick = { cerrar(); pagarTodo(d) }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                    Icon(Iconos.Check, null, modifier = Modifier.size(20.dp))
+                    Text("  Me lo ha pagado todo", fontWeight = FontWeight.SemiBold)
+                }
+                io.github.alexcorrea2001lemon.nummia.ui.comun.AccionPanel(Iconos.Euro, "Ver el detalle", conFlecha = true) { cerrar(); alDeben() }
+            }
+            HorizontalDivider(color = c.borde)
+            io.github.alexcorrea2001lemon.nummia.ui.comun.AccionPanel(Iconos.Lapiz, "Cambiar nombre") { cerrar(); editando = p }
+            io.github.alexcorrea2001lemon.nummia.ui.comun.AccionPanel(Iconos.Papelera, "Quitar a ${p.nombre}", color = MaterialTheme.colorScheme.error) { cerrar(); quitando = p }
+        }
+    }
+
+    quitando?.let { p ->
+        DialogoNummia(
+            onDismissRequest = { quitando = null },
+            title = { Text("¿Quitar a ${p.nombre}?") },
+            text = { Text("Sus gastos se quedan como están. Podrás deshacerlo justo después.") },
+            confirmButton = { Button(onClick = { quitando = null; quitar(p) }) { Text("Quitar") } },
+            dismissButton = { TextButton(onClick = { quitando = null }) { Text("Cancelar") } },
+        )
     }
     if (creando) DialogoNombre("Nueva persona", alCerrar = { creando = false }) { vm.nuevaPersona(it); creando = false }
     editando?.let { p -> DialogoNombre("Cambiar nombre", p.nombre, alCerrar = { editando = null }) { vm.renombrar(p, it); editando = null } }

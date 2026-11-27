@@ -244,12 +244,22 @@ fun SelectorFecha(fecha: LocalDate, hoy: LocalDate, alCambiar: (LocalDate) -> Un
 
 @Composable
 fun DialogoNombre(titulo: String, inicial: String = "", alCerrar: () -> Unit, alAceptar: (String) -> Unit) {
-    var texto by remember { mutableStateOf(inicial) }
+    var texto by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(inicial, androidx.compose.ui.text.TextRange(inicial.length))) }
+    val foco = remember { FocusRequester() }
+    // El teclado se abre solo y la tecla Intro guarda: escribir el nombre y listo.
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(150); runCatching { foco.requestFocus() } }
     DialogoNummia(
         onDismissRequest = alCerrar,
         title = { Text(titulo) },
-        text = { OutlinedTextField(texto, { texto = it }, singleLine = true, label = { Text("Nombre") }) },
-        confirmButton = { TextButton(onClick = { alAceptar(texto.trim()) }, enabled = texto.isNotBlank()) { Text("Guardar") } },
+        text = {
+            OutlinedTextField(
+                texto, { texto = it }, singleLine = true, label = { Text("Nombre") },
+                keyboardOptions = KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { if (texto.text.isNotBlank()) alAceptar(texto.text.trim()) }),
+                modifier = Modifier.fillMaxWidth().focusRequester(foco),
+            )
+        },
+        confirmButton = { androidx.compose.material3.Button(onClick = { alAceptar(texto.text.trim()) }, enabled = texto.text.isNotBlank()) { Text("Guardar") } },
         dismissButton = { TextButton(onClick = alCerrar) { Text("Cancelar") } },
     )
 }

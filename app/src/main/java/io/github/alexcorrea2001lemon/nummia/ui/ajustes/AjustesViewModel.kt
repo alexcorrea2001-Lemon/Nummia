@@ -73,6 +73,7 @@ class AjustesViewModel @Inject constructor(
     fun nuevaPersona(n: String) = viewModelScope.launch { repo.crearPersona(n) }
     fun renombrar(p: PersonaEntity, n: String) = viewModelScope.launch { repo.renombrarPersona(p, n) }
     fun borrarPersona(p: PersonaEntity) = viewModelScope.launch { repo.borrarPersona(p) }
+    fun restaurarPersona(p: PersonaEntity) = viewModelScope.launch { repo.restaurarPersona(p) }
 
     suspend fun exportar(contrasena: String? = null): ByteArray = copia.exportar(reloj.ahoraMs(), contrasena)
     suspend fun copiaGuardada() = ajustesRepo.ultimaCopiaLocal(reloj.hoy().toEpochDay())

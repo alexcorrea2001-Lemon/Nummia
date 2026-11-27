@@ -2,6 +2,23 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [2.10.0] - 2026-11-27
+
+### Añadido
+- Importe: toca una cifra para poner ahí el cursor y cambiarla, sin borrar lo que va detrás. Las teclas escriben donde está el cursor y ⌫ borra la cifra de antes. Con TalkBack, el cursor se mueve con las acciones «Mover el cursor a la izquierda/derecha».
+- Tiendas: buscador, orden (más veces, más gasto o A–Z), el total arriba y la fecha del último gasto de cada tienda.
+- Tiendas: al tocar una se abre un panel con el total, las veces y la media, y con «Ver sus gastos», «Cambiar nombre» y «Unir con otras tiendas…». Mantén pulsada una tienda para marcar varias y unirlas desde la barra de abajo.
+- Personas: arriba, cuánto te deben en total; cada persona muestra lo que te debe o «Al día».
+- Personas: al tocar una se abre un panel con lo que tiene pendiente, «Me lo ha pagado todo», «Cambiar nombre» y «Quitar».
+- Pagos y cobros fijos: pestañas «Pagos» y «Cobros», y el próximo pago en el resumen.
+- Pagos y cobros fijos: al tocar uno se abre un panel con el próximo pago, lo que cuesta al año, lo pagado, el historial y los botones «Editar», «Pausar» y «Borrar».
+- Ajustes: los botones «Bloqueo», «Importes» y «Avisos» de la portada ya funcionan. «Importes» oculta o muestra las cifras al momento, y los otros dos abren su pantalla. Tiendas y Pagos muestran cuántas hay y cuánto cuestan al mes.
+
+### Cambiado
+- Quitar una persona, o borrar un pago o un cobro, ahora pide confirmación o permite «Deshacer» justo después.
+- Nueva persona y Cambiar nombre: el teclado se abre solo y la tecla Intro guarda.
+- Tiendas: ya no hay casillas. Las tiendas repetidas se avisan en una tarjeta más pequeña.
+
 ## [2.9.0] - 2026-11-27
 
 ### Añadido

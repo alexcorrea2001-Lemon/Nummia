@@ -2,6 +2,16 @@
 
 Todas las versiones de Nummia, de la más nueva a la más antigua.
 
+## [3.0.0] - 2026-11-27
+
+### Añadido
+- Escanear tickets: en «Nuevo gasto», el botón «Escanear ticket» abre el escáner de documentos (recorta y endereza la foto, o puedes elegir una que ya tengas), lee el ticket y rellena el importe, la tienda y la fecha. Lo revisas y guardas. Si no encuentra algo, te lo dice y lo escribes tú.
+- La tienda del ticket se escribe con el mismo nombre que ya usas («MERCADONA SA» pasa a «Mercadona» si ya la tenías así), para no crear tiendas repetidas.
+- La foto se lee en el móvil, no se guarda y se borra al terminar. Escanear necesita Google Play Services al día; la primera vez puede descargar el lector de texto.
+
+### Cambiado
+- Apariencia: «Letra» y «Tamaño del texto» rehechos. Las opciones se muestran en tarjetas iguales y alineadas, cada una con su «Aa» (los cuatro tamaños ya se ven con su tamaño real y caben en una sola fila). «Monoespaciada» ya no se parte en dos líneas.
+
 ## [2.10.0] - 2026-11-27
 
 ### Añadido

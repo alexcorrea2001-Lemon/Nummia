@@ -277,7 +277,7 @@ private fun NavGraphBuilder.grafo(nav: NavHostController, snackbar: SnackbarHost
     pantalla(Rutas.TIENDAS) { io.github.alexcorrea2001lemon.nummia.ui.tiendas.TiendasScreen(hiltViewModel(), snackbar, alTienda = { nav.navigate(Rutas.tienda(it)) }) { nav.popBackStack() } }
     pantalla(Rutas.CATEGORIAS) { io.github.alexcorrea2001lemon.nummia.ui.tiendas.CategoriasScreen(hiltViewModel()) { nav.popBackStack() } }
     pantalla(Rutas.PRESUPUESTOS) { io.github.alexcorrea2001lemon.nummia.ui.presupuestos.PresupuestosScreen(hiltViewModel()) { nav.popBackStack() } }
-    pantalla(Rutas.PAGOS) { io.github.alexcorrea2001lemon.nummia.ui.pagos.PagosScreen(hiltViewModel()) { nav.popBackStack() } }
+    pantalla(Rutas.PAGOS) { io.github.alexcorrea2001lemon.nummia.ui.pagos.PagosScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
     pantalla(Rutas.PAPELERA) { io.github.alexcorrea2001lemon.nummia.ui.papelera.PapeleraScreen(hiltViewModel(), snackbar) { nav.popBackStack() } }
     pantalla(Rutas.IMPORTAR) {
         io.github.alexcorrea2001lemon.nummia.ui.importar.ImportarScreen(hiltViewModel(), { nav.popBackStack() }) { irAPestana(nav, Rutas.INICIO) }

@@ -1,6 +1,10 @@
 package io.github.alexcorrea2001lemon.nummia.ui.pagos
 
 import androidx.compose.material3.SegmentedButton
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -99,132 +103,161 @@ private val MES_CORTO = DateTimeFormatter.ofPattern("MMM", java.util.Locale.forL
 private val FECHA_COBRO = DateTimeFormatter.ofPattern("d MMM", java.util.Locale.forLanguageTag("es-ES"))
 private fun frecuencia(n: Int) = when (n) { 1 -> "cada mes"; 3 -> "cada 3 meses"; 12 -> "cada año"; else -> "cada $n meses" }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
+fun PagosScreen(vm: PagosViewModel, snackbar: androidx.compose.material3.SnackbarHostState? = null, alVolver: () -> Unit) {
     val pagos by vm.pagos.collectAsStateWithLifecycle()
     val c = LocalColoresNummia.current
+    val alcance = androidx.compose.runtime.rememberCoroutineScope()
     var editando by remember { mutableStateOf<PagoMensualEntity?>(null) }
     var creando by remember { mutableStateOf(false) }
-    var abierto by remember { mutableStateOf<String?>(null) }
+    var abiertoPago by remember { mutableStateOf<PagoMensualEntity?>(null) }
+    var pestana by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
 
     val cobros by vm.cobros.collectAsStateWithLifecycle()
     var editandoCobro by remember { mutableStateOf<IngresoFijoEntity?>(null) }
     var creandoCobro by remember { mutableStateOf(false) }
+    var abiertoCobro by remember { mutableStateOf<IngresoFijoEntity?>(null) }
+    val hoy = remember { vm.hoy() }
+    val tnum = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")
+    fun proximo(p: PagoMensualEntity) = io.github.alexcorrea2001lemon.nummia.domain.calculo.proximoCobro(p.dia, p.cadaMeses, p.mesDesde, hoy)
+    fun fecha(f: java.time.LocalDate) = FECHA_COBRO.format(f).removeSuffix(".") + if (f.year != hoy.year) " ${f.year}" else ""
+
+    fun borrarPago(p: PagoMensualEntity) {
+        vm.borrar(p)
+        snackbar?.let { sb -> alcance.launch {
+            val r = sb.showSnackbar("Has borrado «${p.concepto}»", actionLabel = "Deshacer", duration = androidx.compose.material3.SnackbarDuration.Long)
+            if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) vm.guardar(p)
+        } }
+    }
+    fun borrarCobro(f: IngresoFijoEntity) {
+        vm.borrarCobro(f)
+        snackbar?.let { sb -> alcance.launch {
+            val r = sb.showSnackbar("Has borrado «${f.concepto}»", actionLabel = "Deshacer", duration = androidx.compose.material3.SnackbarDuration.Long)
+            if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) vm.guardarCobro(f)
+        } }
+    }
 
     PantallaAjustes("Pagos y cobros fijos", alVolver) {
-        Text("Pagos y suscripciones", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         val lista = pagos.orEmpty()
-        if (pagos != null && lista.isEmpty()) {
-            Tarjeta {
-                EstadoVacio(
-                    Iconos.Repetir, "Sin pagos fijos",
-                    "Gimnasio, móvil, suscripciones, el seguro del coche… Cada mes, cada 3 meses o cada año: aparecerán en Inicio para confirmarlos con un toque, aunque el precio cambie.",
-                    accion = "Añadir pago", alPulsar = { creando = true },
-                )
-            }
-            Text("También puedes activar «Se paga cada mes» al apuntar un gasto.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-        } else if (lista.isNotEmpty()) {
-            val activos = lista.filter { it.activo }
-            val alAnio = activos.sumOf { io.github.alexcorrea2001lemon.nummia.domain.calculo.costeAnual(it.importe, it.cadaMeses) }
-            Tarjeta {
-                Text("Te cuestan al año", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
-                Text(formatearEuros(alAnio), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Text("${formatearEuros(alAnio / 12)} al mes de media · ${activos.size} pagos activos", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-            }
-            Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
-                lista.forEachIndexed { n, p ->
-                    if (n > 0) HorizontalDivider(color = c.borde)
-                    Column(Modifier.fillMaxWidth().clickable { abierto = if (abierto == p.id) null else p.id }.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(p.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = if (p.activo) MaterialTheme.colorScheme.onSurface else c.textoSuave)
-                                val hoy = remember { vm.hoy() }
-                                val proximo = remember(p) { io.github.alexcorrea2001lemon.nummia.domain.calculo.proximoCobro(p.dia, p.cadaMeses, p.mesDesde, hoy) }
-                                Text(
-                                    "${formatearEuros(p.importe)} · ${frecuencia(p.cadaMeses)}" +
-                                        if (p.activo) " · próximo: ${FECHA_COBRO.format(proximo).removeSuffix(".")}${if (proximo.year != hoy.year) " ${proximo.year}" else ""}" else " · en pausa",
-                                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
-                                )
-                                if (p.cadaMeses > 1) Text("${formatearEuros(io.github.alexcorrea2001lemon.nummia.domain.calculo.costeAnual(p.importe, p.cadaMeses))} al año", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-                            }
-                            Switch(checked = p.activo, onCheckedChange = { vm.guardar(p.copy(activo = it)) })
-                        }
-                        AnimatedVisibility(abierto == p.id) {
-                            val flujo = remember(p.id) { vm.historial(p.id) }
-                            val hist by flujo.collectAsStateWithLifecycle(emptyList())
-                            Column(Modifier.padding(top = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
-                                Text("Lo que has pagado", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
-                                if (hist.isEmpty()) Text("Aún no hay pagos confirmados.", style = MaterialTheme.typography.bodySmall)
-                                hist.take(12).forEach { g ->
-                                    Row {
-                                        Text(MES.format(g.fecha), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                        Text(formatearEuros(g.importe), style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                                    TextButton(onClick = { editando = p }) { Text("Editar") }
-                                    TextButton(onClick = { vm.borrar(p) }) { Text("Borrar", color = c.gasto) }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            TextButton(onClick = { creando = true }) { Text("+ Añadir pago") }
-        }
-
-        // ---------- Cobros: lo que entra cada mes ----------
-        Text("Cobros", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = Espacio.m))
         val listaCobros = cobros.orEmpty()
-        if (cobros != null && listaCobros.isEmpty()) {
-            Tarjeta {
-                Text("Lo que cobras cada mes", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                Text(
-                    "Un alquiler, una pensión, una paga… Cada mes aparecerá en Inicio para confirmarlo con un toque. También puedes activar «Se cobra cada mes» al apuntar un ingreso.",
-                    style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
-                )
-                TextButton(onClick = { creandoCobro = true }) { Text("+ Añadir cobro") }
+        androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            listOf("Pagos · ${lista.size}", "Cobros · ${listaCobros.size}").forEachIndexed { i, t ->
+                SegmentedButton(
+                    selected = pestana == i, onClick = { pestana = i },
+                    shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(i, 2),
+                ) { Text(t) }
             }
-        } else if (listaCobros.isNotEmpty()) {
-            val activos = listaCobros.filter { it.activo }
-            Tarjeta {
-                Text("Al mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
-                Text(formatearEuros(activos.sumOf { it.importe }, conSigno = true), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = c.ingreso)
-                Text("${activos.size} cobros activos", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-            }
-            Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
-                listaCobros.forEachIndexed { n, f ->
-                    if (n > 0) HorizontalDivider(color = c.borde)
-                    Column(Modifier.fillMaxWidth().clickable { abierto = if (abierto == f.id) null else f.id }.padding(horizontal = Espacio.l, vertical = Espacio.m)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(f.concepto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = if (f.activo) MaterialTheme.colorScheme.onSurface else c.textoSuave)
-                                Text("${formatearEuros(f.importe)} · día ${f.dia}${if (f.activo) "" else " · en pausa"}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-                            }
-                            Switch(checked = f.activo, onCheckedChange = { vm.guardarCobro(f.copy(activo = it)) })
+        }
+        androidx.compose.animation.AnimatedContent(pestana, label = "pestaña") { p ->
+            Column(verticalArrangement = Arrangement.spacedBy(Espacio.l)) {
+                if (p == 0) {
+                    if (pagos != null && lista.isEmpty()) {
+                        Tarjeta {
+                            EstadoVacio(
+                                Iconos.Repetir, "Sin pagos fijos",
+                                "Suscripciones, gimnasio, seguros… Aparecerán en Inicio para confirmarlos con un toque.",
+                                accion = "Añadir pago", alPulsar = { creando = true },
+                            )
                         }
-                        AnimatedVisibility(abierto == f.id) {
-                            val flujo = remember(f.id) { vm.historialCobro(f.id) }
-                            val hist by flujo.collectAsStateWithLifecycle(emptyList())
-                            Column(Modifier.padding(top = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
-                                Text("Lo que has cobrado", style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
-                                if (hist.isEmpty()) Text("Aún no hay cobros confirmados.", style = MaterialTheme.typography.bodySmall)
-                                hist.take(12).forEach { i ->
-                                    Row {
-                                        Text(MES.format(i.fecha), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                        Text(formatearEuros(i.importe), style = MaterialTheme.typography.bodyMedium)
+                    } else if (lista.isNotEmpty()) {
+                        val activos = lista.filter { it.activo }
+                        val alAnio = activos.sumOf { io.github.alexcorrea2001lemon.nummia.domain.calculo.costeAnual(it.importe, it.cadaMeses) }
+                        val siguiente = activos.minByOrNull { proximo(it) }
+                        Tarjeta(fondo = c.heroe) {
+                            Text("Te cuestan al año", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+                            Text(formatearEuros(alAnio), style = MaterialTheme.typography.headlineMedium.merge(tnum), fontWeight = FontWeight.Bold)
+                            Text("${formatearEuros(alAnio / 12)} al mes de media", style = MaterialTheme.typography.bodySmall.merge(tnum), color = c.textoSuave)
+                            if (siguiente != null) {
+                                androidx.compose.material3.Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)) {
+                                    Row(Modifier.fillMaxWidth().padding(Espacio.m), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                                        Icon(Iconos.Calendario, null, tint = MaterialTheme.colorScheme.primary)
+                                        Text("Próximo: ${siguiente.concepto}, el ${fecha(proximo(siguiente))}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                        Text(formatearEuros(siguiente.importe), style = MaterialTheme.typography.bodyMedium.merge(tnum), fontWeight = FontWeight.SemiBold)
                                     }
                                 }
-                                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                                    TextButton(onClick = { editandoCobro = f }) { Text("Editar") }
-                                    TextButton(onClick = { vm.borrarCobro(f) }) { Text("Borrar", color = c.gasto) }
-                                }
                             }
+                        }
+                        Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
+                            lista.forEach { pg ->
+                                FilaFija(
+                                    pg.concepto,
+                                    "${formatearEuros(pg.importe)} · ${frecuencia(pg.cadaMeses)} · " + if (pg.activo) fecha(proximo(pg)) else "en pausa",
+                                    pg.activo, alCambiar = { vm.guardar(pg.copy(activo = it)) },
+                                ) { abiertoPago = pg }
+                                HorizontalDivider(color = c.borde)
+                            }
+                            FilaAnadir("Añadir pago") { creando = true }
+                        }
+                        Text("Toca un pago para ver su historial, editarlo o borrarlo.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave, modifier = Modifier.padding(horizontal = Espacio.s))
+                    }
+                } else {
+                    if (cobros != null && listaCobros.isEmpty()) {
+                        Tarjeta {
+                            EstadoVacio(
+                                Iconos.Euro, "Sin cobros fijos",
+                                "Un alquiler, una pensión, una paga… Aparecerán en Inicio para confirmarlos con un toque.",
+                                accion = "Añadir cobro", alPulsar = { creandoCobro = true },
+                            )
+                        }
+                    } else if (listaCobros.isNotEmpty()) {
+                        val activos = listaCobros.filter { it.activo }
+                        Tarjeta(fondo = c.heroe) {
+                            Text("Cobras al mes", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
+                            Text(formatearEuros(activos.sumOf { it.importe }, conSigno = true), style = MaterialTheme.typography.headlineMedium.merge(tnum), fontWeight = FontWeight.Bold, color = c.ingreso)
+                            Text(if (activos.size == 1) "1 cobro activo" else "${activos.size} cobros activos", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                        }
+                        Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
+                            listaCobros.forEach { f ->
+                                FilaFija(f.concepto, "${formatearEuros(f.importe)} · día ${f.dia}${if (f.activo) "" else " · en pausa"}", f.activo, alCambiar = { vm.guardarCobro(f.copy(activo = it)) }) { abiertoCobro = f }
+                                HorizontalDivider(color = c.borde)
+                            }
+                            FilaAnadir("Añadir cobro") { creandoCobro = true }
                         }
                     }
                 }
             }
-            TextButton(onClick = { creandoCobro = true }) { Text("+ Añadir cobro") }
+        }
+    }
+
+    abiertoPago?.let { abierto ->
+        val pg = pagos.orEmpty().firstOrNull { it.id == abierto.id } ?: abierto
+        val flujo = remember(pg.id) { vm.historial(pg.id) }
+        val hist by flujo.collectAsStateWithLifecycle(emptyList())
+        val cerrar = { abiertoPago = null }
+        io.github.alexcorrea2001lemon.nummia.ui.comun.PanelNummia(alCerrar = cerrar) {
+            io.github.alexcorrea2001lemon.nummia.ui.comun.CabeceraPanel(
+                { io.github.alexcorrea2001lemon.nummia.ui.comun.AvatarIniciales(pg.concepto.trim().take(1).uppercase().ifEmpty { "?" }, tam = 52.dp) },
+                pg.concepto, "${formatearEuros(pg.importe)} ${frecuencia(pg.cadaMeses)} · día ${pg.dia}",
+            )
+            io.github.alexcorrea2001lemon.nummia.ui.comun.DatosPanel(
+                "Próximo" to if (pg.activo) fecha(proximo(pg)) else "En pausa",
+                "Al año" to formatearEuros(io.github.alexcorrea2001lemon.nummia.domain.calculo.costeAnual(pg.importe, pg.cadaMeses)),
+                "Pagado" to formatearEuros(hist.sumOf { it.importe }),
+            )
+            HistorialFijo("Lo que has pagado", hist.map { it.fecha to it.importe }, "Aún no hay pagos confirmados.")
+            BotonesFijo(pg.activo, alEditar = { cerrar(); editando = pg }, alPausar = { vm.guardar(pg.copy(activo = !pg.activo)) })
+            io.github.alexcorrea2001lemon.nummia.ui.comun.AccionPanel(Iconos.Papelera, "Borrar pago", color = MaterialTheme.colorScheme.error) { cerrar(); borrarPago(pg) }
+        }
+    }
+    abiertoCobro?.let { abierto ->
+        val f = cobros.orEmpty().firstOrNull { it.id == abierto.id } ?: abierto
+        val flujo = remember(f.id) { vm.historialCobro(f.id) }
+        val hist by flujo.collectAsStateWithLifecycle(emptyList())
+        val cerrar = { abiertoCobro = null }
+        io.github.alexcorrea2001lemon.nummia.ui.comun.PanelNummia(alCerrar = cerrar) {
+            io.github.alexcorrea2001lemon.nummia.ui.comun.CabeceraPanel(
+                { io.github.alexcorrea2001lemon.nummia.ui.comun.AvatarIniciales(f.concepto.trim().take(1).uppercase().ifEmpty { "?" }, tam = 52.dp, fondo = c.ingresoFondo, color = c.ingreso) },
+                f.concepto, "${formatearEuros(f.importe)} cada mes · día ${f.dia}",
+            )
+            io.github.alexcorrea2001lemon.nummia.ui.comun.DatosPanel(
+                "Al mes" to formatearEuros(f.importe),
+                "Al año" to formatearEuros(f.importe * 12),
+                "Cobrado" to formatearEuros(hist.sumOf { it.importe }),
+            )
+            HistorialFijo("Lo que has cobrado", hist.map { it.fecha to it.importe }, "Aún no hay cobros confirmados.")
+            BotonesFijo(f.activo, alEditar = { cerrar(); editandoCobro = f }, alPausar = { vm.guardarCobro(f.copy(activo = !f.activo)) })
+            io.github.alexcorrea2001lemon.nummia.ui.comun.AccionPanel(Iconos.Papelera, "Borrar cobro", color = MaterialTheme.colorScheme.error) { cerrar(); borrarCobro(f) }
         }
     }
 
@@ -249,6 +282,70 @@ fun PagosScreen(vm: PagosViewModel, alVolver: () -> Unit) {
             )
             editando = null
         })
+    }
+}
+
+/** Fila de un pago o cobro fijo: se toca para ver el detalle; el interruptor lo pausa. */
+@Composable
+private fun FilaFija(titulo: String, detalle: String, activo: Boolean, alCambiar: (Boolean) -> Unit, alPulsar: () -> Unit) {
+    val c = LocalColoresNummia.current
+    Row(
+        Modifier.fillMaxWidth().clickable(onClickLabel = "Ver detalle", onClick = alPulsar).padding(start = Espacio.l, end = Espacio.m, top = Espacio.m, bottom = Espacio.m),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l),
+    ) {
+        io.github.alexcorrea2001lemon.nummia.ui.comun.AvatarIniciales(
+            titulo.trim().take(1).uppercase().ifEmpty { "?" },
+            fondo = if (activo) null else MaterialTheme.colorScheme.surfaceContainerHighest, color = if (activo) null else c.textoSuave,
+        )
+        Column(Modifier.weight(1f)) {
+            Text(titulo, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = if (activo) MaterialTheme.colorScheme.onSurface else c.textoSuave)
+            Text(detalle, style = MaterialTheme.typography.bodySmall.merge(androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")), color = c.textoSuave)
+        }
+        Switch(checked = activo, onCheckedChange = alCambiar, modifier = Modifier.semantics { contentDescription = if (activo) "Activo" else "En pausa" })
+    }
+}
+
+@Composable
+private fun FilaAnadir(texto: String, alPulsar: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = alPulsar).padding(horizontal = Espacio.l, vertical = Espacio.m),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l),
+    ) {
+        Box(
+            Modifier.size(40.dp).border(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Iconos.Mas, null, tint = MaterialTheme.colorScheme.primary) }
+        Text(texto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
+@Composable
+private fun HistorialFijo(titulo: String, filas: List<Pair<java.time.LocalDate, Long>>, vacio: String) {
+    val c = LocalColoresNummia.current
+    Column {
+        Text(titulo, style = MaterialTheme.typography.labelMedium, color = c.textoSuave)
+        if (filas.isEmpty()) Text(vacio, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = Espacio.s))
+        filas.take(8).forEachIndexed { n, (f, importe) ->
+            if (n > 0) HorizontalDivider(color = c.borde)
+            Row(Modifier.fillMaxWidth().padding(vertical = Espacio.s), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                Icon(Iconos.Check, null, tint = c.ingreso, modifier = Modifier.size(18.dp))
+                Text(io.github.alexcorrea2001lemon.nummia.ui.comun.fechaCorta(f), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text(formatearEuros(importe), style = MaterialTheme.typography.bodyMedium.merge(androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")))
+            }
+        }
+        if (filas.size > 8) Text("y ${filas.size - 8} más", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+    }
+}
+
+@Composable
+private fun BotonesFijo(activo: Boolean, alEditar: () -> Unit, alPausar: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+        Button(onClick = alEditar, modifier = Modifier.weight(1f).height(48.dp)) {
+            Icon(Iconos.Lapiz, null, modifier = Modifier.size(18.dp)); Text("  Editar")
+        }
+        androidx.compose.material3.OutlinedButton(onClick = alPausar, modifier = Modifier.weight(1f).height(48.dp)) {
+            Text(if (activo) "Pausar" else "Reanudar")
+        }
     }
 }
 

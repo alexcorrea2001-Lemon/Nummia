@@ -2,6 +2,9 @@ package io.github.alexcorrea2001lemon.nummia.ui.ajustes
 
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -170,27 +173,28 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
         }
 
         TituloAjustes("Letra")
-        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s), modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Max)) {
             TipoLetra.entries.forEach { l ->
-                val elegido = a.letra == l
                 val familia = when (l) { TipoLetra.SISTEMA -> FontFamily.Default; TipoLetra.SERIFA -> FontFamily.Serif; TipoLetra.MONO -> FontFamily.Monospace }
-                Surface(
-                    onClick = { vm.letra(l) }, shape = MaterialTheme.shapes.medium, color = if (elegido) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-                    border = BorderStroke(if (elegido) 2.dp else 1.dp, if (elegido) MaterialTheme.colorScheme.primary else c.borde),
-                    modifier = Modifier.weight(1f).semantics { selected = elegido; role = Role.RadioButton },
-                ) {
-                    Column(Modifier.padding(Espacio.m), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Aa", style = MaterialTheme.typography.headlineMedium.copy(fontFamily = familia), fontWeight = FontWeight.Bold)
-                        Text(l.nombre, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                    }
+                OpcionAparienciaTarjeta(a.letra == l, "Letra ${l.nombre}", Modifier.weight(1f).fillMaxHeight(), { vm.letra(l) }) {
+                    Text("Aa", style = MaterialTheme.typography.headlineMedium.copy(fontFamily = familia), fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(l.corto, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 }
             }
         }
         NotaAjuste(a.letra.descripcion)
 
         TituloAjustes("Tamaño del texto")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            TamanoTexto.entries.forEach { t -> FilterChip(selected = a.tamanoTexto == t, onClick = { vm.tamano(t) }, label = { Text(t.nombre) }) }
+        // Los cuatro tamaños en una sola fila; cada «Aa» se ve ya con su tamaño.
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s), modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Max)) {
+            TamanoTexto.entries.forEach { t ->
+                OpcionAparienciaTarjeta(a.tamanoTexto == t, "Tamaño ${t.nombre}", Modifier.weight(1f).fillMaxHeight(), { vm.tamano(t) }) {
+                    Box(Modifier.height(34.dp), contentAlignment = Alignment.Center) {
+                        Text("Aa", fontSize = (20 * t.escala).sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                    Text(t.nombre, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                }
+            }
         }
 
         TituloAjustes("Forma de las tarjetas")
@@ -320,5 +324,23 @@ private fun SelectorColores(
                 ) { if (fondoElegido) Icon(Iconos.Check, null, tint = Color.White, modifier = Modifier.size(18.dp)) }
             }
         }
+    }
+}
+
+/** Tarjeta de elección única (letra, tamaño): resalta la elegida y se anuncia como botón de opción. */
+@Composable
+private fun OpcionAparienciaTarjeta(elegido: Boolean, descripcion: String, modifier: Modifier, alPulsar: () -> Unit, contenido: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    val c = LocalColoresNummia.current
+    val fondo by androidx.compose.animation.animateColorAsState(if (elegido) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer, label = "fondo")
+    Surface(
+        onClick = alPulsar, shape = MaterialTheme.shapes.medium, color = fondo,
+        border = BorderStroke(if (elegido) 2.dp else 1.dp, if (elegido) MaterialTheme.colorScheme.primary else c.borde),
+        modifier = modifier.semantics { selected = elegido; role = Role.RadioButton; contentDescription = descripcion },
+    ) {
+        Column(
+            Modifier.padding(horizontal = Espacio.xs, vertical = Espacio.m).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+            content = contenido,
+        )
     }
 }

@@ -59,8 +59,8 @@ enum class TamanoTexto(val nombre: String, val escala: Float) {
 }
 
 /** Tipo de letra de toda la app. Son las familias que trae Android, sin añadir fuentes al APK. */
-enum class TipoLetra(val nombre: String, val descripcion: String) {
-    SISTEMA("Del sistema", "La de tu móvil"),
-    SERIFA("Con serifa", "Aire de libro de cuentas"),
-    MONO("Monoespaciada", "Cifras como en una caja registradora"),
+enum class TipoLetra(val nombre: String, val corto: String, val descripcion: String) {
+    SISTEMA("Del sistema", "Sistema", "La de tu móvil"),
+    SERIFA("Con serifa", "Serifa", "Aire de libro de cuentas"),
+    MONO("Monoespaciada", "Mono", "Cifras como en una caja registradora"),
 }

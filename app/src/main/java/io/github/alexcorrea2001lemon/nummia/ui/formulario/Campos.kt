@@ -50,6 +50,7 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.semantics.customActions
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos

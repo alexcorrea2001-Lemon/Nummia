@@ -20,6 +20,9 @@
         android:theme="@style/Theme.Nummia"
         tools:targetApi="34">
 
+        <!-- Descarga el lector de texto (OCR) junto con la app, para que escanear un ticket funcione sin esperas. -->
+        <meta-data android:name="com.google.mlkit.vision.DEPENDENCIES" android:value="ocr" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

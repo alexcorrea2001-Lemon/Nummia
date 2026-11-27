@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -69,6 +71,23 @@ fun FormularioGastoScreen(
     var nuevaPersona by rememberSaveable { mutableStateOf(false) }
     val c = LocalColoresNummia.current
     val hoy = remember { RelojSistema().hoy() }
+    val alcance = androidx.compose.runtime.rememberCoroutineScope()
+    val escaner = rememberEscanerTicket { r ->
+        when (r) {
+            is ResultadoEscaneo.Texto -> alcance.launch {
+                val t = vm.aplicarTicket(r.texto)
+                snackbar.showSnackbar(
+                    when {
+                        t.vacio -> "No he podido leer el ticket. Prueba con más luz o apúntalo a mano."
+                        t.importe == null -> "Ticket leído, pero no he encontrado el importe: escríbelo tú."
+                        else -> "Ticket leído. Revisa el importe, la tienda y la fecha antes de guardar."
+                    },
+                )
+            }
+            is ResultadoEscaneo.Error -> alcance.launch { snackbar.showSnackbar(r.motivo) }
+            ResultadoEscaneo.Cancelado -> Unit
+        }
+    }
 
     LaunchedEffect(Unit) { if (!f.editando) runCatching { foco.requestFocus() } }
     LaunchedEffect(Unit) {
@@ -103,6 +122,17 @@ fun FormularioGastoScreen(
             Modifier.fillMaxSize().padding(p).verticalScroll(rememberScrollState()).padding(horizontal = Espacio.l, vertical = Espacio.s),
             verticalArrangement = Arrangement.spacedBy(Espacio.l),
         ) {
+            if (!f.editando) {
+                OutlinedButton(onClick = escaner.abrir, enabled = !escaner.ocupado, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                    if (escaner.ocupado) {
+                        androidx.compose.material3.CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text("  Leyendo el ticket…")
+                    } else {
+                        Icon(Iconos.Camara, null, Modifier.size(20.dp))
+                        Text("  Escanear ticket")
+                    }
+                }
+            }
             CampoImporteGrande(f.importe, vm::importe, f.errorImporte, foco) { runCatching { focoConcepto.requestFocus() } }
 
             OutlinedTextField(

@@ -127,6 +127,9 @@ dependencies {
     implementation(libs.biometric)
     implementation(libs.profileinstaller)
     implementation(libs.play.services.auth)
+    // Escanear tickets: escáner de documentos y reconocimiento de texto de Google Play Services (se hacen en el móvil y no pesan en el APK).
+    implementation(libs.mlkit.escaner)
+    implementation(libs.mlkit.texto)
     implementation(libs.kotlinx.coroutines.play.services)
 
     testImplementation(libs.junit)

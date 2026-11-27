@@ -24,6 +24,8 @@ androidxTestCore = "1.6.1"
 androidxTestExt = "1.2.1"
 splashscreen = "1.0.1"
 playAuth = "21.2.0"
+mlkitEscaner = "16.0.0"
+mlkitTexto = "19.0.1"
 biometric = "1.1.0"
 profileinstaller = "1.4.1"
 
@@ -69,6 +71,8 @@ room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playAuth" }
+mlkit-escaner = { module = "com.google.android.gms:play-services-mlkit-document-scanner", version.ref = "mlkitEscaner" }
+mlkit-texto = { module = "com.google.android.gms:play-services-mlkit-text-recognition", version.ref = "mlkitTexto" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 

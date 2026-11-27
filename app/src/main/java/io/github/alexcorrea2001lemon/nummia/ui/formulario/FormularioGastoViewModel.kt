@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -109,6 +110,25 @@ class FormularioGastoViewModel @Inject constructor(
             val sugerida = repo.categoriaHabitual(v)
             if (sugerida != null && _form.value.tienda == v && _form.value.categoriaId == null) _form.update { it.copy(categoriaId = sugerida) }
         }
+    }
+
+    /**
+     * Rellena el formulario con lo leído de un ticket (solo lo que se ha encontrado) y devuelve lo leído,
+     * para avisar de lo que falte. Todo queda editable: la persona lo revisa antes de guardar.
+     */
+    suspend fun aplicarTicket(texto: String): io.github.alexcorrea2001lemon.nummia.domain.ticket.TicketLeido {
+        val conocidas = repo.tiendas().first().map { it.nombre }
+        val t = io.github.alexcorrea2001lemon.nummia.domain.ticket.leerTicket(texto, reloj.hoy(), conocidas)
+        _form.update { f ->
+            f.copy(
+                importe = t.importe?.let(::textoImporte) ?: f.importe,
+                fecha = t.fecha ?: f.fecha,
+                concepto = if (f.concepto.isBlank() && !t.vacio) "Compra" else f.concepto,
+                errorImporte = null, errorConcepto = null,
+            )
+        }
+        t.tienda?.let { tienda(it) }
+        return t
     }
 
     fun nuevaPersona(nombre: String) = viewModelScope.launch {

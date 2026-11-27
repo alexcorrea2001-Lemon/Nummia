@@ -49,6 +49,7 @@ object Iconos {
     val ChevronDer by lazy { trazo("chevron_der", "M9 6l6 6-6 6", grosor = 2f) }
     val Duplicar by lazy { trazo("duplicar", "M8 8h12v12H8zM4 16V4h12") }
     val Check by lazy { trazo("check", "M5 12l5 5L20 7", grosor = 2.2f) }
+    val Camara by lazy { trazo("camara", "M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1zM12 10.5a3.5 3.5 0 1 1 0 7a3.5 3.5 0 1 1 0-7z") }
     val Descargar by lazy { trazo("descargar", "M12 4v12M6 10l6 6 6-6M4 20h16") }
     val Subir by lazy { trazo("subir", "M12 16V4M6 10l6-6 6 6M4 20h16") }
     val Info by lazy { trazo("info", "M12 3a9 9 0 1 1 0 18a9 9 0 1 1 0-18zM12 11v6M12 7.5v.5") }

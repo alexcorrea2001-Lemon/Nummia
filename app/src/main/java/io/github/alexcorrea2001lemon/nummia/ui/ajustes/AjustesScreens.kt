@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -104,16 +106,18 @@ private data class EntradaAjuste(
 fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Unit) {
     val a by vm.ajustes.collectAsStateWithLifecycle()
     val personas by vm.personas.collectAsStateWithLifecycle()
+    val numTiendas by vm.numTiendas.collectAsStateWithLifecycle()
+    val pagosAlMes by vm.pagosAlMes.collectAsStateWithLifecycle()
     var buscar by rememberSaveable { mutableStateOf("") }
     val R = io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas
     val entradas = listOf(
         EntradaAjuste("Tus datos", Iconos.Nube, "Tu Drive", "Sincroniza con Google Drive y guarda copias de seguridad", R.DRIVE, "google sincronizar copia nube hoja excel"),
         EntradaAjuste("Tus datos", Iconos.Descargar, "Datos", "Importar Excel, exportar a CSV, papelera y copia en archivo", R.DATOS, "importar exportar excel csv papelera borrado restaurar copia archivo"),
         EntradaAjuste("Dinero", Iconos.Euro, "Sueldo", a.sueldoHabitual?.let { "Habitual: ${formatearEuros(it)} · se cobra a final de mes" } ?: "Sin configurar", R.SUELDO, "nomina salario ingreso"),
-        EntradaAjuste("Dinero", Iconos.Repetir, "Pagos y cobros fijos", "Suscripciones, gimnasio, lo que cobras cada mes…", R.PAGOS, "suscripcion recibo cada mes fijo pagos mensuales ingreso cobro"),
+        EntradaAjuste("Dinero", Iconos.Repetir, "Pagos y cobros fijos", pagosAlMes?.takeIf { it.first > 0 }?.let { (n, mes) -> "${if (n == 1) "1 pago" else "$n pagos"} · ${formatearEuros(mes)} al mes" } ?: "Suscripciones, gimnasio, lo que cobras cada mes…", R.PAGOS, "suscripcion recibo cada mes fijo pagos mensuales ingreso cobro"),
         EntradaAjuste("Dinero", Iconos.Estadisticas, "Presupuestos", "Límites de gasto al mes", R.PRESUPUESTOS, "limite tope ahorro"),
         EntradaAjuste("Dinero", Iconos.Persona, "Personas", when (personas.size) { 0 -> "Quién te devuelve el dinero"; 1 -> "1 persona · quién te devuelve el dinero"; else -> "${personas.size} personas · quién te devuelve el dinero" }, R.PERSONAS, "deben deuda devolver amigos familia"),
-        EntradaAjuste("Dinero", Iconos.Bolsa, "Tiendas", "Unir nombres repetidos o cambiarlos", R.TIENDAS, "comercio lugar duplicados unir"),
+        EntradaAjuste("Dinero", Iconos.Bolsa, "Tiendas", numTiendas?.takeIf { it > 0 }?.let { "${if (it == 1) "1 tienda" else "$it tiendas"} · buscar, unir y renombrar" } ?: "Unir nombres repetidos o cambiarlos", R.TIENDAS, "comercio lugar duplicados unir"),
         EntradaAjuste("Dinero", Iconos.Filtro, "Categorías", "Crear, renombrar, iconos y colores", R.CATEGORIAS, "tipo grupo icono color"),
         EntradaAjuste("Aspecto", Iconos.Paleta, "Apariencia", "${a.tema.nombre} · ${nombreColor(a)} · letra ${a.letra.nombre.lowercase()}", R.APARIENCIA, "oscuro claro amoled color icono letra tamaño tema"),
         EntradaAjuste("Seguridad y avisos", Iconos.Escudo, "Seguridad", if (a.bloqueo) "Bloqueo activado · pide la huella tras ${a.bloqueoTras.nombre.lowercase()}" else "Bloqueo con huella o PIN · modo discreto", R.SEGURIDAD, "huella pin bloqueo discreto ocultar privacidad"),
@@ -127,7 +131,7 @@ fun AjustesScreen(vm: AjustesViewModel, alVolver: () -> Unit, ir: (String) -> Un
                 Button(onClick = { ir(R.ACERCA) }) { Text("Ver la actualización") }
             }
         }
-        if (buscar.isBlank()) ResumenAjustes(a)
+        if (buscar.isBlank()) ResumenAjustes(a, alDiscreto = { vm.discreto(!a.modoDiscreto) }, ir = ir)
         // Buscador: escribe «drive», «huella», «presupuesto»…
         androidx.compose.material3.TextField(
             value = buscar, onValueChange = { buscar = it }, singleLine = true,
@@ -647,11 +651,14 @@ private fun nombreColor(a: io.github.alexcorrea2001lemon.nummia.data.ajustes.Aju
     ModoAcento.FONDO_PANTALLA -> "color del fondo"
 }
 
-/** Cómo está Nummia de un vistazo: icono, versión y qué protecciones y avisos hay activos. */
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * Cómo está Nummia de un vistazo: icono, versión y tres botones.
+ * «Importes» oculta o muestra las cifras al momento; «Bloqueo» y «Avisos» abren su pantalla.
+ */
 @Composable
-private fun ResumenAjustes(a: io.github.alexcorrea2001lemon.nummia.data.ajustes.Ajustes) {
+private fun ResumenAjustes(a: io.github.alexcorrea2001lemon.nummia.data.ajustes.Ajustes, alDiscreto: () -> Unit, ir: (String) -> Unit) {
     val c = LocalColoresNummia.current
+    val R = io.github.alexcorrea2001lemon.nummia.ui.nav.Rutas
     Tarjeta(fondo = c.heroe) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l)) {
             ImagenLogo(a.iconoLogo, a.iconoColor, Modifier.size(56.dp))
@@ -660,25 +667,50 @@ private fun ResumenAjustes(a: io.github.alexcorrea2001lemon.nummia.data.ajustes.
                 Text("Versión ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
             }
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.s)) {
-            EstadoAjuste(Iconos.Escudo, if (a.bloqueo) "Bloqueo activado" else "Sin bloqueo", a.bloqueo)
-            EstadoAjuste(if (a.modoDiscreto) Iconos.OjoTachado else Iconos.Ojo, if (a.modoDiscreto) "Importes ocultos" else "Importes visibles", a.modoDiscreto)
-            EstadoAjuste(Iconos.Info, if (a.notificaciones) "Avisos activados" else "Sin avisos", a.notificaciones)
+        Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s), modifier = Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min)) {
+            BotonEstado(Iconos.Escudo, "Bloqueo", if (a.bloqueo) "Activado" else "Desactivado", a.bloqueo, conFlecha = true) { ir(R.SEGURIDAD) }
+            BotonEstado(
+                if (a.modoDiscreto) Iconos.OjoTachado else Iconos.Ojo, "Importes", if (a.modoDiscreto) "Ocultos" else "Visibles", a.modoDiscreto,
+                interruptor = true, alPulsar = alDiscreto,
+            )
+            BotonEstado(Iconos.Info, "Avisos", if (a.notificaciones) "Activados" else "Desactivados", a.notificaciones, conFlecha = true) { ir(R.NOTIFICACIONES) }
         }
     }
 }
 
 @Composable
-private fun EstadoAjuste(icono: androidx.compose.ui.graphics.vector.ImageVector, texto: String, activo: Boolean) {
+private fun androidx.compose.foundation.layout.RowScope.BotonEstado(
+    icono: androidx.compose.ui.graphics.vector.ImageVector, titulo: String, estado: String, activo: Boolean,
+    conFlecha: Boolean = false, interruptor: Boolean = false, alPulsar: () -> Unit,
+) {
     val c = LocalColoresNummia.current
+    val fondo by androidx.compose.animation.animateColorAsState(
+        if (activo) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh, label = "fondo",
+    )
+    val texto = if (activo) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
     Surface(
-        shape = RoundedCornerShape(50),
-        color = if (activo) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = if (activo) MaterialTheme.colorScheme.onPrimaryContainer else c.textoSuave,
+        shape = MaterialTheme.shapes.large, color = fondo, contentColor = texto,
+        modifier = Modifier.weight(1f).fillMaxHeight().clip(MaterialTheme.shapes.large)
+            .let {
+                if (interruptor) it.toggleable(value = activo, role = Role.Switch, onValueChange = { alPulsar() })
+                else it.clickable(role = Role.Button, onClick = alPulsar)
+            }
+            .semantics(mergeDescendants = true) { contentDescription = "$titulo: $estado" },
     ) {
-        Row(Modifier.padding(horizontal = Espacio.m, vertical = Espacio.s), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.xs)) {
-            Icon(icono, null, Modifier.size(16.dp))
-            Text(texto, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        Column(Modifier.padding(Espacio.m), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icono, null, Modifier.size(20.dp), tint = if (activo) texto else c.textoSuave)
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                if (interruptor) {
+                    // Mini interruptor: se ve que este botón cambia algo al momento.
+                    val x by androidx.compose.animation.core.animateDpAsState(if (activo) 12.dp else 0.dp, label = "x")
+                    Box(Modifier.size(28.dp, 16.dp).clip(CircleShape).background(if (activo) MaterialTheme.colorScheme.primary else c.textoSuave.copy(alpha = 0.4f))) {
+                        Box(Modifier.padding(start = 2.dp + x, top = 2.dp).size(12.dp).clip(CircleShape).background(if (activo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.surface))
+                    }
+                }
+            }
+            Text(titulo, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+            Text(estado + if (conFlecha) " ›" else "", style = MaterialTheme.typography.labelSmall, color = if (activo) texto else c.textoSuave, maxLines = 1)
         }
     }
 }

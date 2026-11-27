@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,6 +39,12 @@ class AjustesViewModel @Inject constructor(
 ) : ViewModel() {
     val ajustes: StateFlow<Ajustes> = ajustesRepo.ajustes.stateIn(viewModelScope, SharingStarted.Eagerly, Ajustes())
     val personas: StateFlow<List<PersonaEntity>> = repo.personas().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    /** Para la portada de Ajustes: cuántas tiendas hay y cuánto cuestan al mes los pagos fijos activos. */
+    val numTiendas: StateFlow<Int?> = repo.tiendas().map { it.size }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val pagosAlMes: StateFlow<Pair<Int, Long>?> = repo.pagos().map { l ->
+        val activos = l.filter { it.activo }
+        activos.size to activos.sumOf { io.github.alexcorrea2001lemon.nummia.domain.calculo.costeAnual(it.importe, it.cadaMeses) } / 12
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun tema(t: Tema) = viewModelScope.launch { ajustesRepo.tema(t) }
     fun acento(a: Acento) = viewModelScope.launch { ajustesRepo.acento(a) }

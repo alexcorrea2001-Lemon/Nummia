@@ -48,6 +48,10 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.semantics.customActions
 import io.github.alexcorrea2001lemon.nummia.ui.comun.Iconos
 import io.github.alexcorrea2001lemon.nummia.ui.comun.fechaCorta
 import io.github.alexcorrea2001lemon.nummia.ui.theme.Espacio
@@ -60,6 +64,7 @@ import java.time.ZoneOffset
 /**
  * Importe grande, centrado, con el teclado propio de Nummia: números, coma, sumas y restas
  * («12+3,50»). Se abre solo al empezar y al tocar el importe; «Listo» lo cierra.
+ * Tocar una cifra coloca ahí el cursor para cambiarla sin borrar lo de detrás.
  */
 @Composable
 fun CampoImporteGrande(
@@ -68,8 +73,12 @@ fun CampoImporteGrande(
 ) {
     val c = LocalColoresNummia.current
     var abierto by rememberSaveable { mutableStateOf(valor.isEmpty()) }
+    // null = al final (lo normal). Solo cambia al tocar una cifra.
+    var cursor by remember { mutableStateOf<Int?>(null) }
+    var disposicion by remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
+    val pos = cursor?.coerceIn(0, valor.length) ?: valor.length
     val gestor = androidx.compose.ui.platform.LocalFocusManager.current
-    LaunchedEffect(valor.isEmpty()) { if (valor.isEmpty()) abierto = true } // tras «Guardar y otro»
+    LaunchedEffect(valor.isEmpty()) { if (valor.isEmpty()) { abierto = true; cursor = null } } // tras «Guardar y otro»
     // Si se abre el teclado del móvil (al escribir el concepto), el nuestro se cierra: nunca los dos a la vez.
     val tecladoMovil = WindowInsets.isImeVisible
     LaunchedEffect(tecladoMovil) { if (tecladoMovil) abierto = false }
@@ -78,13 +87,33 @@ fun CampoImporteGrande(
             io.github.alexcorrea2001lemon.nummia.domain.dinero.leerImporteOperacion(valor).getOrNull()
         } else null
     }
+    // Cursor que parpadea; quieto si la persona ha quitado las animaciones.
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val animar = remember { android.provider.Settings.Global.getFloat(ctx.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f }
+    val parpadeo = if (animar) {
+        androidx.compose.animation.core.rememberInfiniteTransition(label = "cursor").animateFloat(
+            1f, 0f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(530), androidx.compose.animation.core.RepeatMode.Reverse), label = "cursor",
+        )
+    } else remember { mutableStateOf(1f) }
+    val colorCursor = MaterialTheme.colorScheme.primary
+    fun mover(n: Int): Boolean {
+        val nuevo = (pos + n).coerceIn(0, valor.length)
+        cursor = if (nuevo == valor.length) null else nuevo
+        return true
+    }
     Column(Modifier.fillMaxWidth().padding(vertical = Espacio.s), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(etiqueta, style = MaterialTheme.typography.bodyMedium, color = c.textoSuave)
         Row(
             Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium)
-                .clickable { gestor.clearFocus(); abierto = true }
+                .clickable { gestor.clearFocus(); cursor = null; abierto = true }
                 .focusRequester(foco).focusable()
-                .semantics { contentDescription = "$etiqueta: ${valor.ifEmpty { "vacío" }}. Toca para escribir" }
+                .semantics {
+                    contentDescription = "$etiqueta: ${valor.ifEmpty { "vacío" }}. Toca una cifra para cambiarla"
+                    customActions = listOf(
+                        androidx.compose.ui.semantics.CustomAccessibilityAction("Mover el cursor a la izquierda") { mover(-1) },
+                        androidx.compose.ui.semantics.CustomAccessibilityAction("Mover el cursor a la derecha") { mover(1) },
+                    )
+                }
                 .padding(vertical = Espacio.s),
             horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -92,6 +121,29 @@ fun CampoImporteGrande(
                 valor.ifEmpty { "0,00" }, fontSize = if (valor.length > 9) 36.sp else 48.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                 color = if (valor.isEmpty()) c.textoSuave.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
                 style = TextStyle(fontFeatureSettings = "tnum"),
+                onTextLayout = { disposicion = it },
+                modifier = Modifier
+                    .pointerInput(valor) {
+                        detectTapGestures { punto ->
+                            gestor.clearFocus()
+                            val d = disposicion
+                            cursor = if (valor.isEmpty() || d == null) null else d.getOffsetForPosition(punto).let { if (it >= valor.length) null else it }
+                            abierto = true
+                        }
+                    }
+                    .drawWithContent {
+                        drawContent()
+                        val d = disposicion
+                        if (abierto && valor.isNotEmpty() && d != null && pos <= d.layoutInput.text.length) {
+                            val r = d.getCursorRect(pos)
+                            val ancho = 2.5.dp.toPx()
+                            drawRect(
+                                colorCursor.copy(alpha = parpadeo.value),
+                                topLeft = androidx.compose.ui.geometry.Offset((r.left - ancho / 2).coerceAtLeast(0f), r.top + r.height * 0.12f),
+                                size = androidx.compose.ui.geometry.Size(ancho, r.height * 0.76f),
+                            )
+                        }
+                    },
             )
             Text(" €", fontSize = 32.sp, fontWeight = FontWeight.SemiBold, color = c.textoSuave)
         }
@@ -100,31 +152,28 @@ fun CampoImporteGrande(
         }
         if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         androidx.compose.animation.AnimatedVisibility(abierto) {
-            TecladoImporte(valor, alCambiar) { abierto = false; alListo() }
+            TecladoImporte(
+                valor, pos,
+                alCambiar = { e -> cursor = if (e.cursor >= e.texto.length) null else e.cursor; alCambiar(e.texto) },
+            ) { abierto = false; cursor = null; alListo() }
         }
     }
 }
 
-/** Teclado numérico grande con + y −. */
+/** Teclado numérico grande con + y −. Escribe en la posición del [cursor]. */
 @Composable
-fun TecladoImporte(valor: String, alCambiar: (String) -> Unit, alListo: () -> Unit) {
+fun TecladoImporte(
+    valor: String, cursor: Int,
+    alCambiar: (io.github.alexcorrea2001lemon.nummia.domain.dinero.EdicionImporte) -> Unit, alListo: () -> Unit,
+) {
     val haptica = androidx.compose.ui.platform.LocalHapticFeedback.current
     val vibrar = io.github.alexcorrea2001lemon.nummia.ui.theme.LocalPreferenciasUi.current.vibracion
     fun pulsar(k: String) {
         if (vibrar) haptica.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-        val ultimo = valor.substringAfterLast('+').substringAfterLast('−')
-        val nuevo = when (k) {
-            "⌫" -> valor.dropLast(1)
-            "+", "−" -> when {
-                valor.isEmpty() -> valor
-                valor.last() == '+' || valor.last() == '−' -> valor.dropLast(1) + k
-                valor.last() == ',' -> valor.dropLast(1) + k
-                else -> valor + k
-            }
-            "," -> if (',' in ultimo) valor else valor + (if (ultimo.isEmpty()) "0," else ",")
-            else -> if (',' in ultimo && ultimo.substringAfter(',').length >= 2) valor else valor + k
-        }
-        if (nuevo.length <= 24) alCambiar(nuevo)
+        val teclas = if (k == "00") listOf("0", "0") else listOf(k)
+        var e = io.github.alexcorrea2001lemon.nummia.domain.dinero.EdicionImporte(valor, cursor)
+        teclas.forEach { e = io.github.alexcorrea2001lemon.nummia.domain.dinero.teclearImporte(e.texto, e.cursor, it) }
+        if (e.texto != valor || e.cursor != cursor) alCambiar(e)
     }
     val filas = listOf(listOf("7", "8", "9", "⌫"), listOf("4", "5", "6", "+"), listOf("1", "2", "3", "−"), listOf(",", "0", "00", "Listo"))
     Column(Modifier.fillMaxWidth().padding(top = Espacio.s), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
@@ -142,7 +191,7 @@ fun TecladoImporte(valor: String, alCambiar: (String) -> Unit, alListo: () -> Un
                                     else -> MaterialTheme.colorScheme.surfaceContainerHigh
                                 },
                             )
-                            .clickable { if (esListo) alListo() else if (k == "00") { pulsar("0"); pulsar("0") } else pulsar(k) }
+                            .clickable { if (esListo) alListo() else pulsar(k) }
                             .semantics {
                                 contentDescription = when (k) { "⌫" -> "Borrar"; "+" -> "Sumar"; "−" -> "Restar"; "," -> "Coma"; else -> k }
                             },

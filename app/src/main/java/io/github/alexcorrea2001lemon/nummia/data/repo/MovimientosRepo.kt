@@ -70,7 +70,8 @@ const val DIAS_PAPELERA = 30
 /** Clave para comparar tiendas: sin mayúsculas, tildes, espacios ni signos («Bono bús» = «bonobus»). */
 fun claveTienda(s: String): String = claveTexto(s).replace(Regex("[^a-z0-9ñ]"), "")
 
-data class TiendaResumen(val nombre: String, val veces: Int, val total: Long)
+/** Una tienda con cuántas veces se ha comprado, cuánto en total y la fecha del último gasto. */
+data class TiendaResumen(val nombre: String, val veces: Int, val total: Long, val ultima: java.time.LocalDate? = null)
 
 fun PresupuestoEntity.aLimite() = Limite(
     id, runCatching { Ambito.valueOf(ambito) }.getOrDefault(Ambito.TOTAL), ref, limite,
@@ -599,7 +600,7 @@ class MovimientosRepo @Inject constructor(
         gs.filter { it.gasto.estado == Estado.CONFIRMADO }
             .groupBy { it.gasto.tienda.trim() }
             .filterKeys { it.isNotEmpty() }
-            .map { (n, l) -> TiendaResumen(n, l.size, l.sumOf { it.real }) }
+            .map { (n, l) -> TiendaResumen(n, l.size, l.sumOf { it.real }, l.maxOf { it.gasto.fecha }) }
             .sortedByDescending { it.veces }
     }
 

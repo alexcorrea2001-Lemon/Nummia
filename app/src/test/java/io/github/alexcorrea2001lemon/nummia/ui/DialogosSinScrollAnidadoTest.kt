@@ -26,19 +26,29 @@ class DialogosSinScrollAnidadoTest {
             val t = sinCadenas(f.readText())
             var desde = 0
             while (true) {
-                val i = t.indexOf("DialogoNummia(", desde)
-                if (i < 0) break
+                val i = listOf("DialogoNummia(", "PanelNummia(").map { t.indexOf(it, desde) }.filter { it >= 0 }.minOrNull() ?: break
                 desde = i + 1
                 if (t.substring(maxOf(0, i - 4), i) == "fun ") continue
                 var prof = 0
-                var fin = i + "DialogoNummia".length
+                var fin = t.indexOf('(', i)
                 while (fin < t.length) {
                     when (t[fin]) { '(' -> prof++; ')' -> { prof--; if (prof == 0) break } }
                     fin++
                 }
+                // Contenido en una lambda final: «PanelNummia(alCerrar = …) { … }».
+                var j = fin + 1
+                while (j < t.length && t[j].isWhitespace()) j++
+                if (j < t.length && t[j] == '{') {
+                    var llaves = 0
+                    fin = j
+                    while (fin < t.length) {
+                        when (t[fin]) { '{' -> llaves++; '}' -> { llaves--; if (llaves == 0) break } }
+                        fin++
+                    }
+                }
                 val bloque = t.substring(i, minOf(fin, t.length))
                 prohibido.filter { bloque.contains(it) }.forEach { p ->
-                    fallos += "${f.name}: «$p» dentro de DialogoNummia (línea ${t.substring(0, i).count { it == '\n' } + 1})"
+                    fallos += "${f.name}: «$p» dentro de un diálogo o panel (línea ${t.substring(0, i).count { it == '\n' } + 1})"
                 }
             }
         }

@@ -1,6 +1,19 @@
 package io.github.alexcorrea2001lemon.nummia.ui.tiendas
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import io.github.alexcorrea2001lemon.nummia.ui.comun.AccionPanel
+import io.github.alexcorrea2001lemon.nummia.ui.comun.AvatarIniciales
+import io.github.alexcorrea2001lemon.nummia.ui.comun.CabeceraPanel
+import io.github.alexcorrea2001lemon.nummia.ui.comun.DatosPanel
+import io.github.alexcorrea2001lemon.nummia.ui.comun.PanelNummia
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -88,64 +101,146 @@ fun posiblesDuplicados(tiendas: List<TiendaResumen>): List<List<TiendaResumen>> 
     return tiendas.groupBy { unificado.getValue(it.nombre) }.values.filter { it.size > 1 }.map { g -> g.sortedByDescending { it.veces } }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun TiendasScreen(vm: TiendasViewModel, snackbar: SnackbarHostState, alVolver: () -> Unit) {
+fun TiendasScreen(vm: TiendasViewModel, snackbar: SnackbarHostState, alTienda: (String) -> Unit = {}, alVolver: () -> Unit) {
     val tiendas by vm.tiendas.collectAsStateWithLifecycle()
     val c = LocalColoresNummia.current
     val alcance = rememberCoroutineScope()
+    val haptica = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var busqueda by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    var orden by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(OrdenTiendas.VECES) }
     var marcadas by remember { mutableStateOf(setOf<String>()) }
+    var abierta by remember { mutableStateOf<TiendaResumen?>(null) }
     var uniendo by remember { mutableStateOf<Set<String>?>(null) }
+    val seleccionando = marcadas.isNotEmpty()
 
     fun unir(origen: Set<String>, destino: String) = alcance.launch {
         val n = vm.unir(origen, destino)
         marcadas = emptySet()
         snackbar.showSnackbar(if (n == 1) "1 gasto pasa a «$destino»" else "$n gastos pasan a «$destino»")
     }
+    fun alternar(t: TiendaResumen) { marcadas = if (t.nombre in marcadas) marcadas - t.nombre else marcadas + t.nombre }
+    androidx.activity.compose.BackHandler(seleccionando) { marcadas = emptySet() }
 
-    PantallaAjustes("Tiendas", alVolver) {
-        val lista = tiendas.orEmpty()
-        if (tiendas != null && lista.isEmpty()) {
-            Tarjeta { EstadoVacio(Iconos.Bolsa, "Aún no hay tiendas", "Aparecerán aquí cuando apuntes gastos.") }
-        } else if (lista.isNotEmpty()) {
-            val dup = posiblesDuplicados(lista)
-            if (dup.isNotEmpty()) {
-                Text("Parecen la misma tienda", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                dup.forEach { g ->
-                    Tarjeta {
-                        Text(g.joinToString(" · ") { "${it.nombre} (${it.veces})" }, style = MaterialTheme.typography.bodyMedium)
+    Box(Modifier.fillMaxSize()) {
+        PantallaAjustes("Tiendas", alVolver) {
+            val lista = tiendas.orEmpty()
+            if (tiendas != null && lista.isEmpty()) {
+                Tarjeta { EstadoVacio(Iconos.Bolsa, "Aún no hay tiendas", "Aparecerán aquí cuando apuntes gastos.") }
+            } else if (lista.isNotEmpty()) {
+                Text(
+                    "${lista.size} tiendas · ${formatearEuros(lista.sumOf { it.total })} en total",
+                    style = MaterialTheme.typography.bodyMedium.merge(androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")), color = c.textoSuave,
+                    modifier = Modifier.padding(start = Espacio.xs),
+                )
+                OutlinedTextField(
+                    busqueda, { busqueda = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Buscar tienda") }, leadingIcon = { Icon(Iconos.Buscar, null) },
+                    trailingIcon = { if (busqueda.isNotEmpty()) IconButton(onClick = { busqueda = "" }) { Icon(Iconos.Cerrar, "Borrar la búsqueda") } },
+                    shape = RoundedCornerShape(50),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
+                    OrdenTiendas.entries.forEach { o ->
+                        FilterChip(selected = orden == o, onClick = { orden = o }, label = { Text(o.texto) })
+                    }
+                }
+                posiblesDuplicados(lista).forEach { g ->
+                    Tarjeta(fondo = c.heroe) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.m)) {
+                            Icon(Iconos.Duplicar, null, tint = MaterialTheme.colorScheme.primary)
+                            Text(
+                                g.joinToString(" y ") { "«${it.nombre}»" } + " parecen la misma",
+                                style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f),
+                            )
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                            Button(onClick = { unir(g.map { it.nombre }.toSet(), g.first().nombre) }) { Text("Unir en «${g.first().nombre}»") }
+                            Button(onClick = { unir(g.map { it.nombre }.toSet(), g.first().nombre) }) { Text("Unir en «${g.first().nombre}»", maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) }
                             TextButton(onClick = { uniendo = g.map { it.nombre }.toSet() }) { Text("Otro nombre") }
                         }
                     }
                 }
-            }
-            Text("Todas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("Marca varias para unirlas, o una para cambiarle el nombre.", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
-            AnimatedVisibility(marcadas.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Espacio.s)) {
-                    Button(onClick = { uniendo = marcadas }) { Text(if (marcadas.size == 1) "Cambiar nombre" else "Unir ${marcadas.size} tiendas") }
-                    OutlinedButton(onClick = { marcadas = emptySet() }) { Text("Cancelar") }
-                }
-            }
-            Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
-                lista.forEachIndexed { n, t ->
-                    if (n > 0) HorizontalDivider(color = c.borde)
-                    val marcada = t.nombre in marcadas
-                    Row(
-                        Modifier.fillMaxWidth().clickable { marcadas = if (marcada) marcadas - t.nombre else marcadas + t.nombre }
-                            .padding(horizontal = Espacio.s, vertical = Espacio.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(checked = marcada, onCheckedChange = { marcadas = if (it) marcadas + t.nombre else marcadas - t.nombre })
-                        Column(Modifier.weight(1f)) {
-                            Text(t.nombre, style = MaterialTheme.typography.bodyLarge)
-                            Text(if (t.veces == 1) "1 vez" else "${t.veces} veces", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
+                val vista = filtrarTiendas(lista, busqueda, orden)
+                if (vista.isEmpty()) {
+                    Text("Ninguna tienda coincide con «${busqueda.trim()}».", style = MaterialTheme.typography.bodyMedium, color = c.textoSuave, modifier = Modifier.padding(Espacio.s))
+                } else {
+                    Tarjeta(relleno = false, modifier = Modifier.animateContentSize()) {
+                        vista.forEachIndexed { n, t ->
+                            if (n > 0) HorizontalDivider(color = c.borde)
+                            val marcada = t.nombre in marcadas
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .background(if (marcada) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f) else Color.Transparent)
+                                    .combinedClickable(
+                                        onClickLabel = if (seleccionando) "Marcar o desmarcar" else "Abrir",
+                                        onLongClickLabel = "Marcar para unir",
+                                        onClick = { if (seleccionando) alternar(t) else abierta = t },
+                                        onLongClick = { haptica.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress); alternar(t) },
+                                    )
+                                    .semantics { selected = marcada }
+                                    .padding(horizontal = Espacio.l, vertical = Espacio.m),
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Espacio.l),
+                            ) {
+                                AvatarIniciales(iniciales(t.nombre).take(1), marcado = marcada)
+                                Column(Modifier.weight(1f)) {
+                                    Text(t.nombre, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    Text(
+                                        (if (t.veces == 1) "1 vez" else "${t.veces} veces") + (t.ultima?.let { " · última ${io.github.alexcorrea2001lemon.nummia.ui.comun.fechaCorta(it)}" } ?: ""),
+                                        style = MaterialTheme.typography.bodySmall, color = c.textoSuave,
+                                    )
+                                }
+                                Text(formatearEuros(t.total), style = MaterialTheme.typography.bodyLarge.merge(androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum")), fontWeight = FontWeight.Medium)
+                            }
                         }
-                        Text(formatearEuros(t.total), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(end = Espacio.m))
                     }
+                    Text(
+                        "Toca una para ver sus opciones · Mantén pulsado para unir varias",
+                        style = MaterialTheme.typography.bodySmall, color = c.textoSuave, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = if (seleccionando) 96.dp else 0.dp),
+                    )
                 }
             }
+        }
+
+        // Barra de selección: cuántas hay marcadas y «Unir».
+        AnimatedVisibility(
+            seleccionando, modifier = Modifier.align(Alignment.BottomCenter),
+            enter = androidx.compose.animation.slideInVertically { it } + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.slideOutVertically { it } + androidx.compose.animation.fadeOut(),
+        ) {
+            val elegidas = tiendas.orEmpty().filter { it.nombre in marcadas }
+            Surface(
+                shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.secondaryContainer, shadowElevation = 6.dp,
+                modifier = Modifier.navigationBarsPadding().padding(Espacio.l).fillMaxWidth(),
+            ) {
+                Row(Modifier.padding(start = Espacio.s, end = Espacio.l, top = Espacio.s, bottom = Espacio.s), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { marcadas = emptySet() }) { Icon(Iconos.Cerrar, "Salir de la selección") }
+                    Column(Modifier.weight(1f)) {
+                        Text(if (marcadas.size == 1) "1 marcada" else "${marcadas.size} marcadas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "${elegidas.sumOf { it.veces }} gastos · ${formatearEuros(elegidas.sumOf { it.total })}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    Button(onClick = { uniendo = marcadas }) { Text(if (marcadas.size == 1) "Cambiar nombre" else "Unir…") }
+                }
+            }
+        }
+    }
+
+    abierta?.let { t ->
+        val cerrar = { abierta = null }
+        PanelNummia(alCerrar = cerrar) {
+            CabeceraPanel({ AvatarIniciales(iniciales(t.nombre).take(1), tam = 52.dp) }, t.nombre, t.ultima?.let { "Último gasto: ${io.github.alexcorrea2001lemon.nummia.ui.comun.fechaCorta(it)}" })
+            DatosPanel("Total" to formatearEuros(t.total), "Veces" to t.veces.toString(), "Media" to formatearEuros(if (t.veces > 0) t.total / t.veces else 0))
+            HorizontalDivider(color = c.borde)
+            AccionPanel(Iconos.Movimientos, "Ver sus gastos", conFlecha = true) { cerrar(); alTienda(t.nombre) }
+            AccionPanel(Iconos.Lapiz, "Cambiar nombre") { cerrar(); uniendo = setOf(t.nombre) }
+            AccionPanel(Iconos.Duplicar, "Unir con otras tiendas…") {
+                cerrar(); marcadas = setOf(t.nombre)
+                alcance.launch { snackbar.showSnackbar("Marca las tiendas que quieras unir con «${t.nombre}»") }
+            }
+            Text("Si cambias el nombre, todos sus gastos pasan a llamarse así (también en tu hoja de Drive).", style = MaterialTheme.typography.bodySmall, color = c.textoSuave)
         }
     }
 
@@ -161,7 +256,7 @@ fun TiendasScreen(vm: TiendasViewModel, snackbar: SnackbarHostState, alVolver: (
                     OutlinedTextField(nombre, { nombre = it }, label = { Text("Nombre") }, singleLine = true)
                 }
             },
-            confirmButton = { Button(enabled = nombre.isNotBlank(), onClick = { unir(origen, nombre); uniendo = null }) { Text("Guardar") } },
+            confirmButton = { Button(enabled = nombre.isNotBlank(), onClick = { unir(origen, nombre.trim()); uniendo = null }) { Text("Guardar") } },
             dismissButton = { TextButton(onClick = { uniendo = null }) { Text("Cancelar") } },
         )
     }

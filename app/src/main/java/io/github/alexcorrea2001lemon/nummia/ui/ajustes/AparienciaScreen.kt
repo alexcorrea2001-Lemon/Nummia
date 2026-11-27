@@ -153,7 +153,7 @@ fun AparienciaScreen(vm: AjustesViewModel, alVolver: () -> Unit) {
                 seleccionado = a.acento.takeIf { a.modoAcento == ModoAcento.PALETA }, alElegir = vm::acento,
                 personalizado = Color(a.acentoPersonalizado).takeIf { a.modoAcento == ModoAcento.PERSONALIZADO },
                 alPersonalizar = { personalizando = true },
-                alFondo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) vm::acentoFondo else null,
+                alFondo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ({ vm.acentoFondo() }) else null,
                 fondoElegido = a.modoAcento == ModoAcento.FONDO_PANTALLA,
             )
             Text(
